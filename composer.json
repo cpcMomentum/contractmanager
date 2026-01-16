@@ -1,0 +1,29 @@
+{
+    "name": "cpcmomentum/contractmanager",
+    "description": "Nextcloud App zur Vertragsverwaltung mit Kündigungserinnerungen",
+    "type": "project",
+    "license": "AGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "cpc Momentum",
+            "email": "dev@cpc-momentum.de"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "nextcloud/ocp": "^32.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "OCA\\ContractManager\\": "lib/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.2"
+        }
+    }
+}
