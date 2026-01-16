@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import App from './App.vue'
+import store from './store/index.js'
 import { translate, translatePlural } from '@nextcloud/l10n'
 
 // eslint-disable-next-line
@@ -10,5 +11,6 @@ Vue.prototype.n = translatePlural
 
 new Vue({
     el: '#contractmanager',
+    store,
     render: h => h(App),
 })

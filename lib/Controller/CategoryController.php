@@ -5,50 +5,59 @@ declare(strict_types=1);
 namespace OCA\ContractManager\Controller;
 
 use OCA\ContractManager\AppInfo\Application;
+use OCA\ContractManager\Service\CategoryService;
+use OCA\ContractManager\Service\NotFoundException;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
 class CategoryController extends Controller {
-    private ?string $userId;
 
     public function __construct(
         IRequest $request,
-        ?string $userId
+        private CategoryService $service,
+        private ?string $userId,
     ) {
         parent::__construct(Application::APP_ID, $request);
-        $this->userId = $userId;
     }
 
     /**
      * @NoAdminRequired
      */
     public function index(): JSONResponse {
-        // TODO: Implement
-        return new JSONResponse([]);
+        return new JSONResponse($this->service->findAll());
     }
 
     /**
-     * @NoAdminRequired
+     * Admin only - create category
      */
-    public function create(): JSONResponse {
-        // TODO: Implement
-        return new JSONResponse([]);
+    public function create(string $name): JSONResponse {
+        $category = $this->service->create($name);
+        return new JSONResponse($category, Http::STATUS_CREATED);
     }
 
     /**
-     * @NoAdminRequired
+     * Admin only - update category
      */
-    public function update(int $id): JSONResponse {
-        // TODO: Implement
-        return new JSONResponse([]);
+    public function update(int $id, string $name, ?int $sortOrder = null): JSONResponse {
+        try {
+            $category = $this->service->update($id, $name, $sortOrder);
+            return new JSONResponse($category);
+        } catch (NotFoundException $e) {
+            return new JSONResponse(['error' => 'Category not found'], Http::STATUS_NOT_FOUND);
+        }
     }
 
     /**
-     * @NoAdminRequired
+     * Admin only - delete category
      */
     public function destroy(int $id): JSONResponse {
-        // TODO: Implement
-        return new JSONResponse([]);
+        try {
+            $this->service->delete($id);
+            return new JSONResponse(['success' => true]);
+        } catch (NotFoundException $e) {
+            return new JSONResponse(['error' => 'Category not found'], Http::STATUS_NOT_FOUND);
+        }
     }
 }

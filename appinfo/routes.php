@@ -9,6 +9,7 @@ return [
 
         // Contract API routes
         ['name' => 'contract#index', 'url' => '/api/contracts', 'verb' => 'GET'],
+        ['name' => 'contract#archived', 'url' => '/api/contracts/archived', 'verb' => 'GET'],
         ['name' => 'contract#show', 'url' => '/api/contracts/{id}', 'verb' => 'GET'],
         ['name' => 'contract#create', 'url' => '/api/contracts', 'verb' => 'POST'],
         ['name' => 'contract#update', 'url' => '/api/contracts/{id}', 'verb' => 'PUT'],
