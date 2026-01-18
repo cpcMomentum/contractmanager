@@ -12,10 +12,65 @@ use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 
 class ContractService {
 
-    public function __construct(
-        private ContractMapper $mapper,
-    ) {
-    }
+	private const VALID_STATUSES = [
+		Contract::STATUS_ACTIVE,
+		Contract::STATUS_CANCELLED,
+		Contract::STATUS_ENDED,
+	];
+
+	public function __construct(
+		private ContractMapper $mapper,
+	) {
+	}
+
+	/**
+	 * Validate contract data
+	 *
+	 * @param array<string, mixed> $data
+	 * @throws ValidationException
+	 */
+	public function validate(array $data): void {
+		$errors = [];
+
+		// Name is required
+		if (empty($data['name']) || trim($data['name']) === '') {
+			$errors['name'] = 'Name ist erforderlich';
+		}
+
+		// Vendor is required
+		if (empty($data['vendor']) || trim($data['vendor']) === '') {
+			$errors['vendor'] = 'Vertragspartner ist erforderlich';
+		}
+
+		// Date validation: startDate must be before endDate
+		if (!empty($data['startDate']) && !empty($data['endDate'])) {
+			$start = new DateTime($data['startDate']);
+			$end = new DateTime($data['endDate']);
+			if ($start >= $end) {
+				$errors['endDate'] = 'Enddatum muss nach Startdatum liegen';
+			}
+		}
+
+		// Status validation
+		if (!empty($data['status']) && !in_array($data['status'], self::VALID_STATUSES, true)) {
+			$errors['status'] = 'Ungültiger Status';
+		}
+
+		if (!empty($errors)) {
+			throw new ValidationException($errors);
+		}
+	}
+
+	/**
+	 * Check if a user has access to a contract
+	 *
+	 * @throws ForbiddenException
+	 */
+	public function checkAccess(Contract $contract, string $userId): void {
+		if ($contract->getCreatedBy() !== $userId) {
+			throw new ForbiddenException('Kein Zugriff auf diesen Vertrag');
+		}
+	}
 
     /**
      * @return Contract[]
@@ -83,7 +138,7 @@ class ContractService {
         $contract->setCostInterval($costInterval);
         $contract->setContractFolder($contractFolder);
         $contract->setMainDocument($mainDocument);
-        $contract->setReminderEnabled($reminderEnabled);
+        $contract->setReminderEnabled($reminderEnabled ? 1 : 0);
         $contract->setReminderDays($reminderDays);
         $contract->setNotes($notes);
         $contract->setCreatedBy($userId);
@@ -105,6 +160,7 @@ class ContractService {
         string $cancellationPeriod,
         string $contractType,
         ?int $categoryId = null,
+        ?string $status = null,
         ?string $renewalPeriod = null,
         ?string $cost = null,
         ?string $currency = null,
@@ -124,6 +180,9 @@ class ContractService {
         $contract->setName($name);
         $contract->setVendor($vendor);
         $contract->setCategoryId($categoryId);
+        if ($status !== null) {
+            $contract->setStatus($status);
+        }
         $contract->setStartDate(new DateTime($startDate));
         $contract->setEndDate(new DateTime($endDate));
         $contract->setCancellationPeriod($cancellationPeriod);
@@ -134,7 +193,7 @@ class ContractService {
         $contract->setCostInterval($costInterval);
         $contract->setContractFolder($contractFolder);
         $contract->setMainDocument($mainDocument);
-        $contract->setReminderEnabled($reminderEnabled);
+        $contract->setReminderEnabled($reminderEnabled ? 1 : 0);
         $contract->setReminderDays($reminderDays);
         $contract->setNotes($notes);
         $contract->setUpdatedAt(new DateTime());
@@ -155,36 +214,45 @@ class ContractService {
         return $this->mapper->delete($contract);
     }
 
-    /**
-     * @throws NotFoundException
-     */
-    public function archive(int $id): Contract {
-        try {
-            $contract = $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+	/**
+	 * Archive a contract
+	 *
+	 * @throws NotFoundException
+	 * @throws ForbiddenException
+	 */
+	public function archive(int $id, string $userId): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
 
-        $contract->setStatus(Contract::STATUS_ARCHIVED);
-        $contract->setUpdatedAt(new DateTime());
+		$this->checkAccess($contract, $userId);
 
-        return $this->mapper->update($contract);
-    }
+		$contract->setArchived(true);
+		$contract->setUpdatedAt(new DateTime());
 
-    /**
-     * @throws NotFoundException
-     */
-    public function restore(int $id): Contract {
-        try {
-            $contract = $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+		return $this->mapper->update($contract);
+	}
 
-        // Restore to active status
-        $contract->setStatus(Contract::STATUS_ACTIVE);
-        $contract->setUpdatedAt(new DateTime());
+	/**
+	 * Restore a contract from archive
+	 *
+	 * @throws NotFoundException
+	 * @throws ForbiddenException
+	 */
+	public function restore(int $id, string $userId): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
 
-        return $this->mapper->update($contract);
-    }
+		$this->checkAccess($contract, $userId);
+
+		$contract->setArchived(false);
+		$contract->setUpdatedAt(new DateTime());
+
+		return $this->mapper->update($contract);
+	}
 }

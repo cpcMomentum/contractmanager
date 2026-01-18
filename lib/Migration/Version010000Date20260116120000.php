@@ -108,9 +108,9 @@ class Version010000Date20260116120000 extends SimpleMigrationStep {
                 'notnull' => false,
                 'length' => 1024,
             ]);
-            $table->addColumn('reminder_enabled', Types::BOOLEAN, [
+            $table->addColumn('reminder_enabled', Types::SMALLINT, [
                 'notnull' => true,
-                'default' => true,
+                'default' => 1,
             ]);
             $table->addColumn('reminder_days', Types::INTEGER, [
                 'notnull' => false,

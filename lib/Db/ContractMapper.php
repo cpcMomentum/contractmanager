@@ -28,7 +28,7 @@ class ContractMapper extends QBMapper {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
-            ->where($qb->expr()->neq('status', $qb->createNamedParameter(Contract::STATUS_ARCHIVED)))
+            ->where($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
             ->orderBy('end_date', 'ASC');
 
         return $this->findEntities($qb);
@@ -43,7 +43,7 @@ class ContractMapper extends QBMapper {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
-            ->where($qb->expr()->eq('status', $qb->createNamedParameter(Contract::STATUS_ARCHIVED)))
+            ->where($qb->expr()->eq('archived', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
             ->orderBy('updated_at', 'DESC');
 
         return $this->findEntities($qb);
@@ -87,7 +87,7 @@ class ContractMapper extends QBMapper {
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('category_id', $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_INT)))
-            ->andWhere($qb->expr()->neq('status', $qb->createNamedParameter(Contract::STATUS_ARCHIVED)))
+            ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
             ->orderBy('end_date', 'ASC');
 
         return $this->findEntities($qb);
@@ -103,7 +103,7 @@ class ContractMapper extends QBMapper {
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('status', $qb->createNamedParameter(Contract::STATUS_ACTIVE)))
-            ->andWhere($qb->expr()->eq('reminder_enabled', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
+            ->andWhere($qb->expr()->eq('reminder_enabled', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
             ->andWhere($qb->expr()->lte('end_date', $qb->createNamedParameter($deadlineDate, IQueryBuilder::PARAM_DATE)))
             ->orderBy('end_date', 'ASC');
 
@@ -121,7 +121,7 @@ class ContractMapper extends QBMapper {
 
         $qb->select('*')
             ->from($this->getTableName())
-            ->where($qb->expr()->neq('status', $qb->createNamedParameter(Contract::STATUS_ARCHIVED)))
+            ->where($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
             ->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->iLike('name', $qb->createNamedParameter($searchPattern)),

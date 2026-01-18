@@ -39,8 +39,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setContractFolder(?string $contractFolder)
  * @method string|null getMainDocument()
  * @method void setMainDocument(?string $mainDocument)
- * @method bool getReminderEnabled()
- * @method void setReminderEnabled(bool $reminderEnabled)
+ * @method int getReminderEnabled()
+ * @method void setReminderEnabled(int $reminderEnabled)
  * @method int|null getReminderDays()
  * @method void setReminderDays(?int $reminderDays)
  * @method string|null getNotes()
@@ -51,13 +51,14 @@ use OCP\AppFramework\Db\Entity;
  * @method void setCreatedAt(DateTime $createdAt)
  * @method DateTime getUpdatedAt()
  * @method void setUpdatedAt(DateTime $updatedAt)
+ * @method int getArchived()
+ * @method void setArchived(int $archived)
  */
 class Contract extends Entity implements JsonSerializable {
 
     public const STATUS_ACTIVE = 'active';
     public const STATUS_CANCELLED = 'cancelled';
     public const STATUS_ENDED = 'ended';
-    public const STATUS_ARCHIVED = 'archived';
 
     public const TYPE_FIXED = 'fixed';
     public const TYPE_AUTO_RENEWAL = 'auto_renewal';
@@ -80,9 +81,10 @@ class Contract extends Entity implements JsonSerializable {
     protected ?string $costInterval = null;
     protected ?string $contractFolder = null;
     protected ?string $mainDocument = null;
-    protected bool $reminderEnabled = true;
+    protected int $reminderEnabled = 1;
     protected ?int $reminderDays = null;
     protected ?string $notes = null;
+    protected int $archived = 0;
     protected string $createdBy = '';
     protected ?DateTime $createdAt = null;
     protected ?DateTime $updatedAt = null;
@@ -92,10 +94,11 @@ class Contract extends Entity implements JsonSerializable {
         $this->addType('categoryId', 'integer');
         $this->addType('startDate', 'datetime');
         $this->addType('endDate', 'datetime');
-        $this->addType('reminderEnabled', 'boolean');
+        $this->addType('reminderEnabled', 'integer');
         $this->addType('reminderDays', 'integer');
         $this->addType('createdAt', 'datetime');
         $this->addType('updatedAt', 'datetime');
+        $this->addType('archived', 'integer');
     }
 
     public function jsonSerialize(): array {
@@ -115,9 +118,10 @@ class Contract extends Entity implements JsonSerializable {
             'costInterval' => $this->costInterval,
             'contractFolder' => $this->contractFolder,
             'mainDocument' => $this->mainDocument,
-            'reminderEnabled' => $this->reminderEnabled,
+            'reminderEnabled' => (bool) $this->reminderEnabled,
             'reminderDays' => $this->reminderDays,
             'notes' => $this->notes,
+            'archived' => (bool) $this->archived,
             'createdBy' => $this->createdBy,
             'createdAt' => $this->createdAt?->format('c'),
             'updatedAt' => $this->updatedAt?->format('c'),

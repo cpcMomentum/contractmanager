@@ -1,60 +1,79 @@
 <template>
-	<NcListItem :name="contract.name"
-		:bold="false"
-		:force-display-actions="true"
-		@click="$emit('click', contract)">
-		<template #subname>
-			<span class="contract-vendor">{{ contract.vendor }}</span>
-			<span class="contract-separator">•</span>
-			<span class="contract-date">{{ formatDate(contract.endDate) }}</span>
-			<span v-if="daysUntilEnd !== null" :class="['contract-days', daysClass]">
-				({{ daysText }})
-			</span>
-		</template>
-		<template #indicator>
-			<StatusBadge :status="contract.status" />
-		</template>
-		<template #actions>
-			<NcActionButton v-if="contract.status === 'active'"
-				@click.stop="$emit('archive', contract)">
+	<div class="contract-list-item">
+		<div class="contract-list-item__main">
+			<div class="contract-list-item__header">
+				<a class="contract-name" href="#" @click.prevent="$emit('edit', contract)">
+					{{ contract.name }}
+				</a>
+				<StatusBadge :status="contract.status" />
+			</div>
+			<div class="contract-list-item__details">
+				<span>{{ contract.vendor }}</span>
+				<span v-if="contract.cost">{{ formatCost(contract.cost, contract.currency) }}</span>
+				<span>|</span>
+				<span>{{ t('contractmanager', 'Endet:') }} {{ formatDate(contract.endDate) }}</span>
+				<span v-if="cancellationDeadline">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
+				<span v-if="contract.renewalPeriod">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
+			</div>
+		</div>
+		<div class="contract-list-item__actions">
+			<NcButton v-if="contract.mainDocument"
+				type="tertiary"
+				:title="t('contractmanager', 'Vertragsdokument öffnen')"
+				@click.stop="openDocument">
 				<template #icon>
-					<ArchiveIcon :size="20" />
+					<FileDocumentIcon :size="20" />
 				</template>
-				{{ t('contractmanager', 'Archivieren') }}
-			</NcActionButton>
-			<NcActionButton v-if="contract.status === 'archived'"
-				@click.stop="$emit('restore', contract)">
-				<template #icon>
-					<RestoreIcon :size="20" />
-				</template>
-				{{ t('contractmanager', 'Wiederherstellen') }}
-			</NcActionButton>
-			<NcActionButton @click.stop="$emit('edit', contract)">
-				<template #icon>
-					<PencilIcon :size="20" />
-				</template>
-				{{ t('contractmanager', 'Bearbeiten') }}
-			</NcActionButton>
-		</template>
-	</NcListItem>
+			</NcButton>
+			<NcActions :force-menu="true">
+				<NcActionButton v-if="!contract.archived"
+					@click.stop="$emit('archive', contract)">
+					<template #icon>
+						<ArchiveIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Archivieren') }}
+				</NcActionButton>
+				<NcActionButton v-if="contract.archived"
+					@click.stop="$emit('restore', contract)">
+					<template #icon>
+						<RestoreIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Wiederherstellen') }}
+				</NcActionButton>
+				<NcActionButton @click.stop="$emit('edit', contract)">
+					<template #icon>
+						<PencilIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Bearbeiten') }}
+				</NcActionButton>
+			</NcActions>
+		</div>
+	</div>
 </template>
 
 <script>
-import NcListItem from '@nextcloud/vue/dist/Components/NcListItem.js'
+import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
 import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
+import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
 import RestoreIcon from 'vue-material-design-icons/Restore.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import StatusBadge from './StatusBadge.vue'
+import { generateUrl } from '@nextcloud/router'
+import { formatDate } from '../utils/dateUtils.js'
+import { formatPeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 
 export default {
 	name: 'ContractListItem',
 	components: {
-		NcListItem,
+		NcActions,
 		NcActionButton,
+		NcButton,
 		ArchiveIcon,
 		RestoreIcon,
 		PencilIcon,
+		FileDocumentIcon,
 		StatusBadge,
 	},
 	props: {
@@ -63,86 +82,95 @@ export default {
 			required: true,
 		},
 	},
-	emits: ['click', 'edit', 'archive', 'restore'],
+	emits: ['edit', 'archive', 'restore'],
 	computed: {
-		daysUntilEnd() {
-			if (!this.contract.endDate || this.contract.status !== 'active') {
+		cancellationDeadline() {
+			if (this.contract.status !== 'active') {
 				return null
 			}
-			const end = new Date(this.contract.endDate)
-			const today = new Date()
-			today.setHours(0, 0, 0, 0)
-			const diffTime = end.getTime() - today.getTime()
-			return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-		},
-		daysText() {
-			if (this.daysUntilEnd === null) return ''
-			if (this.daysUntilEnd < 0) {
-				return t('contractmanager', '{days} Tage überfällig', { days: Math.abs(this.daysUntilEnd) })
-			}
-			if (this.daysUntilEnd === 0) {
-				return t('contractmanager', 'Heute')
-			}
-			if (this.daysUntilEnd === 1) {
-				return t('contractmanager', 'Morgen')
-			}
-			return t('contractmanager', 'in {days} Tagen', { days: this.daysUntilEnd })
-		},
-		daysClass() {
-			if (this.daysUntilEnd === null) return ''
-			if (this.daysUntilEnd < 0) return 'overdue'
-			if (this.daysUntilEnd <= 7) return 'urgent'
-			if (this.daysUntilEnd <= 30) return 'warning'
-			return 'normal'
+			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod)
 		},
 	},
 	methods: {
-		formatDate(dateString) {
-			if (!dateString) return ''
-			const date = new Date(dateString)
-			return date.toLocaleDateString('de-DE', {
-				day: '2-digit',
-				month: '2-digit',
-				year: 'numeric',
+		formatDate,
+		formatPeriod,
+		formatCost(cost, currency) {
+			if (!cost) return ''
+			const amount = parseFloat(cost)
+			return new Intl.NumberFormat('de-DE', {
+				style: 'currency',
+				currency: currency || 'EUR',
+			}).format(amount)
+		},
+		openDocument() {
+			if (!this.contract.mainDocument) return
+			const path = this.contract.mainDocument
+			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
+			const fileName = path.substring(path.lastIndexOf('/') + 1)
+			const filesUrl = generateUrl('/apps/files/?dir={dir}&scrollto={file}&openfile={file}', {
+				dir: parentDir,
+				file: fileName,
 			})
+			window.open(filesUrl, '_blank')
 		},
 	},
 }
 </script>
 
 <style scoped lang="scss">
-.contract-vendor {
-	color: var(--color-text-maxcontrast);
-}
+.contract-list-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 16px;
+	background: var(--color-main-background);
+	border-radius: 8px;
+	transition: background-color 0.15s ease;
 
-.contract-separator {
-	margin: 0 6px;
-	color: var(--color-text-light);
-}
-
-.contract-date {
-	color: var(--color-text-maxcontrast);
-}
-
-.contract-days {
-	margin-left: 4px;
-	font-size: 12px;
-
-	&.overdue {
-		color: var(--color-error);
-		font-weight: 500;
+	&:hover {
+		background: var(--color-background-hover);
 	}
 
-	&.urgent {
-		color: var(--color-error);
+	&__main {
+		flex: 1;
+		min-width: 0;
 	}
 
-	&.warning {
-		color: var(--color-warning);
+	&__header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 4px;
 	}
 
-	&.normal {
-		color: var(--color-text-light);
+	&__details {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px;
+		font-size: 13px;
+		color: var(--color-text-maxcontrast);
+	}
+
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		flex-shrink: 0;
+		margin-left: 16px;
+	}
+}
+
+.contract-name {
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--color-main-text);
+	text-decoration: none;
+	cursor: pointer;
+
+	&:hover {
+		text-decoration: underline;
+		color: var(--color-primary-element);
 	}
 }
 </style>

@@ -111,6 +111,7 @@ export default {
 <style scoped lang="scss">
 .archive-view {
 	padding: 20px;
+	padding-left: 50px;
 	height: 100%;
 
 	&__header {

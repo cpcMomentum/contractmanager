@@ -6,7 +6,9 @@ namespace OCA\ContractManager\Controller;
 
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Service\ContractService;
+use OCA\ContractManager\Service\ForbiddenException;
 use OCA\ContractManager\Service\NotFoundException;
+use OCA\ContractManager\Service\ValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -68,27 +70,39 @@ class ContractController extends Controller {
         ?int $reminderDays = null,
         ?string $notes = null,
     ): JSONResponse {
-        $contract = $this->service->create(
-            $name,
-            $vendor,
-            $startDate,
-            $endDate,
-            $cancellationPeriod,
-            $contractType,
-            $this->userId,
-            $categoryId,
-            $renewalPeriod,
-            $cost,
-            $currency,
-            $costInterval,
-            $contractFolder,
-            $mainDocument,
-            $reminderEnabled,
-            $reminderDays,
-            $notes,
-        );
+        try {
+            // Validate input data
+            $this->service->validate([
+                'name' => $name,
+                'vendor' => $vendor,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]);
 
-        return new JSONResponse($contract, Http::STATUS_CREATED);
+            $contract = $this->service->create(
+                $name,
+                $vendor,
+                $startDate,
+                $endDate,
+                $cancellationPeriod,
+                $contractType,
+                $this->userId,
+                $categoryId,
+                $renewalPeriod,
+                $cost,
+                $currency,
+                $costInterval,
+                $contractFolder,
+                $mainDocument,
+                $reminderEnabled,
+                $reminderDays,
+                $notes,
+            );
+
+            return new JSONResponse($contract, Http::STATUS_CREATED);
+        } catch (ValidationException $e) {
+            return new JSONResponse(['errors' => $e->getErrors()], Http::STATUS_BAD_REQUEST);
+        }
     }
 
     /**
@@ -103,6 +117,7 @@ class ContractController extends Controller {
         string $cancellationPeriod,
         string $contractType,
         ?int $categoryId = null,
+        ?string $status = null,
         ?string $renewalPeriod = null,
         ?string $cost = null,
         ?string $currency = null,
@@ -114,6 +129,15 @@ class ContractController extends Controller {
         ?string $notes = null,
     ): JSONResponse {
         try {
+            // Validate input data
+            $this->service->validate([
+                'name' => $name,
+                'vendor' => $vendor,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'status' => $status,
+            ]);
+
             $contract = $this->service->update(
                 $id,
                 $name,
@@ -123,6 +147,7 @@ class ContractController extends Controller {
                 $cancellationPeriod,
                 $contractType,
                 $categoryId,
+                $status,
                 $renewalPeriod,
                 $cost,
                 $currency,
@@ -135,6 +160,8 @@ class ContractController extends Controller {
             );
 
             return new JSONResponse($contract);
+        } catch (ValidationException $e) {
+            return new JSONResponse(['errors' => $e->getErrors()], Http::STATUS_BAD_REQUEST);
         } catch (NotFoundException $e) {
             return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
         }
@@ -157,10 +184,12 @@ class ContractController extends Controller {
      */
     public function archive(int $id): JSONResponse {
         try {
-            $contract = $this->service->archive($id);
+            $contract = $this->service->archive($id, $this->userId);
             return new JSONResponse($contract);
         } catch (NotFoundException $e) {
             return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+        } catch (ForbiddenException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
         }
     }
 
@@ -169,10 +198,12 @@ class ContractController extends Controller {
      */
     public function restore(int $id): JSONResponse {
         try {
-            $contract = $this->service->restore($id);
+            $contract = $this->service->restore($id, $this->userId);
             return new JSONResponse($contract);
         } catch (NotFoundException $e) {
             return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+        } catch (ForbiddenException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
         }
     }
 }

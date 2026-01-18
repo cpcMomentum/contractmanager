@@ -34,7 +34,6 @@
 			<ContractListItem v-for="contract in contracts"
 				:key="contract.id"
 				:contract="contract"
-				@click="handleContractClick"
 				@edit="handleEdit"
 				@archive="handleArchive" />
 		</div>
@@ -68,6 +67,12 @@ export default {
 		ContractListItem,
 		ContractForm,
 	},
+	props: {
+		categoryFilter: {
+			type: Number,
+			default: null,
+		},
+	},
 	data() {
 		return {
 			showCreateForm: false,
@@ -78,9 +83,17 @@ export default {
 	},
 	computed: {
 		...mapGetters('contracts', {
-			contracts: 'allContracts',
+			allContracts: 'allContracts',
 			loading: 'isLoading',
 		}),
+		contracts() {
+			// Show active, cancelled, and expired contracts (not archived)
+			let filtered = this.allContracts.filter(c => c.status !== 'archived')
+			if (this.categoryFilter !== null) {
+				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
+			}
+			return filtered
+		},
 	},
 	created() {
 		this.fetchContracts()
@@ -89,11 +102,6 @@ export default {
 	methods: {
 		...mapActions('contracts', ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
 		...mapActions('categories', ['fetchCategories']),
-
-		handleContractClick(contract) {
-			this.editingContract = contract
-			this.showEditForm = true
-		},
 
 		handleEdit(contract) {
 			this.editingContract = contract
@@ -141,6 +149,7 @@ export default {
 <style scoped lang="scss">
 .contract-list {
 	padding: 20px;
+	padding-left: 50px;
 	height: 100%;
 
 	&__header {
