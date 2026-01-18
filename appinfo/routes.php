@@ -23,8 +23,12 @@ return [
         ['name' => 'category#update', 'url' => '/api/categories/{id}', 'verb' => 'PUT'],
         ['name' => 'category#destroy', 'url' => '/api/categories/{id}', 'verb' => 'DELETE'],
 
-        // Settings API routes
+        // User Settings API routes
         ['name' => 'settings#get', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#update', 'url' => '/api/settings', 'verb' => 'PUT'],
+
+        // Admin Settings API routes
+        ['name' => 'settings#getAdmin', 'url' => '/api/settings/admin', 'verb' => 'GET'],
+        ['name' => 'settings#updateAdmin', 'url' => '/api/settings/admin', 'verb' => 'PUT'],
     ]
 ];

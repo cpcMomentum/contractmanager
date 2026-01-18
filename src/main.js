@@ -9,8 +9,15 @@ __webpack_public_path__ = OC.linkTo('contractmanager', 'js/')
 Vue.prototype.t = translate
 Vue.prototype.n = translatePlural
 
+// Get admin status from data attribute
+const appElement = document.getElementById('contractmanager')
+const isAdmin = appElement?.dataset?.isAdmin === 'true'
+
+// Make it available globally
+Vue.prototype.$isAdmin = isAdmin
+
 new Vue({
-    el: '#contractmanager',
-    store,
-    render: h => h(App),
+	el: '#contractmanager',
+	store,
+	render: h => h(App),
 })

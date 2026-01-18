@@ -38,15 +38,14 @@
 					<ArchiveIcon :size="20" />
 				</template>
 			</NcAppNavigationItem>
-			<template #footer>
-				<NcAppNavigationItem :name="t('contractmanager', 'Einstellungen')"
-					:class="{ active: currentView === 'settings' }"
-					@click="currentView = 'settings'; selectedCategoryId = null">
-					<template #icon>
-						<CogIcon :size="20" />
-					</template>
-				</NcAppNavigationItem>
-			</template>
+
+			<NcAppNavigationItem :name="t('contractmanager', 'Einstellungen')"
+				:class="{ active: currentView === 'settings' }"
+				@click="currentView = 'settings'; selectedCategoryId = null">
+				<template #icon>
+					<CogIcon :size="20" />
+				</template>
+			</NcAppNavigationItem>
 		</NcAppNavigation>
 
 		<NcAppContent>

@@ -52,7 +52,6 @@ use OCP\AppFramework\Db\Entity;
  * @method DateTime getUpdatedAt()
  * @method void setUpdatedAt(DateTime $updatedAt)
  * @method int getArchived()
- * @method void setArchived(int $archived)
  */
 class Contract extends Entity implements JsonSerializable {
 
@@ -99,6 +98,15 @@ class Contract extends Entity implements JsonSerializable {
         $this->addType('createdAt', 'datetime');
         $this->addType('updatedAt', 'datetime');
         $this->addType('archived', 'integer');
+    }
+
+    /**
+     * Custom setter for archived to handle bool/int conversion
+     */
+    public function setArchived(bool|int $archived): void {
+        $value = is_bool($archived) ? ($archived ? 1 : 0) : $archived;
+        $this->archived = $value;
+        $this->markFieldUpdated('archived');
     }
 
     public function jsonSerialize(): array {
