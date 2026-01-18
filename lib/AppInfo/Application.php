@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\ContractManager\AppInfo;
 
+use OCA\ContractManager\Notification\Notifier;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -17,7 +18,7 @@ class Application extends App implements IBootstrap {
     }
 
     public function register(IRegistrationContext $context): void {
-        // Register services, event listeners, etc.
+        $context->registerNotifierService(Notifier::class);
     }
 
     public function boot(IBootContext $context): void {

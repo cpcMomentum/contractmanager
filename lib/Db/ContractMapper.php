@@ -111,6 +111,27 @@ class ContractMapper extends QBMapper {
     }
 
     /**
+     * Find contracts that potentially need a reminder
+     * Returns active, non-archived contracts with reminders enabled
+     *
+     * @return Contract[]
+     */
+    public function findContractsNeedingReminder(): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('status', $qb->createNamedParameter(Contract::STATUS_ACTIVE)))
+            ->andWhere($qb->expr()->eq('reminder_enabled', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->isNotNull('end_date'))
+            ->andWhere($qb->expr()->isNotNull('cancellation_period'))
+            ->andWhere($qb->expr()->neq('cancellation_period', $qb->createNamedParameter('')))
+            ->orderBy('end_date', 'ASC');
+
+        return $this->findEntities($qb);
+    }
+
+    /**
      * Search contracts by name or vendor
      *
      * @return Contract[]
