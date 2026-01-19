@@ -6,11 +6,16 @@ namespace OCA\ContractManager\Service;
 
 use OCA\ContractManager\AppInfo\Application;
 use OCP\IConfig;
-use OCP\IGroupManager;
 
+/**
+ * Service for managing app settings
+ *
+ * Note: User access control is handled via Nextcloud's native group-based
+ * app access (Admin → Apps → "Enable only for specific groups").
+ * No custom access control logic needed here.
+ */
 class SettingsService {
 
-	private const KEY_ALLOWED_USERS = 'allowed_users';
 	private const KEY_TALK_CHAT_TOKEN = 'talk_chat_token';
 	private const KEY_REMINDER_DAYS_1 = 'reminder_days_1';
 	private const KEY_REMINDER_DAYS_2 = 'reminder_days_2';
@@ -21,41 +26,12 @@ class SettingsService {
 
 	public function __construct(
 		private IConfig $config,
-		private IGroupManager $groupManager,
 	) {
 	}
 
 	// ========================================
-	// Admin-Settings (produktbeschreibung.md Zeile 206-213)
+	// Admin-Settings
 	// ========================================
-
-	/**
-	 * Get list of user IDs that have access to ContractManager
-	 *
-	 * @return string[]
-	 */
-	public function getAllowedUsers(): array {
-		$value = $this->config->getAppValue(
-			Application::APP_ID,
-			self::KEY_ALLOWED_USERS,
-			'[]'
-		);
-		$decoded = json_decode($value, true);
-		return is_array($decoded) ? $decoded : [];
-	}
-
-	/**
-	 * Set list of user IDs that have access to ContractManager
-	 *
-	 * @param string[] $userIds
-	 */
-	public function setAllowedUsers(array $userIds): void {
-		$this->config->setAppValue(
-			Application::APP_ID,
-			self::KEY_ALLOWED_USERS,
-			json_encode(array_values($userIds))
-		);
-	}
 
 	/**
 	 * Get Nextcloud Talk chat token for reminders
@@ -153,31 +129,4 @@ class SettingsService {
 		);
 	}
 
-	// ========================================
-	// Access Control
-	// ========================================
-
-	/**
-	 * Check if a user can access ContractManager
-	 *
-	 * Access is granted if:
-	 * 1. User is admin, OR
-	 * 2. allowed_users is empty (all users allowed), OR
-	 * 3. User is in allowed_users list
-	 */
-	public function canAccess(string $userId): bool {
-		// Admins always have access
-		if ($this->groupManager->isAdmin($userId)) {
-			return true;
-		}
-
-		$allowedUsers = $this->getAllowedUsers();
-
-		// Empty list = all users allowed
-		if (empty($allowedUsers)) {
-			return true;
-		}
-
-		return in_array($userId, $allowedUsers, true);
-	}
 }

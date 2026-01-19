@@ -26,21 +26,6 @@
 					{{ t('contractmanager', 'Administrator-Einstellungen') }}
 				</h3>
 
-				<!-- Allowed Users -->
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'Berechtigte Benutzer') }}</label>
-					<p class="settings-description">
-						{{ t('contractmanager', 'Leer lassen, um allen Benutzern Zugriff zu gewähren.') }}
-					</p>
-					<NcSelect v-model="adminSettings.allowedUsers"
-						:options="[]"
-						:multiple="true"
-						:taggable="true"
-						:placeholder="t('contractmanager', 'Benutzer-IDs eingeben...')"
-						class="user-select"
-						@tag="addAllowedUser" />
-				</div>
-
 				<!-- Talk Chat Token -->
 				<div class="settings-item">
 					<label class="settings-label">{{ t('contractmanager', 'Nextcloud Talk Chat-Token') }}</label>
@@ -177,7 +162,6 @@ import { mapGetters, mapActions } from 'vuex'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
 import ShieldIcon from 'vue-material-design-icons/Shield.vue'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
@@ -195,7 +179,6 @@ export default {
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
-		NcSelect,
 		NcTextField,
 		ShieldIcon,
 		PlusIcon,
@@ -209,7 +192,6 @@ export default {
 			emailReminder: false,
 			savingAdmin: false,
 			adminSettings: {
-				allowedUsers: [],
 				talkChatToken: '',
 				reminderDays1: 14,
 				reminderDays2: 3,
@@ -248,7 +230,6 @@ export default {
 			try {
 				const settings = await SettingsService.getAdminSettings()
 				this.adminSettings = {
-					allowedUsers: settings.allowedUsers || [],
 					talkChatToken: settings.talkChatToken || '',
 					reminderDays1: settings.reminderDays1 || 14,
 					reminderDays2: settings.reminderDays2 || 3,
@@ -269,21 +250,15 @@ export default {
 			}
 		},
 
-		addAllowedUser(tag) {
-			this.adminSettings.allowedUsers.push(tag)
-		},
-
 		async saveAdminSettings() {
 			this.savingAdmin = true
 			try {
 				const result = await SettingsService.updateAdminSettings({
-					allowedUsers: this.adminSettings.allowedUsers,
 					talkChatToken: this.adminSettings.talkChatToken,
 					reminderDays1: parseInt(this.adminSettings.reminderDays1, 10),
 					reminderDays2: parseInt(this.adminSettings.reminderDays2, 10),
 				})
 				this.adminSettings = {
-					allowedUsers: result.allowedUsers || [],
 					talkChatToken: result.talkChatToken || '',
 					reminderDays1: result.reminderDays1 || 14,
 					reminderDays2: result.reminderDays2 || 3,
@@ -423,10 +398,6 @@ export default {
 }
 
 .settings-input {
-	max-width: 400px;
-}
-
-.user-select {
 	max-width: 400px;
 }
 

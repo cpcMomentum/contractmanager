@@ -62,10 +62,12 @@ class SettingsController extends Controller {
 	/**
 	 * Get admin settings
 	 * No @NoAdminRequired = only admins can access
+	 *
+	 * Note: User access control is now handled via Nextcloud's native
+	 * group-based app access (Admin → Apps → "Enable only for specific groups")
 	 */
 	public function getAdmin(): JSONResponse {
 		return new JSONResponse([
-			'allowedUsers' => $this->settingsService->getAllowedUsers(),
 			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
@@ -77,15 +79,10 @@ class SettingsController extends Controller {
 	 * No @NoAdminRequired = only admins can access
 	 */
 	public function updateAdmin(
-		?array $allowedUsers = null,
 		?string $talkChatToken = null,
 		?int $reminderDays1 = null,
 		?int $reminderDays2 = null,
 	): JSONResponse {
-		if ($allowedUsers !== null) {
-			$this->settingsService->setAllowedUsers($allowedUsers);
-		}
-
 		if ($talkChatToken !== null) {
 			$this->settingsService->setTalkChatToken($talkChatToken ?: null);
 		}
@@ -99,7 +96,6 @@ class SettingsController extends Controller {
 		}
 
 		return new JSONResponse([
-			'allowedUsers' => $this->settingsService->getAllowedUsers(),
 			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),

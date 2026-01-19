@@ -16,7 +16,7 @@
 | 1 | Basis-CRUD | ✅ ABGESCHLOSSEN |
 | 2 | Archiv & Validierung | ✅ ABGESCHLOSSEN |
 | 3 | Erinnerungen | ✅ ABGESCHLOSSEN |
-| 4 | Berechtigungen & Settings | ⏳ TEILWEISE (4.5 fehlt) |
+| 4 | Berechtigungen & Settings | ✅ ABGESCHLOSSEN |
 | 5 | Testing & Polish | ❌ NICHT BEGONNEN |
 
 ---
@@ -89,17 +89,21 @@ Die Nextcloud-Notification (Glocke) wurde **nicht** implementiert, da Talk und E
 
 ---
 
-## Phase 4: Berechtigungen & Settings ⏳ TEILWEISE
+## Phase 4: Berechtigungen & Settings ✅ ABGESCHLOSSEN
 
 ### 4.1 SettingsService ✅ ABGESCHLOSSEN
 
 **Implementiert:** `lib/Service/SettingsService.php`
-- `getAllowedUsers()` / `setAllowedUsers()`
 - `getTalkChatToken()` / `setTalkChatToken()`
 - `getReminderDays1()` / `setReminderDays1()` (Default: 14)
 - `getReminderDays2()` / `setReminderDays2()` (Default: 3)
 - `getUserEmailReminder()` / `setUserEmailReminder()`
-- `canAccess()` - Prüft Admin oder allowed_users
+
+**Entscheidung: Nextcloud-native Access Control**
+Die Benutzerberechtigungen werden NICHT app-intern verwaltet, sondern über Nextcloud's Standard-Mechanismus:
+- Admin → Apps → ContractManager → "Nur für bestimmte Gruppen aktivieren"
+- Vorteile: Weniger Code, konsistente UX, keine Middleware nötig
+- `allowed_users` und `canAccess()` wurden entfernt
 
 ### 4.2 Admin-Settings API & UI ✅ ABGESCHLOSSEN
 
@@ -107,7 +111,6 @@ Die Nextcloud-Notification (Glocke) wurde **nicht** implementiert, da Talk und E
 - Routes: `/api/settings/admin` (GET/PUT)
 - SettingsController: `getAdmin()`, `updateAdmin()`
 - SettingsView.vue: Admin-Bereich mit:
-  - Berechtigte Benutzer (NcSelect mit Tagging)
   - Talk-Chat-Token
   - Erinnerungstage 1 + 2
 
@@ -126,18 +129,14 @@ Die Nextcloud-Notification (Glocke) wurde **nicht** implementiert, da Talk und E
 - Löschen mit Bestätigung
 - Nur für Admins sichtbar
 
-### 4.5 Access-Control Middleware ❌ FEHLT
+### 4.5 Access-Control ✅ ABGESCHLOSSEN (Nextcloud-native)
 
-**Noch zu implementieren:** `lib/Middleware/AccessCheckMiddleware.php`
-```php
-class AccessCheckMiddleware extends Middleware {
-    public function beforeController($controller, $methodName): void {
-        if (!$this->settingsService->canAccess($this->userId)) {
-            throw new NotPermittedException();
-        }
-    }
-}
-```
+**Entscheidung:** Keine eigene Middleware implementiert.
+
+Stattdessen wird Nextcloud's nativer Mechanismus genutzt:
+- Admin → Apps → ContractManager → "Nur für bestimmte Gruppen aktivieren"
+- Nextcloud prüft automatisch bei jedem Request, ob der User die App nutzen darf
+- Kein zusätzlicher Code erforderlich
 
 ---
 
@@ -200,13 +199,14 @@ class AccessCheckMiddleware extends Middleware {
 
 ### Settings (über IConfig)
 **Admin (App-weit):**
-- `contractmanager.allowed_users` - JSON array
 - `contractmanager.talk_chat_token` - string
 - `contractmanager.reminder_days_1` - int (Default: 14)
 - `contractmanager.reminder_days_2` - int (Default: 3)
 
 **User (pro User):**
 - `contractmanager.email_reminder` - bool (Default: false)
+
+**Access Control:** Über Nextcloud-native Gruppensteuerung (Admin → Apps)
 
 ---
 
@@ -249,8 +249,7 @@ class AccessCheckMiddleware extends Middleware {
 
 ## Offene Punkte
 
-1. **Phase 4.5 - Access-Control Middleware** - Damit nur berechtigte User die App nutzen können
-2. **Phase 5 - Testing & Polish** - PHPUnit Tests, i18n, Error Handling
+1. **Phase 5 - Testing & Polish** - PHPUnit Tests, i18n, Error Handling
 
 ---
 
