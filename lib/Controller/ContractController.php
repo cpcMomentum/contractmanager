@@ -28,14 +28,14 @@ class ContractController extends Controller {
      * @NoAdminRequired
      */
     public function index(): JSONResponse {
-        return new JSONResponse($this->service->findAll());
+        return new JSONResponse($this->service->findAll($this->userId));
     }
 
     /**
      * @NoAdminRequired
      */
     public function archived(): JSONResponse {
-        return new JSONResponse($this->service->findArchived());
+        return new JSONResponse($this->service->findArchived($this->userId));
     }
 
     /**
@@ -136,10 +136,12 @@ class ContractController extends Controller {
                 'startDate' => $startDate,
                 'endDate' => $endDate,
                 'status' => $status,
+                'notes' => $notes,
             ]);
 
             $contract = $this->service->update(
                 $id,
+                $this->userId,
                 $name,
                 $vendor,
                 $startDate,
@@ -164,6 +166,8 @@ class ContractController extends Controller {
             return new JSONResponse(['errors' => $e->getErrors()], Http::STATUS_BAD_REQUEST);
         } catch (NotFoundException $e) {
             return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+        } catch (ForbiddenException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
         }
     }
 
@@ -172,10 +176,12 @@ class ContractController extends Controller {
      */
     public function destroy(int $id): JSONResponse {
         try {
-            $this->service->delete($id);
+            $this->service->delete($id, $this->userId);
             return new JSONResponse(['success' => true]);
         } catch (NotFoundException $e) {
             return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+        } catch (ForbiddenException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
         }
     }
 

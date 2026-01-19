@@ -20,30 +20,32 @@ class ContractMapper extends QBMapper {
     }
 
     /**
-     * Find all non-archived contracts
+     * Find all non-archived contracts for a user
      *
      * @return Contract[]
      */
-    public function findAll(): array {
+    public function findAll(string $userId): array {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
             ->orderBy('end_date', 'ASC');
 
         return $this->findEntities($qb);
     }
 
     /**
-     * Find all archived contracts
+     * Find all archived contracts for a user
      *
      * @return Contract[]
      */
-    public function findArchived(): array {
+    public function findArchived(string $userId): array {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('archived', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
             ->orderBy('updated_at', 'DESC');
 
         return $this->findEntities($qb);
@@ -132,17 +134,18 @@ class ContractMapper extends QBMapper {
     }
 
     /**
-     * Search contracts by name or vendor
+     * Search contracts by name or vendor for a user
      *
      * @return Contract[]
      */
-    public function search(string $query): array {
+    public function search(string $query, string $userId): array {
         $qb = $this->db->getQueryBuilder();
         $searchPattern = '%' . $this->db->escapeLikeParameter($query) . '%';
 
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
             ->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->iLike('name', $qb->createNamedParameter($searchPattern)),

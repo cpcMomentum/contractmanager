@@ -164,9 +164,10 @@ class ContractServiceTest extends TestCase {
 
 		$this->mapper->expects($this->once())
 			->method('findAll')
+			->with('testuser')
 			->willReturn($contracts);
 
-		$result = $this->service->findAll();
+		$result = $this->service->findAll('testuser');
 
 		$this->assertCount(2, $result);
 	}
@@ -178,9 +179,10 @@ class ContractServiceTest extends TestCase {
 
 		$this->mapper->expects($this->once())
 			->method('findArchived')
+			->with('testuser')
 			->willReturn($contracts);
 
-		$result = $this->service->findArchived();
+		$result = $this->service->findArchived('testuser');
 
 		$this->assertCount(1, $result);
 	}
@@ -216,10 +218,10 @@ class ContractServiceTest extends TestCase {
 
 		$this->mapper->expects($this->once())
 			->method('search')
-			->with('test')
+			->with('test', 'testuser')
 			->willReturn($contracts);
 
-		$result = $this->service->search('test');
+		$result = $this->service->search('test', 'testuser');
 
 		$this->assertCount(1, $result);
 	}
@@ -300,6 +302,7 @@ class ContractServiceTest extends TestCase {
 
 	public function testDeleteRemovesContract(): void {
 		$contract = $this->createMock(Contract::class);
+		$contract->method('getCreatedBy')->willReturn('testuser');
 
 		$this->mapper->expects($this->once())
 			->method('find')
@@ -311,7 +314,7 @@ class ContractServiceTest extends TestCase {
 			->with($contract)
 			->willReturn($contract);
 
-		$result = $this->service->delete(1);
+		$result = $this->service->delete(1, 'testuser');
 
 		$this->assertSame($contract, $result);
 	}
@@ -324,7 +327,21 @@ class ContractServiceTest extends TestCase {
 			->with(999)
 			->willThrowException(new DoesNotExistException(''));
 
-		$this->service->delete(999);
+		$this->service->delete(999, 'testuser');
+	}
+
+	public function testDeleteThrowsForbiddenForNonOwner(): void {
+		$this->expectException(ForbiddenException::class);
+
+		$contract = $this->createMock(Contract::class);
+		$contract->method('getCreatedBy')->willReturn('owner');
+
+		$this->mapper->expects($this->once())
+			->method('find')
+			->with(1)
+			->willReturn($contract);
+
+		$this->service->delete(1, 'otheruser');
 	}
 
 	// ========================================

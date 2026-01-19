@@ -12,6 +12,14 @@ use Psr\Log\LoggerInterface;
  * Service for sending messages to Nextcloud Talk
  *
  * Uses the Talk Bot API to send messages as a system/bot user
+ *
+ * EXPERIMENTAL: This service uses internal Talk APIs (OCA\Talk\*) which are
+ * not part of Nextcloud's public API contract and may change without notice
+ * between Talk versions. If Talk integration fails after an update, this
+ * service may need to be adapted to the new internal API.
+ *
+ * Alternative approach for production use: Implement HTTP-based Talk OCS API
+ * (POST /ocs/v2.php/apps/spreed/api/v1/chat/{token}) with proper authentication.
  */
 class TalkService {
 
@@ -112,24 +120,34 @@ class TalkService {
 
 			$this->logger->info('Talk message sent successfully', [
 				'app' => Application::APP_ID,
-				'chatToken' => $chatToken,
+				'chatToken' => $this->anonymizeToken($chatToken),
 			]);
 			return true;
 
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
-			$this->logger->error('Talk chat not found: ' . $chatToken, [
+			$this->logger->error('Talk chat not found', [
 				'app' => Application::APP_ID,
-				'chatToken' => $chatToken,
+				'chatToken' => $this->anonymizeToken($chatToken),
 				'exception' => $e,
 			]);
 			return false;
 		} catch (\Exception $e) {
 			$this->logger->error('Exception while sending Talk message: ' . $e->getMessage(), [
 				'app' => Application::APP_ID,
-				'chatToken' => $chatToken,
+				'chatToken' => $this->anonymizeToken($chatToken),
 				'exception' => $e,
 			]);
 			return false;
 		}
+	}
+
+	/**
+	 * Anonymize a token for logging (show only first 3 chars)
+	 */
+	private function anonymizeToken(string $token): string {
+		if (strlen($token) <= 3) {
+			return '***';
+		}
+		return substr($token, 0, 3) . '***';
 	}
 }

@@ -18,6 +18,9 @@ class ContractService {
 		Contract::STATUS_ENDED,
 	];
 
+	private const MAX_STRING_LENGTH = 500;
+	private const MAX_NOTES_LENGTH = 5000;
+
 	public function __construct(
 		private ContractMapper $mapper,
 	) {
@@ -56,6 +59,17 @@ class ContractService {
 			$errors['status'] = 'Ungültiger Status';
 		}
 
+		// String length validation (L2 Security Fix)
+		if (!empty($data['name']) && strlen($data['name']) > self::MAX_STRING_LENGTH) {
+			$errors['name'] = 'Name ist zu lang (max. ' . self::MAX_STRING_LENGTH . ' Zeichen)';
+		}
+		if (!empty($data['vendor']) && strlen($data['vendor']) > self::MAX_STRING_LENGTH) {
+			$errors['vendor'] = 'Vertragspartner ist zu lang (max. ' . self::MAX_STRING_LENGTH . ' Zeichen)';
+		}
+		if (!empty($data['notes']) && strlen($data['notes']) > self::MAX_NOTES_LENGTH) {
+			$errors['notes'] = 'Notizen sind zu lang (max. ' . self::MAX_NOTES_LENGTH . ' Zeichen)';
+		}
+
 		if (!empty($errors)) {
 			throw new ValidationException($errors);
 		}
@@ -75,15 +89,15 @@ class ContractService {
     /**
      * @return Contract[]
      */
-    public function findAll(): array {
-        return $this->mapper->findAll();
+    public function findAll(string $userId): array {
+        return $this->mapper->findAll($userId);
     }
 
     /**
      * @return Contract[]
      */
-    public function findArchived(): array {
-        return $this->mapper->findArchived();
+    public function findArchived(string $userId): array {
+        return $this->mapper->findArchived($userId);
     }
 
     /**
@@ -100,8 +114,8 @@ class ContractService {
     /**
      * @return Contract[]
      */
-    public function search(string $query): array {
-        return $this->mapper->search($query);
+    public function search(string $query, string $userId): array {
+        return $this->mapper->search($query, $userId);
     }
 
     public function create(
@@ -150,9 +164,11 @@ class ContractService {
 
     /**
      * @throws NotFoundException
+     * @throws ForbiddenException
      */
     public function update(
         int $id,
+        string $userId,
         string $name,
         string $vendor,
         string $startDate,
@@ -176,6 +192,8 @@ class ContractService {
         } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
             throw new NotFoundException($e->getMessage());
         }
+
+        $this->checkAccess($contract, $userId);
 
         $contract->setName($name);
         $contract->setVendor($vendor);
@@ -203,13 +221,16 @@ class ContractService {
 
     /**
      * @throws NotFoundException
+     * @throws ForbiddenException
      */
-    public function delete(int $id): Contract {
+    public function delete(int $id, string $userId): Contract {
         try {
             $contract = $this->mapper->find($id);
         } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
             throw new NotFoundException($e->getMessage());
         }
+
+        $this->checkAccess($contract, $userId);
 
         return $this->mapper->delete($contract);
     }
