@@ -16,7 +16,7 @@ use OCP\IDBConnection;
 class ContractMapper extends QBMapper {
 
     public function __construct(IDBConnection $db) {
-        parent::__construct($db, 'contractmanager_contracts', Contract::class);
+        parent::__construct($db, 'contractmgr_contracts', Contract::class);
     }
 
     /**

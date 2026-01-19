@@ -19,8 +19,8 @@ class Version010003Date20260118160000 extends SimpleMigrationStep {
         /** @var ISchemaWrapper $schema */
         $schema = $schemaClosure();
 
-        if ($schema->hasTable('contractmanager_contracts')) {
-            $table = $schema->getTable('contractmanager_contracts');
+        if ($schema->hasTable('contractmgr_contracts')) {
+            $table = $schema->getTable('contractmgr_contracts');
 
             if (!$table->hasColumn('archived')) {
                 $table->addColumn('archived', Types::SMALLINT, [

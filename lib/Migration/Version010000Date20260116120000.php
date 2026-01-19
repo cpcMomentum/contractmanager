@@ -22,9 +22,9 @@ class Version010000Date20260116120000 extends SimpleMigrationStep {
         /** @var ISchemaWrapper $schema */
         $schema = $schemaClosure();
 
-        // Categories table
-        if (!$schema->hasTable('contractmanager_categories')) {
-            $table = $schema->createTable('contractmanager_categories');
+        // Categories table (short name to avoid index name length issues)
+        if (!$schema->hasTable('contractmgr_categories')) {
+            $table = $schema->createTable('contractmgr_categories');
 
             $table->addColumn('id', Types::INTEGER, [
                 'autoincrement' => true,
@@ -43,9 +43,9 @@ class Version010000Date20260116120000 extends SimpleMigrationStep {
             $table->addIndex(['sort_order'], 'cm_cat_sort_idx');
         }
 
-        // Contracts table
-        if (!$schema->hasTable('contractmanager_contracts')) {
-            $table = $schema->createTable('contractmanager_contracts');
+        // Contracts table (short name to avoid index name length issues)
+        if (!$schema->hasTable('contractmgr_contracts')) {
+            $table = $schema->createTable('contractmgr_contracts');
 
             $table->addColumn('id', Types::INTEGER, [
                 'autoincrement' => true,
