@@ -6,7 +6,7 @@
 
 **ContractManager** – Nextcloud-App zur Verwaltung von Verträgen mit Kündigungserinnerungen.
 
-**Status:** In Entwicklung (Phase 3 von 5)
+**Status:** Fertig (v1.0.0)
 
 ---
 
@@ -43,11 +43,11 @@
 |-------|--------------|--------|
 | 1 | Basis-CRUD | ✅ |
 | 2 | Archiv & Validierung | ✅ |
-| 3 | Erinnerungen | ⏳ (3.1 fertig, 3.2-3.4 fehlen) |
-| 4 | Settings & Berechtigungen | ⏳ (4.1-4.2 fertig) |
-| 5 | Testing & Polish | ❌ |
+| 3 | Erinnerungen | ✅ |
+| 4 | Settings & Berechtigungen | ✅ |
+| 5 | Testing & Polish | ✅ |
 
-**Nächster Schritt:** Phase 3.2 (Zwei Erinnerungszeitpunkte) - SettingsService ist jetzt verfügbar
+**Status:** Alle Phasen abgeschlossen - Release v1.0.0
 
 ---
 
@@ -98,4 +98,4 @@ contractmanager/
 ---
 
 *Erstellt: 2026-01-16*
-*Aktualisiert: 2026-01-18*
+*Aktualisiert: 2026-01-19*
