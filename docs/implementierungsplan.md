@@ -15,8 +15,8 @@
 |-------|--------------|--------|
 | 1 | Basis-CRUD | ✅ ABGESCHLOSSEN |
 | 2 | Archiv & Validierung | ✅ ABGESCHLOSSEN |
-| 3 | Erinnerungen | ⏳ TEILWEISE (3.1 fertig) |
-| 4 | Berechtigungen & Settings | ⏳ TEILWEISE (4.1-4.2 fertig) |
+| 3 | Erinnerungen | ✅ ABGESCHLOSSEN |
+| 4 | Berechtigungen & Settings | ⏳ TEILWEISE (4.5 fehlt) |
 | 5 | Testing & Polish | ❌ NICHT BEGONNEN |
 
 ---
@@ -52,179 +52,83 @@
 
 ---
 
-## Phase 3: Erinnerungen ⏳ IN ARBEIT
+## Phase 3: Erinnerungen ✅ ABGESCHLOSSEN
 
-### 3.1 Nextcloud Notifications ✅ ABGESCHLOSSEN
+### 3.1 Basis-Infrastruktur ✅ ABGESCHLOSSEN
 - **Migration:** Version010002 - Tabelle contractmgr_reminders
 - **ReminderSent Entity + Mapper** - Tracking gesendeter Erinnerungen
-- **Notifier.php** - Formatiert Notification-Texte
-- **ReminderService.php** - Basis-Logik (checkAndSendReminders, calculateCancellationDeadline)
 - **ReminderJob.php** - Background Job alle 6 Stunden
 
-### 3.2 Zwei Erinnerungszeitpunkte ❌ FEHLT
+### 3.2 Zwei Erinnerungszeitpunkte ✅ ABGESCHLOSSEN
 
-**Anforderung (produktbeschreibung.md Zeile 138-140):**
-> Zwei Erinnerungen: Erste Warnung (14 Tage) + letzte Warnung (3 Tage)
-> Admin konfiguriert globale Default-Werte
-> Pro Vertrag überschreibbar
+**Implementiert:**
+- ReminderService mit `shouldSendFirstReminder()` und `shouldSendFinalReminder()`
+- Reminder-Types: `cancellation_{endDate}_first` und `cancellation_{endDate}_final`
+- Erste Erinnerung: X Tage vor Kündigungsfrist (Admin-Setting, Default: 14)
+- Letzte Erinnerung: Y Tage vor Kündigungsfrist (Admin-Setting, Default: 3)
 
-**Zu implementieren:**
-- ReminderService erweitern:
-  - `shouldSendFirstReminder(Contract)` - Prüft reminder_days_1
-  - `shouldSendFinalReminder(Contract)` - Prüft reminder_days_2
-- Notifier erweitern:
-  - Subject `cancellation_reminder_first`
-  - Subject `cancellation_reminder_final`
-- Reminder-Types:
-  - `cancellation_{endDate}_first`
-  - `cancellation_{endDate}_final`
+### 3.3 Talk-Integration ✅ ABGESCHLOSSEN
 
-**⚠️ ABHÄNGIGKEIT:** Braucht SettingsService für reminder_days_1/2!
+**Implementiert:** `lib/Service/TalkService.php`
+- Nutzt interne Talk ChatManager API (nicht HTTP)
+- Actor-Type: `guests` (triggert Unread-Counter)
+- Sendet formatierte Markdown-Nachrichten mit Emoji
 
-### 3.3 Talk-Integration ❌ FEHLT
+**Hinweis:** Bot-Nachrichten in Talk erzeugen keinen Unread-Counter. Daher wird als `guests` Actor-Type verwendet.
 
-**Anforderung (produktbeschreibung.md Zeile 143):**
-> Nextcloud Talk: Admin definiert einmalig den Ziel-Chat
+### 3.4 E-Mail-Integration ✅ ABGESCHLOSSEN
 
-**Zu implementieren:**
-- **TalkService.php** erstellen:
-  ```php
-  class TalkService {
-      public function isTalkAvailable(): bool;
-      public function sendMessage(string $chatToken, string $message): bool;
-  }
-  ```
-- Talk OCS API nutzen: `POST /ocs/v2.php/apps/spreed/api/v1/chat/{token}`
-- In ReminderService integrieren
+**Implementiert:** `lib/Service/EmailService.php`
+- Nutzt Nextcloud IMailer
+- HTML + Plain-Text E-Mails
+- Nur wenn User `email_reminder` aktiviert hat
 
-**⚠️ ABHÄNGIGKEIT:** Braucht SettingsService für talk_chat_token!
+### Entscheidung: Nextcloud Notifications (Glocke) entfernt
 
-### 3.4 E-Mail-Integration ❌ FEHLT
-
-**Anforderung (produktbeschreibung.md Zeile 144, 219):**
-> E-Mail: Jeder User aktiviert/deaktiviert für sich selbst
-
-**Zu implementieren:**
-- **EmailService.php** erstellen:
-  ```php
-  class EmailService {
-      public function sendReminder(Contract $contract, string $userId): void;
-  }
-  ```
-- IMailer nutzen für SMTP-Versand
-- Nur senden wenn User email_reminder aktiviert hat
-
-**⚠️ ABHÄNGIGKEIT:** Braucht SettingsService für User-Setting email_reminder!
+Die Nextcloud-Notification (Glocke) wurde **nicht** implementiert, da Talk und E-Mail ausreichend sind und die Glocke als redundant empfunden wurde.
 
 ---
 
-## Phase 4: Berechtigungen & Settings ⏳ IN ARBEIT
-
-**WICHTIG: Phase 4.1 und 4.2 müssen VOR Phase 3.2-3.4 implementiert werden!**
+## Phase 4: Berechtigungen & Settings ⏳ TEILWEISE
 
 ### 4.1 SettingsService ✅ ABGESCHLOSSEN
 
 **Implementiert:** `lib/Service/SettingsService.php`
-- getAllowedUsers() / setAllowedUsers()
-- getTalkChatToken() / setTalkChatToken()
-- getReminderDays1() / setReminderDays1() (Default: 14)
-- getReminderDays2() / setReminderDays2() (Default: 3)
-- getUserEmailReminder() / setUserEmailReminder()
-- canAccess() - Prüft Admin oder allowed_users
+- `getAllowedUsers()` / `setAllowedUsers()`
+- `getTalkChatToken()` / `setTalkChatToken()`
+- `getReminderDays1()` / `setReminderDays1()` (Default: 14)
+- `getReminderDays2()` / `setReminderDays2()` (Default: 3)
+- `getUserEmailReminder()` / `setUserEmailReminder()`
+- `canAccess()` - Prüft Admin oder allowed_users
 
 ### 4.2 Admin-Settings API & UI ✅ ABGESCHLOSSEN
 
 **Implementiert:**
 - Routes: `/api/settings/admin` (GET/PUT)
-- SettingsController: getAdmin(), updateAdmin()
-- SettingsView.vue: Admin-Bereich mit Talk-Token, Erinnerungstage
-- Frontend SettingsService.js
+- SettingsController: `getAdmin()`, `updateAdmin()`
+- SettingsView.vue: Admin-Bereich mit:
+  - Berechtigte Benutzer (NcSelect mit Tagging)
+  - Talk-Chat-Token
+  - Erinnerungstage 1 + 2
 
-### 4.1 SettingsService (Referenz)
+### 4.3 User-Settings API & UI ✅ ABGESCHLOSSEN
 
-**Neue Datei:** `lib/Service/SettingsService.php`
+**Implementiert:**
+- Routes: `/api/settings` (GET/PUT)
+- SettingsController: `get()`, `update()`
+- SettingsView.vue: E-Mail-Toggle für User
 
-```php
-class SettingsService {
-    // === Admin-Settings (produktbeschreibung.md Zeile 206-213) ===
+### 4.4 Kategorie-Verwaltung UI ✅ ABGESCHLOSSEN
 
-    // berechtigte_user - Array der User mit Zugriff
-    public function getAllowedUsers(): array;
-    public function setAllowedUsers(array $userIds): void;
-
-    // talk_chat_id - Nextcloud Talk Chat Token
-    public function getTalkChatToken(): ?string;
-    public function setTalkChatToken(?string $token): void;
-
-    // erinnerung_tage_1 - Erste Erinnerung (Default: 14)
-    public function getReminderDays1(): int;
-    public function setReminderDays1(int $days): void;
-
-    // erinnerung_tage_2 - Zweite Erinnerung (Default: 3)
-    public function getReminderDays2(): int;
-    public function setReminderDays2(int $days): void;
-
-    // === User-Settings (produktbeschreibung.md Zeile 219) ===
-
-    // email_erinnerung - Boolean pro User
-    public function getUserEmailReminder(string $userId): bool;
-    public function setUserEmailReminder(string $userId, bool $enabled): void;
-
-    // === Access Control ===
-    public function canAccess(string $userId): bool;
-}
-```
-
-**Storage:** IConfig::setAppValue / setUserValue
-
-### 4.2 Admin-Settings API & UI
-
-**Routes hinzufügen:**
-```php
-['name' => 'settings#getAdmin', 'url' => '/api/settings/admin', 'verb' => 'GET'],
-['name' => 'settings#updateAdmin', 'url' => '/api/settings/admin', 'verb' => 'PUT'],
-```
-
-**SettingsController erweitern:**
-```php
-// Ohne @NoAdminRequired - nur Admins
-public function getAdmin(): JSONResponse {
-    return new JSONResponse([
-        'allowedUsers' => $this->settingsService->getAllowedUsers(),
-        'talkChatToken' => $this->settingsService->getTalkChatToken(),
-        'reminderDays1' => $this->settingsService->getReminderDays1(),
-        'reminderDays2' => $this->settingsService->getReminderDays2(),
-    ]);
-}
-```
-
-**Frontend - AdminSettingsSection.vue:**
-- User-Auswahl (NcMultiSelect)
-- Talk-Chat-Token (NcInputField)
-- Erinnerungstage 1 + 2 (NcInputField type="number")
-
-### 4.3 User-Settings API & UI
-
-**SettingsController erweitern:**
-```php
-/** @NoAdminRequired */
-public function get(): JSONResponse;
-public function update(bool $emailReminder): JSONResponse;
-```
-
-**SettingsView.vue erweitern:**
-- E-Mail-Toggle mit Backend verbinden (aktuell nur UI)
-
-### 4.4 Kategorie-Verwaltung UI
-
-**Neue Komponente:** `CategoryManager.vue`
-- Kategorie-Liste mit Drag&Drop
-- Inline-Edit, Löschen mit Bestätigung
+**Implementiert in SettingsView.vue:**
+- Kategorie hinzufügen
+- Inline-Edit
+- Löschen mit Bestätigung
 - Nur für Admins sichtbar
 
-### 4.5 Access-Control Middleware
+### 4.5 Access-Control Middleware ❌ FEHLT
 
-**Neue Datei:** `lib/Middleware/AccessCheckMiddleware.php`
+**Noch zu implementieren:** `lib/Middleware/AccessCheckMiddleware.php`
 ```php
 class AccessCheckMiddleware extends Middleware {
     public function beforeController($controller, $methodName): void {
@@ -260,7 +164,7 @@ class AccessCheckMiddleware extends Middleware {
 
 ## Datenmodell
 
-### Contract Entity (aktuell)
+### Contract Entity
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | id | int | Primary Key |
@@ -325,41 +229,42 @@ class AccessCheckMiddleware extends Middleware {
 | DELETE | /api/categories/{id} | Admin |
 | GET | /api/settings | User |
 | PUT | /api/settings | User |
-
-### Zu implementieren (Phase 4)
-| Method | Endpoint | Auth |
-|--------|----------|------|
 | GET | /api/settings/admin | Admin |
 | PUT | /api/settings/admin | Admin |
 
 ---
 
-## Implementierungsreihenfolge
+## Services-Übersicht
 
-```
-1. Phase 4.1 - SettingsService        ← ZUERST!
-2. Phase 4.2 - Admin-Settings API/UI
-3. Phase 3.2 - Zwei Zeitpunkte
-4. Phase 4.3 - User-Settings API/UI
-5. Phase 3.3 - Talk-Integration
-6. Phase 3.4 - E-Mail-Integration
-7. Phase 4.4 - Kategorie-Verwaltung
-8. Phase 4.5 - Access Middleware
-9. Phase 5   - Testing & Polish
-```
+| Service | Datei | Zweck |
+|---------|-------|-------|
+| ContractService | lib/Service/ContractService.php | CRUD für Verträge |
+| CategoryService | lib/Service/CategoryService.php | CRUD für Kategorien |
+| SettingsService | lib/Service/SettingsService.php | Admin- & User-Settings |
+| ReminderService | lib/Service/ReminderService.php | Erinnerungslogik |
+| TalkService | lib/Service/TalkService.php | Talk-Nachrichten |
+| EmailService | lib/Service/EmailService.php | E-Mail-Versand |
+
+---
+
+## Offene Punkte
+
+1. **Phase 4.5 - Access-Control Middleware** - Damit nur berechtigte User die App nutzen können
+2. **Phase 5 - Testing & Polish** - PHPUnit Tests, i18n, Error Handling
 
 ---
 
 ## Security-Checkliste
 
-- [ ] Alle DB-Queries über Query Builder
-- [ ] Keine OC\* APIs (nur OCP\*)
-- [ ] Admin-Endpoints ohne @NoAdminRequired
-- [ ] PARAM_INT statt PARAM_BOOL
-- [ ] Keine Secrets in Logs
+- [x] Alle DB-Queries über Query Builder
+- [x] Keine OC\* APIs (nur OCP\*)
+- [x] Admin-Endpoints ohne @NoAdminRequired
+- [x] PARAM_INT statt PARAM_BOOL
+- [x] Keine Secrets in Logs
 - [ ] php occ app:check-code vor Release
 
 ---
 
 *Erstellt: 2026-01-18*
+*Aktualisiert: 2026-01-18*
 *Basis: produktbeschreibung.md v1.0*
