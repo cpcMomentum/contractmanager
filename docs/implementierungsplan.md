@@ -174,6 +174,7 @@ Ideen für zukünftige Versionen, noch nicht priorisiert:
 | 6 | Export/Import | CSV/Excel Export, ggf. Import | TBD |
 | 7 | UI-Redesign ContractListItem | Modernere Darstellung der Vertragsliste | TBD |
 | 8 | Zugriffssteuerung | Vertrag-spezifische Berechtigungen (später evaluieren) | TBD |
+| 9 | Nicht mehr erinnern | Bei erster Erinnerung Option "Nicht mehr erinnern" für diesen Vertrag (Link in E-Mail/Talk) | TBD |
 
 **Hinweis:** Diese Themen sind gesammelt, aber noch nicht für die Implementierung freigegeben. Priorisierung erfolgt bei Bedarf.
 

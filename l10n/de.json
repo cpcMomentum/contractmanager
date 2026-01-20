@@ -153,7 +153,16 @@
 		"Kündigungserinnerung": "Kündigungserinnerung",
 		"Kündigung des Vertrags \"{name}\" bis {deadline} erforderlich.": "Kündigung des Vertrags \"{name}\" bis {deadline} erforderlich.",
 		"LETZTE Kündigungserinnerung - Dringend": "LETZTE Kündigungserinnerung - Dringend",
-		"ACHTUNG: Die Kündigungsfrist für den Vertrag \"{name}\" endet am {deadline}! Dies ist die letzte Erinnerung.": "ACHTUNG: Die Kündigungsfrist für den Vertrag \"{name}\" endet am {deadline}! Dies ist die letzte Erinnerung."
+		"ACHTUNG: Die Kündigungsfrist für den Vertrag \"{name}\" endet am {deadline}! Dies ist die letzte Erinnerung.": "ACHTUNG: Die Kündigungsfrist für den Vertrag \"{name}\" endet am {deadline}! Dies ist die letzte Erinnerung.",
+
+		"Erinnerung: %s läuft bald ab": "Erinnerung: %s läuft bald ab",
+		"Erinnerung: %s läuft in wenigen Tagen ab": "Erinnerung: %s läuft in wenigen Tagen ab",
+		"Hallo %s,": "Hallo %s,",
+		"dein Vertrag „%1$s" bei %2$s läuft bald ab.": "dein Vertrag „%1$s" bei %2$s läuft bald ab.",
+		"dein Vertrag „%1$s" bei %2$s läuft in wenigen Tagen ab.": "dein Vertrag „%1$s" bei %2$s läuft in wenigen Tagen ab.",
+		"Wenn du kündigen möchtest, musst du das bis zum %s tun.": "Wenn du kündigen möchtest, musst du das bis zum %s tun.",
+		"Im ContractManager findest du alle Details:": "Im ContractManager findest du alle Details:",
+		"Zum ContractManager": "Zum ContractManager"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }

@@ -65,22 +65,24 @@ class EmailService {
 			return false;
 		}
 
-		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType);
+		$displayName = $user->getDisplayName() ?: $userId;
+
+		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType, $displayName);
 	}
 
 	/**
 	 * Send reminder email to an address
 	 */
-	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType): bool {
+	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType, string $displayName): bool {
 		try {
 			$l = $this->l10nFactory->get(Application::APP_ID);
 			$message = $this->mailer->createMessage();
 
-			// Set subject based on reminder type
+			// Set subject based on reminder type (no emoji)
 			if ($reminderType === 'first') {
-				$subject = $l->t('Kündigungserinnerung: %s', [$contract->getName()]);
+				$subject = $l->t('Erinnerung: %s läuft bald ab', [$contract->getName()]);
 			} else {
-				$subject = $l->t('⚠️ Letzte Kündigungserinnerung: %s', [$contract->getName()]);
+				$subject = $l->t('Erinnerung: %s läuft in wenigen Tagen ab', [$contract->getName()]);
 			}
 
 			$message->setSubject($subject);
@@ -88,8 +90,8 @@ class EmailService {
 
 			// Build HTML body
 			$appUrl = $this->urlGenerator->linkToRouteAbsolute('contractmanager.page.index');
-			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $appUrl, $l);
-			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $appUrl, $l);
+			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName);
+			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName);
 
 			$message->setHtmlBody($htmlBody);
 			$message->setPlainBody($plainBody);
@@ -119,17 +121,20 @@ class EmailService {
 	/**
 	 * Build HTML email body
 	 */
-	private function buildHtmlBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l): string {
+	private function buildHtmlBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l, string $displayName): string {
 		$contractName = htmlspecialchars($contract->getName());
 		$vendor = htmlspecialchars($contract->getVendor());
+		$displayNameEscaped = htmlspecialchars($displayName);
 
 		if ($reminderType === 'first') {
-			$title = $l->t('Kündigungserinnerung');
-			$intro = $l->t('Dies ist eine Erinnerung, dass der folgende Vertrag bald gekündigt werden muss:');
+			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft bald ab.', [$contractName, $vendor]);
 		} else {
-			$title = $l->t('Letzte Kündigungserinnerung');
-			$intro = $l->t('Dies ist die letzte Erinnerung! Der folgende Vertrag muss dringend gekündigt werden:');
+			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft in wenigen Tagen ab.', [$contractName, $vendor]);
 		}
+
+		$greeting = $l->t('Hallo %s,', [$displayNameEscaped]);
+		$deadlineText = $l->t('Wenn du kündigen möchtest, musst du das bis zum %s tun.', [$deadline]);
+		$linkText = $l->t('Im ContractManager findest du alle Details:');
 
 		return <<<HTML
 <!DOCTYPE html>
@@ -139,25 +144,17 @@ class EmailService {
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #0082c9; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-        .content { background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px; }
-        .contract-info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
-        .deadline { font-size: 1.2em; font-weight: bold; color: #c00; }
+        .content { background: #f5f5f5; padding: 20px; border-radius: 8px; }
         .button { display: inline-block; background: #0082c9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1 style="margin: 0;">{$title}</h1>
-        </div>
         <div class="content">
+            <p>{$greeting}</p>
             <p>{$intro}</p>
-            <div class="contract-info">
-                <p><strong>{$l->t('Vertrag')}:</strong> {$contractName}</p>
-                <p><strong>{$l->t('Vertragspartner')}:</strong> {$vendor}</p>
-                <p class="deadline"><strong>{$l->t('Kündigungsfrist')}:</strong> {$deadline}</p>
-            </div>
+            <p>{$deadlineText}</p>
+            <p>{$linkText}</p>
             <a href="{$appUrl}" class="button">{$l->t('Zum ContractManager')}</a>
         </div>
     </div>
@@ -169,26 +166,26 @@ HTML;
 	/**
 	 * Build plain text email body
 	 */
-	private function buildPlainBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l): string {
+	private function buildPlainBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l, string $displayName): string {
 		if ($reminderType === 'first') {
-			$title = $l->t('Kündigungserinnerung');
-			$intro = $l->t('Dies ist eine Erinnerung, dass der folgende Vertrag bald gekündigt werden muss:');
+			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft bald ab.', [$contract->getName(), $contract->getVendor()]);
 		} else {
-			$title = $l->t('⚠️ Letzte Kündigungserinnerung');
-			$intro = $l->t('Dies ist die letzte Erinnerung! Der folgende Vertrag muss dringend gekündigt werden:');
+			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft in wenigen Tagen ab.', [$contract->getName(), $contract->getVendor()]);
 		}
 
+		$greeting = $l->t('Hallo %s,', [$displayName]);
+		$deadlineText = $l->t('Wenn du kündigen möchtest, musst du das bis zum %s tun.', [$deadline]);
+		$linkText = $l->t('Im ContractManager findest du alle Details:');
+
 		return <<<TEXT
-{$title}
-{'='.repeat(strlen($title))}
+{$greeting}
 
 {$intro}
 
-{$l->t('Vertrag')}: {$contract->getName()}
-{$l->t('Vertragspartner')}: {$contract->getVendor()}
-{$l->t('Kündigungsfrist')}: {$deadline}
+{$deadlineText}
 
-{$l->t('Zum ContractManager')}: {$appUrl}
+{$linkText}
+{$appUrl}
 TEXT;
 	}
 }

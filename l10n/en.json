@@ -153,7 +153,16 @@
 		"Kündigungserinnerung": "Cancellation reminder",
 		"Kündigung des Vertrags \"{name}\" bis {deadline} erforderlich.": "Cancellation of contract \"{name}\" required by {deadline}.",
 		"LETZTE Kündigungserinnerung - Dringend": "FINAL cancellation reminder - Urgent",
-		"ACHTUNG: Die Kündigungsfrist für den Vertrag \"{name}\" endet am {deadline}! Dies ist die letzte Erinnerung.": "ATTENTION: The cancellation deadline for contract \"{name}\" is {deadline}! This is the final reminder."
+		"ACHTUNG: Die Kündigungsfrist für den Vertrag \"{name}\" endet am {deadline}! Dies ist die letzte Erinnerung.": "ATTENTION: The cancellation deadline for contract \"{name}\" is {deadline}! This is the final reminder.",
+
+		"Erinnerung: %s läuft bald ab": "Reminder: %s expires soon",
+		"Erinnerung: %s läuft in wenigen Tagen ab": "Reminder: %s expires in a few days",
+		"Hallo %s,": "Hi %s,",
+		"dein Vertrag „%1$s" bei %2$s läuft bald ab.": "your contract \"%1$s\" with %2$s expires soon.",
+		"dein Vertrag „%1$s" bei %2$s läuft in wenigen Tagen ab.": "your contract \"%1$s\" with %2$s expires in a few days.",
+		"Wenn du kündigen möchtest, musst du das bis zum %s tun.": "If you want to cancel, you need to do so by %s.",
+		"Im ContractManager findest du alle Details:": "You can find all details in the ContractManager:",
+		"Zum ContractManager": "Go to ContractManager"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }
