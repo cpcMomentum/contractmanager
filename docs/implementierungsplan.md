@@ -17,7 +17,8 @@
 | 2 | Archiv & Validierung | ✅ ABGESCHLOSSEN |
 | 3 | Erinnerungen | ✅ ABGESCHLOSSEN |
 | 4 | Berechtigungen & Settings | ✅ ABGESCHLOSSEN |
-| 5 | Testing & Polish | ❌ NICHT BEGONNEN |
+| 5 | Testing & Polish | ✅ ABGESCHLOSSEN |
+| 6 | Themensammlung (Future) | 📋 GESAMMELT |
 
 ---
 
@@ -140,24 +141,39 @@ Stattdessen wird Nextcloud's nativer Mechanismus genutzt:
 
 ---
 
-## Phase 5: Testing & Polish ❌ NICHT BEGONNEN
+## Phase 5: Testing & Polish ✅ ABGESCHLOSSEN
 
-### 5.1 PHPUnit Tests
-- ContractServiceTest.php
-- ReminderServiceTest.php
-- SettingsServiceTest.php
+### 5.1 Internationalisierung ✅ ABGESCHLOSSEN
+- l10n/de.json - Deutsche Übersetzungen
+- l10n/en.json - Englische Übersetzungen
 
-### 5.2 Internationalisierung
-- l10n/de.json
-- l10n/en.json
+### 5.2 Repository-Bereinigung ✅ ABGESCHLOSSEN
+- Sensible Daten entfernt (nicht-existente E-Mail-Adresse)
+- Autor-Info korrigiert: cpcMomentum GmbH
+- Homepage-URL korrigiert: https://cpcMomentum.com
+- Interne Dokumentation aus Git entfernt (CLAUDE.md, docs/archive/)
 
-### 5.3 Error Handling
-- ErrorHandler.js für Frontend
-- Vuex Actions mit Error-Wrapper
+### 5.3 App Store Vorbereitung ✅ ABGESCHLOSSEN
+- info.xml vollständig mit Description
+- README.md aktualisiert
+- Keine sensiblen Daten im Repository
 
-### 5.4 UX
-- Responsive CSS
-- Loading Skeletons
+---
+
+## Phase 6: Themensammlung (Future) 📋 GESAMMELT
+
+Ideen für zukünftige Versionen, noch nicht priorisiert:
+
+| # | Thema | Beschreibung | Priorität |
+|---|-------|--------------|-----------|
+| 1 | Suchfunktion | Volltextsuche über alle Verträge | TBD |
+| 2 | Vertrag duplizieren | Bestehenden Vertrag als Vorlage nutzen | TBD |
+| 3 | Vertrag löschen | Admin-Only, mit Bestätigung | TBD |
+| 4 | Export/Import | CSV/Excel Export, ggf. Import | TBD |
+| 5 | UI-Redesign ContractListItem | Modernere Darstellung der Vertragsliste | TBD |
+| 6 | Zugriffssteuerung | Vertrag-spezifische Berechtigungen (später evaluieren) | TBD |
+
+**Hinweis:** Diese Themen sind gesammelt, aber noch nicht für die Implementierung freigegeben. Priorisierung erfolgt bei Bedarf.
 
 ---
 
@@ -249,7 +265,9 @@ Stattdessen wird Nextcloud's nativer Mechanismus genutzt:
 
 ## Offene Punkte
 
-1. **Phase 5 - Testing & Polish** - PHPUnit Tests, i18n, Error Handling
+Keine offenen Punkte. Alle Phasen 1-5 sind abgeschlossen.
+
+Siehe **Phase 6 - Themensammlung** für zukünftige Features.
 
 ---
 
@@ -265,5 +283,5 @@ Stattdessen wird Nextcloud's nativer Mechanismus genutzt:
 ---
 
 *Erstellt: 2026-01-18*
-*Aktualisiert: 2026-01-18*
+*Aktualisiert: 2026-01-20*
 *Basis: produktbeschreibung.md v1.0*
