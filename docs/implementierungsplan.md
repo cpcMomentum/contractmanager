@@ -166,12 +166,14 @@ Ideen für zukünftige Versionen, noch nicht priorisiert:
 
 | # | Thema | Beschreibung | Priorität |
 |---|-------|--------------|-----------|
-| 1 | Suchfunktion | Volltextsuche über alle Verträge | TBD |
-| 2 | Vertrag duplizieren | Bestehenden Vertrag als Vorlage nutzen | TBD |
-| 3 | Vertrag löschen | Admin-Only, mit Bestätigung | TBD |
-| 4 | Export/Import | CSV/Excel Export, ggf. Import | TBD |
-| 5 | UI-Redesign ContractListItem | Modernere Darstellung der Vertragsliste | TBD |
-| 6 | Zugriffssteuerung | Vertrag-spezifische Berechtigungen (später evaluieren) | TBD |
+| 1 | Berechtigungsmodell | Alle berechtigten User sehen alle Verträge (laut Produktbeschreibung) - aktuell filtert created_by | HOCH |
+| 2 | E-Mail-Text überarbeiten | Übersetzung auf Deutsch, "Cancellation period" → "Kündigen bis" | MITTEL |
+| 3 | Suchfunktion | Volltextsuche über alle Verträge | TBD |
+| 4 | Vertrag duplizieren | Bestehenden Vertrag als Vorlage nutzen | TBD |
+| 5 | Vertrag löschen | Admin-Only, mit Bestätigung | TBD |
+| 6 | Export/Import | CSV/Excel Export, ggf. Import | TBD |
+| 7 | UI-Redesign ContractListItem | Modernere Darstellung der Vertragsliste | TBD |
+| 8 | Zugriffssteuerung | Vertrag-spezifische Berechtigungen (später evaluieren) | TBD |
 
 **Hinweis:** Diese Themen sind gesammelt, aber noch nicht für die Implementierung freigegeben. Priorisierung erfolgt bei Bedarf.
 
