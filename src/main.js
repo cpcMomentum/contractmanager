@@ -10,14 +10,14 @@ Vue.prototype.t = translate
 Vue.prototype.n = translatePlural
 
 // Get admin status from data attribute
-const appElement = document.getElementById('contractmanager')
+const appElement = document.getElementById('content')
 const isAdmin = appElement?.dataset?.isAdmin === 'true'
 
 // Make it available globally
 Vue.prototype.$isAdmin = isAdmin
 
 new Vue({
-	el: '#contractmanager',
+	el: '#content',
 	store,
 	render: h => h(App),
 })
