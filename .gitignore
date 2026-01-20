@@ -38,3 +38,7 @@ coverage/
 
 # Nextcloud
 appinfo/signature.json
+
+# Internal documentation
+CLAUDE.md
+docs/archive/
