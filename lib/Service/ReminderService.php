@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace OCA\ContractManager\Service;
 
 use DateTime;
-use DateInterval;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderSent;
 use OCA\ContractManager\Db\ReminderSentMapper;
-use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -22,7 +20,6 @@ use Psr\Log\LoggerInterface;
  * - Final reminder: Y days before cancellation deadline (default: 3 days)
  *
  * Notifications are sent via:
- * - Nextcloud Notifications (always)
  * - Nextcloud Talk (if configured by admin)
  * - E-Mail (if enabled by user)
  */
@@ -31,7 +28,6 @@ class ReminderService {
 	public function __construct(
 		private ContractMapper $contractMapper,
 		private ReminderSentMapper $reminderSentMapper,
-		private INotificationManager $notificationManager,
 		private SettingsService $settingsService,
 		private TalkService $talkService,
 		private EmailService $emailService,
@@ -287,31 +283,6 @@ class ReminderService {
 				]);
 			}
 		}
-	}
-
-	/**
-	 * Send a Nextcloud notification to the contract owner
-	 *
-	 * @param Contract $contract The contract
-	 * @param string $reminderType 'first' or 'final'
-	 * @param string $deadlineFormatted Formatted deadline date
-	 */
-	private function sendNotification(Contract $contract, string $reminderType, string $deadlineFormatted): void {
-		$subject = $reminderType === 'first' ? 'cancellation_reminder_first' : 'cancellation_reminder_final';
-
-		$notification = $this->notificationManager->createNotification();
-		$notification
-			->setApp(Application::APP_ID)
-			->setUser($contract->getCreatedBy())
-			->setDateTime(new DateTime())
-			->setObject('contract', (string) $contract->getId())
-			->setSubject($subject, [
-				'contractId' => $contract->getId(),
-				'contractName' => $contract->getName(),
-				'deadline' => $deadlineFormatted,
-			]);
-
-		$this->notificationManager->notify($notification);
 	}
 
 	/**

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace OCA\ContractManager\AppInfo;
 
-use OCA\ContractManager\Notification\Notifier;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -18,7 +17,7 @@ class Application extends App implements IBootstrap {
     }
 
     public function register(IRegistrationContext $context): void {
-        $context->registerNotifierService(Notifier::class);
+        // Reminders are sent via Talk and E-Mail, no Nextcloud notifications
     }
 
     public function boot(IBootContext $context): void {
