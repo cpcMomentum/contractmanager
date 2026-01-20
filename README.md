@@ -44,4 +44,4 @@ AGPL-3.0-or-later
 
 ## Autor
 
-cpc Momentum - https://cpc-momentum.de
+cpcMomentum GmbH - https://cpcMomentum.com
