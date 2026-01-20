@@ -22,7 +22,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     <version>0.1.1</version>
     <licence>agpl</licence>
 
-    <author mail="dev@cpc-momentum.de" homepage="https://cpc-momentum.de">cpc Momentum</author>
+    <author homepage="https://cpc-momentum.de">cpcMomentum GmbH</author>
 
     <namespace>ContractManager</namespace>
 

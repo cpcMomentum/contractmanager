@@ -21,7 +21,7 @@
         "contracts",
         "management"
     ],
-    "author": "cpc Momentum",
+    "author": "cpcMomentum GmbH",
     "license": "AGPL-3.0-or-later",
     "dependencies": {
         "@nextcloud/axios": "^2.5.0",
