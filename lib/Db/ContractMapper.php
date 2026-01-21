@@ -20,35 +20,133 @@ class ContractMapper extends QBMapper {
     }
 
     /**
-     * Find all non-archived contracts for a user
+     * Find all visible, non-archived, non-deleted contracts
+     *
+     * Visibility rules:
+     * - Admin sees all contracts
+     * - Others see non-private contracts + their own private contracts
      *
      * @return Contract[]
      */
-    public function findAll(string $userId): array {
+    public function findAllVisible(string $userId, bool $isAdmin): array {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->isNull('deleted_at'));
+
+        if (!$isAdmin) {
+            // Non-admins see: all non-private OR their own contracts
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                )
+            );
+        }
+
+        $qb->orderBy('end_date', 'ASC');
+        return $this->findEntities($qb);
+    }
+
+    /**
+     * Find all visible archived contracts (not deleted)
+     *
+     * @return Contract[]
+     */
+    public function findArchivedVisible(string $userId, bool $isAdmin): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('archived', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->isNull('deleted_at'));
+
+        if (!$isAdmin) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                )
+            );
+        }
+
+        $qb->orderBy('updated_at', 'DESC');
+        return $this->findEntities($qb);
+    }
+
+    /**
+     * Find deleted contracts for a specific user (their trash)
+     *
+     * @return Contract[]
+     */
+    public function findDeletedByUser(string $userId): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->isNotNull('deleted_at'))
             ->andWhere($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
-            ->orderBy('end_date', 'ASC');
+            ->orderBy('deleted_at', 'DESC');
 
         return $this->findEntities($qb);
     }
 
     /**
-     * Find all archived contracts for a user
+     * Find all deleted contracts (admin trash view)
+     *
+     * @return Contract[]
+     */
+    public function findAllDeleted(): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->isNotNull('deleted_at'))
+            ->orderBy('deleted_at', 'DESC');
+
+        return $this->findEntities($qb);
+    }
+
+    /**
+     * Find expired deleted contracts for auto-cleanup
+     * Returns contracts deleted more than X days ago, excluding admin users
+     *
+     * @param \DateTime $cutoffDate Contracts deleted before this date are expired
+     * @param string[] $excludeUserIds User IDs to exclude (e.g., admins)
+     * @return Contract[]
+     */
+    public function findExpiredDeleted(\DateTime $cutoffDate, array $excludeUserIds = []): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->isNotNull('deleted_at'))
+            ->andWhere($qb->expr()->lt('deleted_at', $qb->createNamedParameter($cutoffDate, IQueryBuilder::PARAM_DATE)));
+
+        if (!empty($excludeUserIds)) {
+            $qb->andWhere(
+                $qb->expr()->notIn('created_by', $qb->createNamedParameter($excludeUserIds, IQueryBuilder::PARAM_STR_ARRAY))
+            );
+        }
+
+        return $this->findEntities($qb);
+    }
+
+    /**
+     * @deprecated Use findAllVisible() instead
+     * Find all non-archived contracts for a user (legacy method)
+     *
+     * @return Contract[]
+     */
+    public function findAll(string $userId): array {
+        return $this->findAllVisible($userId, false);
+    }
+
+    /**
+     * @deprecated Use findArchivedVisible() instead
+     * Find all archived contracts for a user (legacy method)
      *
      * @return Contract[]
      */
     public function findArchived(string $userId): array {
-        $qb = $this->db->getQueryBuilder();
-        $qb->select('*')
-            ->from($this->getTableName())
-            ->where($qb->expr()->eq('archived', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
-            ->andWhere($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
-            ->orderBy('updated_at', 'DESC');
-
-        return $this->findEntities($qb);
+        return $this->findArchivedVisible($userId, false);
     }
 
     /**
@@ -114,7 +212,7 @@ class ContractMapper extends QBMapper {
 
     /**
      * Find contracts that potentially need a reminder
-     * Returns active, non-archived contracts with reminders enabled
+     * Returns active, non-archived, non-deleted contracts with reminders enabled
      *
      * @return Contract[]
      */
@@ -125,6 +223,7 @@ class ContractMapper extends QBMapper {
             ->where($qb->expr()->eq('status', $qb->createNamedParameter(Contract::STATUS_ACTIVE)))
             ->andWhere($qb->expr()->eq('reminder_enabled', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
             ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->isNull('deleted_at'))
             ->andWhere($qb->expr()->isNotNull('end_date'))
             ->andWhere($qb->expr()->isNotNull('cancellation_period'))
             ->andWhere($qb->expr()->neq('cancellation_period', $qb->createNamedParameter('')))

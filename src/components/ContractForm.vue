@@ -233,6 +233,18 @@
 					</div>
 				</div>
 
+				<!-- Privacy -->
+				<div class="form-section">
+					<div class="form-row">
+						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate">
+							<template #icon>
+								<LockIcon :size="20" />
+							</template>
+							{{ t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)') }}
+						</NcCheckboxRadioSwitch>
+					</div>
+				</div>
+
 				<!-- Actions -->
 				<div class="form-actions">
 					<NcButton type="tertiary" @click="$emit('close')">
@@ -263,6 +275,7 @@ import { mapGetters } from 'vuex'
 import Folder from 'vue-material-design-icons/Folder.vue'
 import File from 'vue-material-design-icons/File.vue'
 import Close from 'vue-material-design-icons/Close.vue'
+import LockIcon from 'vue-material-design-icons/Lock.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
@@ -280,6 +293,7 @@ export default {
 		Folder,
 		File,
 		Close,
+		LockIcon,
 	},
 	props: {
 		show: {
@@ -402,6 +416,7 @@ export default {
 				reminderEnabled: true,
 				reminderDays: '',
 				notes: '',
+				isPrivate: false,
 			}
 		},
 		formatDateDisplay(date) {
@@ -478,6 +493,7 @@ export default {
 				reminderEnabled: contract.reminderEnabled !== false,
 				reminderDays: contract.reminderDays ? String(contract.reminderDays) : '',
 				notes: contract.notes || '',
+				isPrivate: contract.isPrivate === true || contract.isPrivate === 1,
 			}
 		},
 		formToPayload() {
@@ -498,6 +514,7 @@ export default {
 				reminderEnabled: this.form.reminderEnabled,
 				reminderDays: this.form.reminderDays ? parseInt(this.form.reminderDays, 10) : null,
 				notes: this.form.notes.trim() || null,
+				isPrivate: this.form.isPrivate,
 			}
 		},
 		formatDateForApi(date) {

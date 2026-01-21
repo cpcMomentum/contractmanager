@@ -160,23 +160,25 @@ Stattdessen wird Nextcloud's nativer Mechanismus genutzt:
 
 ---
 
-## Phase 6: Themensammlung (Future) 📋 GESAMMELT
+## Phase 6: Feature-Backlog
 
-Ideen für zukünftige Versionen, noch nicht priorisiert:
+Ideen und geplante Features. Detaillierte Implementierungspläne liegen in separaten `docs/plan-*.md` Dateien.
 
-| # | Thema | Beschreibung | Priorität |
-|---|-------|--------------|-----------|
-| 1 | Berechtigungsmodell | Alle berechtigten User sehen alle Verträge (laut Produktbeschreibung) - aktuell filtert created_by | HOCH |
-| 2 | E-Mail-Text überarbeiten | Übersetzung auf Deutsch, "Cancellation period" → "Kündigen bis" | MITTEL |
-| 3 | Suchfunktion | Volltextsuche über alle Verträge | TBD |
-| 4 | Vertrag duplizieren | Bestehenden Vertrag als Vorlage nutzen | TBD |
-| 5 | Vertrag löschen | Admin-Only, mit Bestätigung | TBD |
-| 6 | Export/Import | CSV/Excel Export, ggf. Import | TBD |
-| 7 | UI-Redesign ContractListItem | Modernere Darstellung der Vertragsliste | TBD |
-| 8 | Zugriffssteuerung | Vertrag-spezifische Berechtigungen (später evaluieren) | TBD |
-| 9 | Nicht mehr erinnern | Bei erster Erinnerung Option "Nicht mehr erinnern" für diesen Vertrag (Link in E-Mail/Talk) | TBD |
+| # | Feature | Beschreibung | Status | Plan-Datei |
+|---|---------|--------------|--------|------------|
+| 1 | Berechtigungskonzept | Editor/Viewer-Rollen, private Verträge, Papierkorb, Löschen | BEREIT | `plan-berechtigungskonzept.md` |
+| 2 | Suchfunktion | Volltextsuche uber alle Vertrage | IDEE | - |
+| 3 | Vertrag duplizieren | Bestehenden Vertrag als Vorlage nutzen | IDEE | - |
+| 4 | Export/Import | CSV/Excel Export, ggf. Import | IDEE | - |
+| 5 | UI-Redesign ContractListItem | Modernere Darstellung der Vertragsliste | IDEE | - |
+| 6 | Nicht mehr erinnern | Option in E-Mail/Talk um Erinnerung fur diesen Vertrag zu deaktivieren | IDEE | - |
+| 7 | Auto-Import aus Dokumenten | Vertragsdaten aus Dokumenten extrahieren (Paperless-NGX oder OCR) | IDEE | - |
 
-**Hinweis:** Diese Themen sind gesammelt, aber noch nicht für die Implementierung freigegeben. Priorisierung erfolgt bei Bedarf.
+**Status-Legende:**
+- IDEE: Gesammelt, noch nicht ausgearbeitet
+- BEREIT: Plan erstellt, bereit zur Implementierung
+- IN ARBEIT: Aktuell in Umsetzung
+- ERLEDIGT: Abgeschlossen
 
 ---
 
@@ -266,14 +268,6 @@ Ideen für zukünftige Versionen, noch nicht priorisiert:
 
 ---
 
-## Offene Punkte
-
-Keine offenen Punkte. Alle Phasen 1-5 sind abgeschlossen.
-
-Siehe **Phase 6 - Themensammlung** für zukünftige Features.
-
----
-
 ## Security-Checkliste
 
 - [x] Alle DB-Queries über Query Builder
@@ -286,5 +280,5 @@ Siehe **Phase 6 - Themensammlung** für zukünftige Features.
 ---
 
 *Erstellt: 2026-01-18*
-*Aktualisiert: 2026-01-20*
+*Aktualisiert: 2026-01-21*
 *Basis: produktbeschreibung.md v1.0*

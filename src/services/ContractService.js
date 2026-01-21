@@ -43,4 +43,29 @@ export default {
 		const response = await axios.post(`${baseUrl}/${id}/restore`)
 		return response.data
 	},
+
+	async getTrashed() {
+		const response = await axios.get(`${baseUrl}/trash`)
+		return response.data
+	},
+
+	async getPermissions() {
+		const response = await axios.get(`${baseUrl}/permissions`)
+		return response.data
+	},
+
+	async restoreFromTrash(id) {
+		const response = await axios.post(`${baseUrl}/${id}/restore-from-trash`)
+		return response.data
+	},
+
+	async deletePermanently(id) {
+		const response = await axios.delete(`${baseUrl}/${id}/permanent`)
+		return response.data
+	},
+
+	async emptyTrash() {
+		const response = await axios.post(`${baseUrl}/trash/empty`)
+		return response.data
+	},
 }

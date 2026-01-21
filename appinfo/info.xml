@@ -39,6 +39,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
 
     <background-jobs>
         <job>OCA\ContractManager\BackgroundJob\ReminderJob</job>
+        <job>OCA\ContractManager\BackgroundJob\TrashCleanupJob</job>
     </background-jobs>
 
     <navigations>

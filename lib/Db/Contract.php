@@ -52,6 +52,8 @@ use OCP\AppFramework\Db\Entity;
  * @method DateTime getUpdatedAt()
  * @method void setUpdatedAt(DateTime $updatedAt)
  * @method int getArchived()
+ * @method int getIsPrivate()
+ * @method DateTime|null getDeletedAt()
  */
 class Contract extends Entity implements JsonSerializable {
 
@@ -84,6 +86,8 @@ class Contract extends Entity implements JsonSerializable {
     protected ?int $reminderDays = null;
     protected ?string $notes = null;
     protected int $archived = 0;
+    protected int $isPrivate = 0;
+    protected ?DateTime $deletedAt = null;
     protected string $createdBy = '';
     protected ?DateTime $createdAt = null;
     protected ?DateTime $updatedAt = null;
@@ -98,6 +102,8 @@ class Contract extends Entity implements JsonSerializable {
         $this->addType('createdAt', 'datetime');
         $this->addType('updatedAt', 'datetime');
         $this->addType('archived', 'integer');
+        $this->addType('isPrivate', 'integer');
+        $this->addType('deletedAt', 'datetime');
     }
 
     /**
@@ -107,6 +113,30 @@ class Contract extends Entity implements JsonSerializable {
         $value = is_bool($archived) ? ($archived ? 1 : 0) : $archived;
         $this->archived = $value;
         $this->markFieldUpdated('archived');
+    }
+
+    /**
+     * Custom setter for isPrivate to handle bool/int conversion
+     */
+    public function setIsPrivate(bool|int $isPrivate): void {
+        $value = is_bool($isPrivate) ? ($isPrivate ? 1 : 0) : $isPrivate;
+        $this->isPrivate = $value;
+        $this->markFieldUpdated('isPrivate');
+    }
+
+    /**
+     * Custom setter for deletedAt
+     */
+    public function setDeletedAt(?DateTime $deletedAt): void {
+        $this->deletedAt = $deletedAt;
+        $this->markFieldUpdated('deletedAt');
+    }
+
+    /**
+     * Check if contract is in trash
+     */
+    public function isDeleted(): bool {
+        return $this->deletedAt !== null;
     }
 
     public function jsonSerialize(): array {
@@ -130,6 +160,8 @@ class Contract extends Entity implements JsonSerializable {
             'reminderDays' => $this->reminderDays,
             'notes' => $this->notes,
             'archived' => (bool) $this->archived,
+            'isPrivate' => (bool) $this->isPrivate,
+            'deletedAt' => $this->deletedAt?->format('c'),
             'createdBy' => $this->createdBy,
             'createdAt' => $this->createdAt?->format('c'),
             'updatedAt' => $this->updatedAt?->format('c'),

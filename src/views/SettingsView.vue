@@ -20,6 +20,88 @@
 
 		<!-- Admin Settings -->
 		<template v-if="$isAdmin">
+			<!-- Permission Settings -->
+			<div class="settings-section admin-section">
+				<h3>
+					<ShieldIcon :size="20" class="admin-icon" />
+					{{ t('contractmanager', 'Berechtigungen') }}
+				</h3>
+
+				<!-- Editor Permission -->
+				<div class="settings-item">
+					<label class="settings-label">{{ t('contractmanager', 'Editor-Berechtigung') }}</label>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Benutzer und Gruppen mit Editor-Rechten können alle sichtbaren Verträge erstellen und bearbeiten.') }}
+					</p>
+					<NcSelect v-model="permissionSettings.editors"
+						:options="searchResults"
+						:loading="searching"
+						:filterable="false"
+						:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
+						:multiple="true"
+						label="displayName"
+						track-by="id"
+						class="permission-select"
+						@search="onSearch"
+						@input="onEditorsChange">
+						<template #option="option">
+							<div class="permission-option">
+								<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
+								<AccountIcon v-else :size="20" />
+								<span>{{ option.displayName }}</span>
+								<span class="permission-option-type">
+									{{ option.type === 'group' ? t('contractmanager', 'Gruppe') : t('contractmanager', 'Benutzer') }}
+								</span>
+							</div>
+						</template>
+						<template #selected-option="option">
+							<div class="permission-tag">
+								<AccountGroupIcon v-if="option.type === 'group'" :size="16" />
+								<AccountIcon v-else :size="16" />
+								<span>{{ option.displayName }}</span>
+							</div>
+						</template>
+					</NcSelect>
+				</div>
+
+				<!-- Viewer Permission -->
+				<div class="settings-item">
+					<label class="settings-label">{{ t('contractmanager', 'Viewer-Berechtigung') }}</label>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Benutzer und Gruppen mit Viewer-Rechten können alle Verträge nur ansehen.') }}
+					</p>
+					<NcSelect v-model="permissionSettings.viewers"
+						:options="searchResults"
+						:loading="searching"
+						:filterable="false"
+						:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
+						:multiple="true"
+						label="displayName"
+						track-by="id"
+						class="permission-select"
+						@search="onSearch"
+						@input="onViewersChange">
+						<template #option="option">
+							<div class="permission-option">
+								<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
+								<AccountIcon v-else :size="20" />
+								<span>{{ option.displayName }}</span>
+								<span class="permission-option-type">
+									{{ option.type === 'group' ? t('contractmanager', 'Gruppe') : t('contractmanager', 'Benutzer') }}
+								</span>
+							</div>
+						</template>
+						<template #selected-option="option">
+							<div class="permission-tag">
+								<AccountGroupIcon v-if="option.type === 'group'" :size="16" />
+								<AccountIcon v-else :size="16" />
+								<span>{{ option.displayName }}</span>
+							</div>
+						</template>
+					</NcSelect>
+				</div>
+			</div>
+
 			<div class="settings-section admin-section">
 				<h3>
 					<ShieldIcon :size="20" class="admin-icon" />
@@ -163,15 +245,19 @@ import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
+import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import ShieldIcon from 'vue-material-design-icons/Shield.vue'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import CheckIcon from 'vue-material-design-icons/Check.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import AccountIcon from 'vue-material-design-icons/Account.vue'
+import AccountGroupIcon from 'vue-material-design-icons/AccountGroup.vue'
 import SettingsService from '../services/SettingsService.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
+import debounce from 'debounce'
 
 export default {
 	name: 'SettingsView',
@@ -180,12 +266,15 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 		NcTextField,
+		NcSelect,
 		ShieldIcon,
 		PlusIcon,
 		PencilIcon,
 		DeleteIcon,
 		CheckIcon,
 		CloseIcon,
+		AccountIcon,
+		AccountGroupIcon,
 	},
 	data() {
 		return {
@@ -196,6 +285,12 @@ export default {
 				reminderDays1: 14,
 				reminderDays2: 3,
 			},
+			permissionSettings: {
+				editors: [],
+				viewers: [],
+			},
+			searchResults: [],
+			searching: false,
 			newCategoryName: '',
 			addingCategory: false,
 			editingCategoryId: null,
@@ -212,7 +307,10 @@ export default {
 		await this.loadUserSettings()
 		if (this.$isAdmin) {
 			await this.loadAdminSettings()
+			await this.loadPermissionSettings()
 		}
+		// Initialize debounced search
+		this.debouncedSearch = debounce(this.performSearch, 300)
 	},
 	methods: {
 		...mapActions('categories', ['fetchCategories', 'createCategory', 'updateCategory', 'deleteCategory']),
@@ -236,6 +334,76 @@ export default {
 				}
 			} catch (error) {
 				console.error('Failed to load admin settings:', error)
+			}
+		},
+
+		async loadPermissionSettings() {
+			try {
+				const settings = await SettingsService.getPermissionSettings()
+				// Convert string IDs to objects for NcSelect
+				this.permissionSettings.editors = await this.convertIdsToObjects(settings.editors || [])
+				this.permissionSettings.viewers = await this.convertIdsToObjects(settings.viewers || [])
+			} catch (error) {
+				console.error('Failed to load permission settings:', error)
+			}
+		},
+
+		async convertIdsToObjects(ids) {
+			// Convert stored IDs like "group:admin" or "user:john" to display objects
+			const objects = []
+			for (const id of ids) {
+				const [type, identifier] = id.split(':')
+				objects.push({
+					id,
+					type,
+					displayName: identifier, // Will be updated by search if user searches
+					...(type === 'group' ? { gid: identifier } : { uid: identifier }),
+				})
+			}
+			return objects
+		},
+
+		onSearch(query, loading) {
+			if (query.length < 1) {
+				this.searchResults = []
+				return
+			}
+			loading(true)
+			this.debouncedSearch(query, loading)
+		},
+
+		async performSearch(query, loading) {
+			try {
+				this.searching = true
+				const results = await SettingsService.searchUsersAndGroups(query)
+				this.searchResults = results
+			} catch (error) {
+				console.error('Failed to search users/groups:', error)
+				this.searchResults = []
+			} finally {
+				this.searching = false
+				if (loading) loading(false)
+			}
+		},
+
+		async onEditorsChange(value) {
+			await this.savePermissionSettings('editors', value)
+		},
+
+		async onViewersChange(value) {
+			await this.savePermissionSettings('viewers', value)
+		},
+
+		async savePermissionSettings(field, value) {
+			try {
+				const ids = value.map(item => item.id)
+				await SettingsService.updatePermissionSettings({
+					[field]: ids,
+				})
+				showSuccess(this.t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save permission settings:', error)
+				showError(this.t('contractmanager', 'Fehler beim Speichern'))
 			}
 		},
 
@@ -494,5 +662,27 @@ export default {
 
 .settings-actions {
 	margin-top: 24px;
+}
+
+.permission-select {
+	max-width: 500px;
+}
+
+.permission-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+
+	.permission-option-type {
+		margin-left: auto;
+		color: var(--color-text-maxcontrast);
+		font-size: 12px;
+	}
+}
+
+.permission-tag {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 }
 </style>

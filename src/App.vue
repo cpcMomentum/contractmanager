@@ -39,6 +39,20 @@
 				</template>
 			</NcAppNavigationItem>
 
+			<NcAppNavigationItem v-if="canEdit"
+				:name="t('contractmanager', 'Papierkorb')"
+				:class="{ active: currentView === 'trash' }"
+				@click="currentView = 'trash'; selectedCategoryId = null">
+				<template #icon>
+					<DeleteIcon :size="20" />
+				</template>
+				<template #counter>
+					<NcCounterBubble v-if="trashedCount > 0">
+						{{ trashedCount }}
+					</NcCounterBubble>
+				</template>
+			</NcAppNavigationItem>
+
 			<NcAppNavigationItem :name="t('contractmanager', 'Einstellungen')"
 				:class="{ active: currentView === 'settings' }"
 				@click="currentView = 'settings'; selectedCategoryId = null">
@@ -51,6 +65,7 @@
 		<NcAppContent>
 			<ContractList v-if="currentView === 'contracts'" :category-filter="selectedCategoryId" />
 			<ArchiveView v-else-if="currentView === 'archive'" />
+			<TrashView v-else-if="currentView === 'trash'" />
 			<SettingsView v-else-if="currentView === 'settings'" />
 		</NcAppContent>
 	</NcContent>
@@ -66,8 +81,10 @@ import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
+import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import ContractList from './views/ContractList.vue'
 import ArchiveView from './views/ArchiveView.vue'
+import TrashView from './views/TrashView.vue'
 import SettingsView from './views/SettingsView.vue'
 import { mapGetters, mapActions } from 'vuex'
 
@@ -83,8 +100,10 @@ export default {
 		ArchiveIcon,
 		CogIcon,
 		TagIcon,
+		DeleteIcon,
 		ContractList,
 		ArchiveView,
+		TrashView,
 		SettingsView,
 	},
 	data() {
@@ -95,18 +114,23 @@ export default {
 	},
 	computed: {
 		...mapGetters('categories', ['allCategories']),
-		...mapGetters('contracts', ['allContracts']),
+		...mapGetters('contracts', ['allContracts', 'trashedContracts', 'canEdit']),
 		contractCount() {
 			return this.allContracts.filter(c => c.status !== 'archived').length
+		},
+		trashedCount() {
+			return this.trashedContracts.length
 		},
 	},
 	created() {
 		this.fetchCategories()
 		this.fetchContracts()
+		this.fetchPermissions()
+		this.fetchTrashedContracts()
 	},
 	methods: {
 		...mapActions('categories', ['fetchCategories']),
-		...mapActions('contracts', ['fetchContracts']),
+		...mapActions('contracts', ['fetchContracts', 'fetchPermissions', 'fetchTrashedContracts']),
 		showAllContracts() {
 			this.currentView = 'contracts'
 			this.selectedCategoryId = null

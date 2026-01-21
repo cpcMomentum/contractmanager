@@ -3,18 +3,33 @@ import ContractService from '../../services/ContractService.js'
 const state = {
 	contracts: [],
 	archivedContracts: [],
+	trashedContracts: [],
 	currentContract: null,
 	loading: false,
 	error: null,
+	permissions: {
+		isAdmin: false,
+		isEditor: false,
+		isViewer: false,
+		canEdit: false,
+		canDeletePermanently: false,
+	},
 }
 
 const getters = {
 	allContracts: (state) => state.contracts,
 	archivedContracts: (state) => state.archivedContracts,
+	trashedContracts: (state) => state.trashedContracts,
 	currentContract: (state) => state.currentContract,
 	isLoading: (state) => state.loading,
 	error: (state) => state.error,
 	getContractById: (state) => (id) => state.contracts.find((c) => c.id === id),
+	isAdmin: (state) => state.permissions.isAdmin,
+	isEditor: (state) => state.permissions.isEditor,
+	isViewer: (state) => state.permissions.isViewer,
+	canEdit: (state) => state.permissions.canEdit,
+	canDeletePermanently: (state) => state.permissions.canDeletePermanently,
+	permissions: (state) => state.permissions,
 }
 
 const mutations = {
@@ -24,8 +39,14 @@ const mutations = {
 	SET_ARCHIVED_CONTRACTS(state, contracts) {
 		state.archivedContracts = contracts
 	},
+	SET_TRASHED_CONTRACTS(state, contracts) {
+		state.trashedContracts = contracts
+	},
 	SET_CURRENT_CONTRACT(state, contract) {
 		state.currentContract = contract
+	},
+	SET_PERMISSIONS(state, permissions) {
+		state.permissions = permissions
 	},
 	ADD_CONTRACT(state, contract) {
 		state.contracts.push(contract)
@@ -46,6 +67,24 @@ const mutations = {
 	RESTORE_FROM_ARCHIVE(state, contract) {
 		state.archivedContracts = state.archivedContracts.filter((c) => c.id !== contract.id)
 		state.contracts.push(contract)
+	},
+	MOVE_TO_TRASH(state, id) {
+		state.contracts = state.contracts.filter((c) => c.id !== id)
+		state.archivedContracts = state.archivedContracts.filter((c) => c.id !== id)
+	},
+	RESTORE_FROM_TRASH(state, contract) {
+		state.trashedContracts = state.trashedContracts.filter((c) => c.id !== contract.id)
+		if (contract.archived) {
+			state.archivedContracts.push(contract)
+		} else {
+			state.contracts.push(contract)
+		}
+	},
+	REMOVE_FROM_TRASH(state, id) {
+		state.trashedContracts = state.trashedContracts.filter((c) => c.id !== id)
+	},
+	CLEAR_TRASH(state) {
+		state.trashedContracts = []
 	},
 	SET_LOADING(state, loading) {
 		state.loading = loading
@@ -79,6 +118,28 @@ const actions = {
 			commit('SET_ERROR', error.message)
 		} finally {
 			commit('SET_LOADING', false)
+		}
+	},
+
+	async fetchTrashedContracts({ commit }) {
+		commit('SET_LOADING', true)
+		commit('SET_ERROR', null)
+		try {
+			const contracts = await ContractService.getTrashed()
+			commit('SET_TRASHED_CONTRACTS', contracts)
+		} catch (error) {
+			commit('SET_ERROR', error.message)
+		} finally {
+			commit('SET_LOADING', false)
+		}
+	},
+
+	async fetchPermissions({ commit }) {
+		try {
+			const permissions = await ContractService.getPermissions()
+			commit('SET_PERMISSIONS', permissions)
+		} catch (error) {
+			console.error('Failed to fetch permissions:', error)
 		}
 	},
 
@@ -132,7 +193,7 @@ const actions = {
 		commit('SET_ERROR', null)
 		try {
 			await ContractService.delete(id)
-			commit('REMOVE_CONTRACT', id)
+			commit('MOVE_TO_TRASH', id)
 		} catch (error) {
 			commit('SET_ERROR', error.message)
 			throw error
@@ -163,6 +224,51 @@ const actions = {
 			const contract = await ContractService.restore(id)
 			commit('RESTORE_FROM_ARCHIVE', contract)
 			return contract
+		} catch (error) {
+			commit('SET_ERROR', error.message)
+			throw error
+		} finally {
+			commit('SET_LOADING', false)
+		}
+	},
+
+	async restoreFromTrash({ commit, dispatch }, id) {
+		commit('SET_LOADING', true)
+		commit('SET_ERROR', null)
+		try {
+			const contract = await ContractService.restoreFromTrash(id)
+			commit('RESTORE_FROM_TRASH', contract)
+			// Refresh lists to ensure consistency
+			dispatch('fetchTrashedContracts')
+			return contract
+		} catch (error) {
+			commit('SET_ERROR', error.message)
+			throw error
+		} finally {
+			commit('SET_LOADING', false)
+		}
+	},
+
+	async deletePermanently({ commit }, id) {
+		commit('SET_LOADING', true)
+		commit('SET_ERROR', null)
+		try {
+			await ContractService.deletePermanently(id)
+			commit('REMOVE_FROM_TRASH', id)
+		} catch (error) {
+			commit('SET_ERROR', error.message)
+			throw error
+		} finally {
+			commit('SET_LOADING', false)
+		}
+	},
+
+	async emptyTrash({ commit }) {
+		commit('SET_LOADING', true)
+		commit('SET_ERROR', null)
+		try {
+			await ContractService.emptyTrash()
+			commit('CLEAR_TRASH')
 		} catch (error) {
 			commit('SET_ERROR', error.message)
 			throw error

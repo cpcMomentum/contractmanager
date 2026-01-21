@@ -25,4 +25,23 @@ export default {
 		const response = await axios.put(`${baseUrl}/admin`, settings)
 		return response.data
 	},
+
+	// Permission Settings (Admin only)
+	async getPermissionSettings() {
+		const response = await axios.get(`${baseUrl}/permissions`)
+		return response.data
+	},
+
+	async updatePermissionSettings(settings) {
+		const response = await axios.put(`${baseUrl}/permissions`, settings)
+		return response.data
+	},
+
+	// Search users and groups for the permission picker
+	async searchUsersAndGroups(query) {
+		const response = await axios.get(generateUrl('/apps/contractmanager/api/settings/search-principals'), {
+			params: { query },
+		})
+		return response.data
+	},
 }
