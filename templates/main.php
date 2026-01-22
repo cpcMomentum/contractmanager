@@ -6,4 +6,4 @@ $isAdmin = $_['isAdmin'] ?? false;
 
 ?>
 
-<div id="app-content-contractmanager" class="app-contractmanager" data-is-admin="<?php echo $isAdmin ? 'true' : 'false'; ?>"></div>
+<div id="content" class="app-contractmanager" data-is-admin="<?php echo $isAdmin ? 'true' : 'false'; ?>"></div>
