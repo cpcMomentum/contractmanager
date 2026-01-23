@@ -166,7 +166,7 @@ Ideen und geplante Features. Detaillierte Implementierungspläne liegen in separ
 
 | # | Feature | Beschreibung | Status | Plan-Datei |
 |---|---------|--------------|--------|------------|
-| 1 | Berechtigungskonzept | Editor/Viewer-Rollen, private Verträge, Papierkorb, Löschen | BEREIT | `plan-berechtigungskonzept.md` |
+| 1 | Berechtigungskonzept | Editor/Viewer-Rollen, private Verträge, Papierkorb, Löschen | ERLEDIGT | `archiv/plan-berechtigungskonzept.md` |
 | 2 | Suchfunktion | Volltextsuche uber alle Vertrage | IDEE | - |
 | 3 | Vertrag duplizieren | Bestehenden Vertrag als Vorlage nutzen | IDEE | - |
 | 4 | Export/Import | CSV/Excel Export, ggf. Import | IDEE | - |
@@ -280,5 +280,5 @@ Ideen und geplante Features. Detaillierte Implementierungspläne liegen in separ
 ---
 
 *Erstellt: 2026-01-18*
-*Aktualisiert: 2026-01-21*
-*Basis: produktbeschreibung.md v1.0*
+*Aktualisiert: 2026-01-23*
+*Basis: archiv/produktbeschreibung.md v1.0*

@@ -42,6 +42,7 @@
 						label="displayName"
 						track-by="id"
 						class="permission-select"
+						@open="onDropdownOpen"
 						@search="onSearch"
 						@input="onEditorsChange">
 						<template #option="option">
@@ -79,6 +80,7 @@
 						label="displayName"
 						track-by="id"
 						class="permission-select"
+						@open="onDropdownOpen"
 						@search="onSearch"
 						@input="onViewersChange">
 						<template #option="option">
@@ -364,12 +366,15 @@ export default {
 		},
 
 		onSearch(query, loading) {
-			if (query.length < 1) {
-				this.searchResults = []
-				return
-			}
 			loading(true)
 			this.debouncedSearch(query, loading)
+		},
+
+		async onDropdownOpen() {
+			// Load all users/groups when dropdown opens
+			if (this.searchResults.length === 0) {
+				await this.performSearch('', null)
+			}
 		},
 
 		async performSearch(query, loading) {

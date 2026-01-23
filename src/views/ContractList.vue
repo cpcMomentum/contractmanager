@@ -2,7 +2,7 @@
 	<div class="contract-list">
 		<div class="contract-list__header">
 			<h2>{{ t('contractmanager', 'Verträge') }}</h2>
-			<NcButton type="primary" @click="showCreateForm = true">
+			<NcButton v-if="canEdit" type="primary" @click="showCreateForm = true">
 				<template #icon>
 					<PlusIcon :size="20" />
 				</template>
@@ -20,7 +20,7 @@
 			<template #icon>
 				<FileDocumentIcon :size="64" />
 			</template>
-			<template #action>
+			<template v-if="canEdit" #action>
 				<NcButton type="primary" @click="showCreateForm = true">
 					<template #icon>
 						<PlusIcon :size="20" />
@@ -35,6 +35,7 @@
 				:key="contract.id"
 				:contract="contract"
 				@edit="handleEdit"
+				@view="handleView"
 				@archive="handleArchive" />
 		</div>
 
@@ -43,6 +44,11 @@
 			:loading="formLoading"
 			@close="closeForm"
 			@submit="handleFormSubmit" />
+
+		<ContractForm :show="showViewForm"
+			:contract="viewingContract"
+			:read-only="true"
+			@close="closeForm" />
 	</div>
 </template>
 
@@ -77,7 +83,9 @@ export default {
 		return {
 			showCreateForm: false,
 			showEditForm: false,
+			showViewForm: false,
 			editingContract: null,
+			viewingContract: null,
 			formLoading: false,
 		}
 	},
@@ -85,6 +93,7 @@ export default {
 		...mapGetters('contracts', {
 			allContracts: 'allContracts',
 			loading: 'isLoading',
+			canEdit: 'canEdit',
 		}),
 		contracts() {
 			// Show active, cancelled, and expired contracts (not archived)
@@ -108,6 +117,11 @@ export default {
 			this.showEditForm = true
 		},
 
+		handleView(contract) {
+			this.viewingContract = contract
+			this.showViewForm = true
+		},
+
 		async handleArchive(contract) {
 			if (confirm(t('contractmanager', 'Vertrag "{name}" wirklich archivieren?', { name: contract.name }))) {
 				try {
@@ -121,7 +135,9 @@ export default {
 		closeForm() {
 			this.showCreateForm = false
 			this.showEditForm = false
+			this.showViewForm = false
 			this.editingContract = null
+			this.viewingContract = null
 		},
 
 		async handleFormSubmit(data) {

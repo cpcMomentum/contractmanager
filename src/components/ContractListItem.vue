@@ -145,6 +145,8 @@ export default {
 		onEdit() {
 			if (this.canEdit) {
 				this.$emit('edit', this.contract)
+			} else {
+				this.$emit('view', this.contract)
 			}
 		},
 		confirmDelete() {

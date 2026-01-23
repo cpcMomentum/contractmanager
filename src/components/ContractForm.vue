@@ -1,6 +1,6 @@
 <template>
 	<NcModal :show="show"
-		:title="isEdit ? t('contractmanager', 'Vertrag bearbeiten') : t('contractmanager', 'Neuer Vertrag')"
+		:title="readOnly ? t('contractmanager', 'Vertragsdetails') : (isEdit ? t('contractmanager', 'Vertrag bearbeiten') : t('contractmanager', 'Neuer Vertrag'))"
 		size="large"
 		@close="$emit('close')">
 		<div class="contract-form">
@@ -13,6 +13,7 @@
 						<label class="form-label">{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</label>
 						<NcTextField :value.sync="form.name"
 							:required="true"
+							:disabled="readOnly"
 							:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')" />
 					</div>
 
@@ -20,6 +21,7 @@
 						<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
 						<NcTextField :value.sync="form.vendor"
 							:required="true"
+							:disabled="readOnly"
 							:placeholder="t('contractmanager', 'z.B. Microsoft')" />
 					</div>
 
@@ -29,6 +31,7 @@
 							<NcSelect v-model="form.categoryId"
 								:options="categoryOptions"
 								:placeholder="t('contractmanager', 'Kategorie wählen')"
+								:disabled="readOnly"
 								label="label"
 								track-by="value"
 								:reduce="option => option.value" />
@@ -37,6 +40,7 @@
 							<label class="form-label">{{ t('contractmanager', 'Status') }}</label>
 							<NcSelect v-model="form.contractStatus"
 								:options="statusOptions"
+								:disabled="readOnly"
 								label="label"
 								track-by="value"
 								:reduce="option => option.value"
@@ -54,18 +58,21 @@
 							<label class="form-label">{{ t('contractmanager', 'Startdatum') + ' *' }}</label>
 							<NcTextField :value.sync="form.startDateFormatted"
 								:placeholder="t('contractmanager', 'TT.MM.JJJJ')"
+								:disabled="readOnly"
 								@blur="parseStartDate" />
 						</div>
 						<div class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Enddatum') + ' *' }}</label>
 							<NcTextField :value.sync="form.endDateFormatted"
 								:placeholder="t('contractmanager', 'TT.MM.JJJJ')"
+								:disabled="readOnly"
 								@blur="parseEndDate" />
 						</div>
 						<div class="field-type">
 							<label class="form-label">{{ t('contractmanager', 'Vertragstyp') + ' *' }}</label>
 							<NcSelect v-model="form.contractType"
 								:options="contractTypeOptions"
+								:disabled="readOnly"
 								label="label"
 								track-by="value"
 								:reduce="option => option.value"
@@ -81,9 +88,11 @@
 									type="number"
 									min="1"
 									:required="true"
+									:disabled="readOnly"
 									class="period-number" />
 								<NcSelect v-model="form.cancellationPeriodUnit"
 									:options="periodUnitOptions"
+									:disabled="readOnly"
 									label="label"
 									track-by="value"
 									:reduce="option => option.value"
@@ -105,9 +114,11 @@
 							<NcTextField :value.sync="form.renewalPeriodValue"
 								type="number"
 								min="1"
+								:disabled="readOnly"
 								class="period-number" />
 							<NcSelect v-model="form.renewalPeriodUnit"
 								:options="periodUnitOptions"
+								:disabled="readOnly"
 								label="label"
 								track-by="value"
 								:reduce="option => option.value"
@@ -127,12 +138,14 @@
 							<NcTextField :value.sync="form.cost"
 								type="number"
 								step="0.01"
+								:disabled="readOnly"
 								:placeholder="t('contractmanager', '0.00')" />
 						</div>
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
 							<NcSelect v-model="form.currency"
 								:options="currencyOptions"
+								:disabled="readOnly"
 								label="label"
 								track-by="value"
 								:reduce="option => option.value"
@@ -149,20 +162,32 @@
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Vertragsordner') }}</label>
 							<div class="document-buttons">
-								<NcButton :type="form.contractFolder ? 'primary' : 'secondary'"
-									:title="form.contractFolder || t('contractmanager', 'Kein Ordner ausgewählt')"
-									@click="form.contractFolder ? openInNextcloud(form.contractFolder) : openFolderPicker()">
+								<span v-if="readOnly && !form.contractFolder" class="no-document-text">
+									{{ t('contractmanager', 'Kein Ordner ausgewählt') }}
+								</span>
+								<NcButton v-else-if="form.contractFolder"
+									type="primary"
+									:title="form.contractFolder"
+									@click="openInNextcloud(form.contractFolder)">
 									<template #icon>
 										<Folder :size="20" />
 									</template>
-									{{ form.contractFolder ? t('contractmanager', 'Öffnen') : t('contractmanager', 'Wählen') }}
+									{{ t('contractmanager', 'Öffnen') }}
 								</NcButton>
-								<NcButton v-if="form.contractFolder"
+								<NcButton v-else
+									type="secondary"
+									@click="openFolderPicker">
+									<template #icon>
+										<Folder :size="20" />
+									</template>
+									{{ t('contractmanager', 'Wählen') }}
+								</NcButton>
+								<NcButton v-if="form.contractFolder && !readOnly"
 									type="secondary"
 									@click="openFolderPicker">
 									{{ t('contractmanager', 'Ändern') }}
 								</NcButton>
-								<NcButton v-if="form.contractFolder"
+								<NcButton v-if="form.contractFolder && !readOnly"
 									type="tertiary"
 									:title="t('contractmanager', 'Entfernen')"
 									@click="form.contractFolder = ''">
@@ -175,20 +200,32 @@
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Hauptvertragsdatei') }}</label>
 							<div class="document-buttons">
-								<NcButton :type="form.mainDocument ? 'primary' : 'secondary'"
-									:title="form.mainDocument || t('contractmanager', 'Keine Datei ausgewählt')"
-									@click="form.mainDocument ? openInNextcloud(form.mainDocument) : openFilePicker()">
+								<span v-if="readOnly && !form.mainDocument" class="no-document-text">
+									{{ t('contractmanager', 'Keine Datei ausgewählt') }}
+								</span>
+								<NcButton v-else-if="form.mainDocument"
+									type="primary"
+									:title="form.mainDocument"
+									@click="openInNextcloud(form.mainDocument)">
 									<template #icon>
 										<File :size="20" />
 									</template>
-									{{ form.mainDocument ? t('contractmanager', 'Öffnen') : t('contractmanager', 'Wählen') }}
+									{{ t('contractmanager', 'Öffnen') }}
 								</NcButton>
-								<NcButton v-if="form.mainDocument"
+								<NcButton v-else
+									type="secondary"
+									@click="openFilePicker">
+									<template #icon>
+										<File :size="20" />
+									</template>
+									{{ t('contractmanager', 'Wählen') }}
+								</NcButton>
+								<NcButton v-if="form.mainDocument && !readOnly"
 									type="secondary"
 									@click="openFilePicker">
 									{{ t('contractmanager', 'Ändern') }}
 								</NcButton>
-								<NcButton v-if="form.mainDocument"
+								<NcButton v-if="form.mainDocument && !readOnly"
 									type="tertiary"
 									:title="t('contractmanager', 'Entfernen')"
 									@click="form.mainDocument = ''">
@@ -206,7 +243,7 @@
 					<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
 
 					<div class="form-row">
-						<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled">
+						<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
 							{{ t('contractmanager', 'Erinnerung aktivieren') }}
 						</NcCheckboxRadioSwitch>
 					</div>
@@ -215,6 +252,7 @@
 						<NcTextField :label="t('contractmanager', 'Erinnerung X Tage vorher (optional)')"
 							:value.sync="form.reminderDays"
 							type="number"
+							:disabled="readOnly"
 							:placeholder="t('contractmanager', 'Standard verwenden')" />
 					</div>
 				</div>
@@ -228,6 +266,7 @@
 							:label="t('contractmanager', 'Zusätzliche Notizen')"
 							:placeholder="t('contractmanager', 'Zusätzliche Notizen...')"
 							:maxlength="5000"
+							:disabled="readOnly"
 							resize="vertical"
 							rows="4" />
 					</div>
@@ -236,7 +275,7 @@
 				<!-- Privacy -->
 				<div class="form-section">
 					<div class="form-row">
-						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate">
+						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate" :disabled="readOnly">
 							<template #icon>
 								<LockIcon :size="20" />
 							</template>
@@ -247,15 +286,20 @@
 
 				<!-- Actions -->
 				<div class="form-actions">
-					<NcButton type="tertiary" @click="$emit('close')">
-						{{ t('contractmanager', 'Abbrechen') }}
+					<NcButton v-if="readOnly" type="primary" @click="$emit('close')">
+						{{ t('contractmanager', 'Schließen') }}
 					</NcButton>
-					<NcButton type="primary" native-type="submit" :disabled="!isValid || loading">
-						<template #icon>
-							<NcLoadingIcon v-if="loading" :size="20" />
-						</template>
-						{{ isEdit ? t('contractmanager', 'Speichern') : t('contractmanager', 'Erstellen') }}
-					</NcButton>
+					<template v-else>
+						<NcButton type="tertiary" @click="$emit('close')">
+							{{ t('contractmanager', 'Abbrechen') }}
+						</NcButton>
+						<NcButton type="primary" native-type="submit" :disabled="!isValid || loading">
+							<template #icon>
+								<NcLoadingIcon v-if="loading" :size="20" />
+							</template>
+							{{ isEdit ? t('contractmanager', 'Speichern') : t('contractmanager', 'Erstellen') }}
+						</NcButton>
+					</template>
 				</div>
 			</form>
 		</div>
@@ -305,6 +349,10 @@ export default {
 			default: null,
 		},
 		loading: {
+			type: Boolean,
+			default: false,
+		},
+		readOnly: {
 			type: Boolean,
 			default: false,
 		},
@@ -724,5 +772,10 @@ export default {
 	gap: 8px;
 	align-items: center;
 	height: 44px;
+}
+
+.no-document-text {
+	color: var(--color-text-maxcontrast);
+	line-height: 44px;
 }
 </style>
