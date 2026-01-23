@@ -32,6 +32,10 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     <bugs>https://github.com/cpcMomentum/contractmanager/issues</bugs>
     <repository type="git">https://github.com/cpcMomentum/contractmanager.git</repository>
 
+    <screenshot>https://raw.githubusercontent.com/cpcMomentum/contractmanager/main/screenshots/screenshot-contract-list.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/cpcMomentum/contractmanager/main/screenshots/screenshot-contract-form.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/cpcMomentum/contractmanager/main/screenshots/screenshot-settings.png</screenshot>
+
     <dependencies>
         <nextcloud min-version="32" max-version="32"/>
         <php min-version="8.2"/>
