@@ -20,9 +20,9 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     ]]></description>
 
     <version>0.1.4</version>
-    <licence>agpl</licence>
+    <licence>AGPL-3.0-or-later</licence>
 
-    <author homepage="https://cpcMomentum.com">cpcMomentum GmbH</author>
+    <author homepage="https://github.com/cpcMomentum">Axel Deffner</author>
 
     <namespace>ContractManager</namespace>
 
