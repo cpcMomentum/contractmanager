@@ -2,8 +2,8 @@
 node_modules/
 vendor/
 
-# Build output
-js/
+# Build output (js/ is committed for easy installation)
+# js/
 css/*.css
 css/*.css.map
 
