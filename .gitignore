@@ -39,6 +39,10 @@ coverage/
 # Nextcloud
 appinfo/signature.json
 
+# Release artifacts
+*.tar.gz
+*.zip
+
 # Internal documentation
 CLAUDE.md
 docs/archive/
