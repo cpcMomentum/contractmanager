@@ -161,6 +161,9 @@
 					<div class="form-row form-row--half">
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Vertragsordner') }}</label>
+							<span v-if="form.contractFolder" class="selected-path" :title="form.contractFolder">
+								{{ form.contractFolder.split('/').filter(s => s).pop() }}
+							</span>
 							<div class="document-buttons">
 								<span v-if="readOnly && !form.contractFolder" class="no-document-text">
 									{{ t('contractmanager', 'Kein Ordner ausgewählt') }}
@@ -199,6 +202,9 @@
 						</div>
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Hauptvertragsdatei') }}</label>
+							<span v-if="form.mainDocument" class="selected-path" :title="form.mainDocument">
+								{{ form.mainDocument.split('/').filter(s => s).pop() }}
+							</span>
 							<div class="document-buttons">
 								<span v-if="readOnly && !form.mainDocument" class="no-document-text">
 									{{ t('contractmanager', 'Keine Datei ausgewählt') }}
@@ -777,5 +783,15 @@ export default {
 .no-document-text {
 	color: var(--color-text-maxcontrast);
 	line-height: 44px;
+}
+
+.selected-path {
+	display: block;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-bottom: 2px;
 }
 </style>

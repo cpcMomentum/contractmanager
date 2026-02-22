@@ -38,7 +38,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     <screenshot>https://raw.githubusercontent.com/cpcMomentum/contractmanager/main/screenshots/screenshot-settings.png</screenshot>
 
     <dependencies>
-        <nextcloud min-version="32" max-version="32"/>
+        <nextcloud min-version="32" max-version="33"/>
         <php min-version="8.2"/>
     </dependencies>
 
