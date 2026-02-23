@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-02-23
+
+### Fixed
+- FilePicker not opening on certain hosting providers due to extremely long webpack chunk filenames
+- Selected folder/file name not visible after FilePicker selection (only in tooltip)
+
+### Changed
+- Nextcloud 33 compatibility added (max-version raised to 33)
+- Webpack chunk filenames shortened to hash-based naming
+
 ## [0.1.4] - 2026-01-23
 
 ### Added
@@ -75,7 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.1...v0.1.2
