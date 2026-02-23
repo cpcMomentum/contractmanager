@@ -2,8 +2,8 @@
 node_modules/
 vendor/
 
-# Build output
-js/
+# Build output (js/ is committed for easy installation)
+# js/
 css/*.css
 css/*.css.map
 
@@ -39,6 +39,11 @@ coverage/
 # Nextcloud
 appinfo/signature.json
 
+# Release artifacts
+*.tar.gz
+*.zip
+
 # Internal documentation
 CLAUDE.md
 docs/archive/
+sessions/

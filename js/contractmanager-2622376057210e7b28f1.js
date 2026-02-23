@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcontractmanager=self.webpackChunkcontractmanager||[]).push([["node_modules_nextcloud_vue_dist_Components_NcColorPicker_mjs"],{6798(e,a,c){c.r(a),c.d(a,{default:()=>n.N});var n=c(8620)}}]);
