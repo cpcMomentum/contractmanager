@@ -35,6 +35,7 @@
 				:key="contract.id"
 				:contract="contract"
 				@edit="handleEdit"
+				@duplicate="handleDuplicate"
 				@view="handleView"
 				@archive="handleArchive" />
 		</div>
@@ -117,6 +118,16 @@ export default {
 			this.showEditForm = true
 		},
 
+		handleDuplicate(contract) {
+			this.editingContract = {
+				...contract,
+				id: null,
+				name: contract.name + ' (' + t('contractmanager', 'Kopie') + ')',
+				status: 'active',
+			}
+			this.showCreateForm = true
+		},
+
 		handleView(contract) {
 			this.viewingContract = contract
 			this.showViewForm = true
@@ -143,7 +154,7 @@ export default {
 		async handleFormSubmit(data) {
 			this.formLoading = true
 			try {
-				if (this.editingContract) {
+				if (this.editingContract && this.editingContract.id) {
 					await this.updateContract({
 						id: this.editingContract.id,
 						data,

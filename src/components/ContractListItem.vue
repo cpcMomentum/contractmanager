@@ -46,6 +46,13 @@
 					{{ t('contractmanager', 'Wiederherstellen') }}
 				</NcActionButton>
 				<NcActionButton v-if="canEdit"
+					@click.stop="$emit('duplicate', contract)">
+					<template #icon>
+						<ContentDuplicate :size="20" />
+					</template>
+					{{ t('contractmanager', 'Duplizieren') }}
+				</NcActionButton>
+				<NcActionButton v-if="canEdit"
 					@click.stop="$emit('edit', contract)">
 					<template #icon>
 						<PencilIcon :size="20" />
@@ -92,6 +99,7 @@ import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
+import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import StatusBadge from './StatusBadge.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
@@ -111,6 +119,7 @@ export default {
 		DeleteIcon,
 		LockIcon,
 		FileDocumentIcon,
+		ContentDuplicate,
 		StatusBadge,
 	},
 	props: {
@@ -123,7 +132,7 @@ export default {
 			default: false,
 		},
 	},
-	emits: ['edit', 'archive', 'restore', 'delete'],
+	emits: ['edit', 'duplicate', 'archive', 'restore', 'delete'],
 	data() {
 		return {
 			showDeleteDialog: false,
