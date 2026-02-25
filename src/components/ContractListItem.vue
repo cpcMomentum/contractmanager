@@ -22,6 +22,14 @@
 			</div>
 		</div>
 		<div class="contract-list-item__actions">
+			<NcButton v-if="contract.contractFolder"
+				type="tertiary"
+				:title="t('contractmanager', 'Vertragsordner öffnen')"
+				@click.stop="openFolder">
+				<template #icon>
+					<FolderOpenIcon :size="20" />
+				</template>
+			</NcButton>
 			<NcButton v-if="contract.mainDocument"
 				type="tertiary"
 				:title="t('contractmanager', 'Vertragsdokument öffnen')"
@@ -99,6 +107,7 @@ import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
+import FolderOpenIcon from 'vue-material-design-icons/FolderOpen.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import StatusBadge from './StatusBadge.vue'
 import { generateUrl } from '@nextcloud/router'
@@ -119,6 +128,7 @@ export default {
 		DeleteIcon,
 		LockIcon,
 		FileDocumentIcon,
+		FolderOpenIcon,
 		ContentDuplicate,
 		StatusBadge,
 	},
@@ -180,6 +190,13 @@ export default {
 				style: 'currency',
 				currency: currency || 'EUR',
 			}).format(amount)
+		},
+		openFolder() {
+			if (!this.contract.contractFolder) return
+			const filesUrl = generateUrl('/apps/files/?dir={dir}', {
+				dir: this.contract.contractFolder,
+			})
+			window.open(filesUrl, '_blank')
 		},
 		openDocument() {
 			if (!this.contract.mainDocument) return
