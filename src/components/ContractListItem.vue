@@ -96,6 +96,7 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
 import { mapGetters, mapActions } from 'vuex'
 import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
 import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
@@ -198,16 +199,40 @@ export default {
 			})
 			window.open(filesUrl, '_blank')
 		},
-		openDocument() {
+		async openDocument() {
 			if (!this.contract.mainDocument) return
+			// Versuch 1: Nextcloud Viewer Overlay (kein neuer Tab)
+			if (window.OCA?.Viewer?.open) {
+				console.debug('[ContractManager] Opening via OCA.Viewer:', this.contract.mainDocument)
+				OCA.Viewer.open({ path: this.contract.mainDocument })
+				return
+			}
+			console.debug('[ContractManager] OCA.Viewer not available, falling back to /f/{fileId}')
+			// Versuch 2: File-ID holen und /f/{id} oeffnen (neuer Tab)
+			try {
+				const user = OC.currentUser
+				const davPath = `/remote.php/dav/files/${user}${this.contract.mainDocument}`
+				const response = await axios({
+					method: 'PROPFIND',
+					url: davPath,
+					headers: { Depth: '0' },
+					data: `<?xml version="1.0"?>
+						<d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
+							<d:prop><oc:fileid/></d:prop>
+						</d:propfind>`,
+				})
+				const match = response.data.match(/<oc:fileid>(\d+)<\/oc:fileid>/)
+				if (match) {
+					window.open(generateUrl('/f/{fileId}', { fileId: match[1] }), '_blank')
+					return
+				}
+			} catch (e) {
+				console.warn('[ContractManager] Could not resolve file ID:', e)
+			}
+			// Versuch 3: Ordner oeffnen
 			const path = this.contract.mainDocument
 			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-			const fileName = path.substring(path.lastIndexOf('/') + 1)
-			const filesUrl = generateUrl('/apps/files/?dir={dir}&scrollto={file}&openfile={file}', {
-				dir: parentDir,
-				file: fileName,
-			})
-			window.open(filesUrl, '_blank')
+			window.open(generateUrl('/apps/files/?dir={dir}', { dir: parentDir }), '_blank')
 		},
 	},
 }
