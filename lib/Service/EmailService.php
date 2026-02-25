@@ -127,9 +127,9 @@ class EmailService {
 		$displayNameEscaped = htmlspecialchars($displayName);
 
 		if ($reminderType === 'first') {
-			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft bald ab.', [$contractName, $vendor]);
+			$intro = $l->t('dein Vertrag "%1$s" bei %2$s läuft bald ab.', [$contractName, $vendor]);
 		} else {
-			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft in wenigen Tagen ab.', [$contractName, $vendor]);
+			$intro = $l->t('dein Vertrag "%1$s" bei %2$s läuft in wenigen Tagen ab.', [$contractName, $vendor]);
 		}
 
 		$greeting = $l->t('Hallo %s,', [$displayNameEscaped]);
@@ -168,9 +168,9 @@ HTML;
 	 */
 	private function buildPlainBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l, string $displayName): string {
 		if ($reminderType === 'first') {
-			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft bald ab.', [$contract->getName(), $contract->getVendor()]);
+			$intro = $l->t('dein Vertrag "%1$s" bei %2$s läuft bald ab.', [$contract->getName(), $contract->getVendor()]);
 		} else {
-			$intro = $l->t('dein Vertrag „%1$s" bei %2$s läuft in wenigen Tagen ab.', [$contract->getName(), $contract->getVendor()]);
+			$intro = $l->t('dein Vertrag "%1$s" bei %2$s läuft in wenigen Tagen ab.', [$contract->getName(), $contract->getVendor()]);
 		}
 
 		$greeting = $l->t('Hallo %s,', [$displayName]);
