@@ -19,7 +19,7 @@ Verwalten Sie Ihre Verträge zentral in Nextcloud:
 Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     ]]></description>
 
-    <version>0.1.5</version>
+    <version>0.2.0</version>
     <licence>AGPL-3.0-or-later</licence>
 
     <author homepage="https://github.com/cpcMomentum">Axel Deffner</author>
