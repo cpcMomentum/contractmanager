@@ -3,10 +3,10 @@
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
 
     <id>contractmanager</id>
-    <name>ContractManager</name>
+    <name>Verträge</name>
     <summary>Vertragsverwaltung mit Kündigungserinnerungen</summary>
     <description><![CDATA[
-# ContractManager
+# Verträge
 
 Verwalten Sie Ihre Verträge zentral in Nextcloud:
 
@@ -49,7 +49,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
 
     <navigations>
         <navigation>
-            <name>ContractManager</name>
+            <name>Verträge</name>
             <route>contractmanager.page.index</route>
             <icon>app.svg</icon>
             <order>10</order>
