@@ -22,6 +22,14 @@
 			</div>
 		</div>
 		<div class="contract-list-item__actions">
+			<NcButton v-if="contract.contractFolder"
+				type="tertiary"
+				:title="t('contractmanager', 'Vertragsordner öffnen')"
+				@click.stop="openFolder">
+				<template #icon>
+					<FolderOpenIcon :size="20" />
+				</template>
+			</NcButton>
 			<NcButton v-if="contract.mainDocument"
 				type="tertiary"
 				:title="t('contractmanager', 'Vertragsdokument öffnen')"
@@ -44,6 +52,13 @@
 						<RestoreIcon :size="20" />
 					</template>
 					{{ t('contractmanager', 'Wiederherstellen') }}
+				</NcActionButton>
+				<NcActionButton v-if="canEdit"
+					@click.stop="$emit('duplicate', contract)">
+					<template #icon>
+						<ContentDuplicate :size="20" />
+					</template>
+					{{ t('contractmanager', 'Duplizieren') }}
 				</NcActionButton>
 				<NcActionButton v-if="canEdit"
 					@click.stop="$emit('edit', contract)">
@@ -81,6 +96,7 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
 import { mapGetters, mapActions } from 'vuex'
 import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
 import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
@@ -92,6 +108,8 @@ import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
+import FolderOpenIcon from 'vue-material-design-icons/FolderOpen.vue'
+import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import StatusBadge from './StatusBadge.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
@@ -111,6 +129,8 @@ export default {
 		DeleteIcon,
 		LockIcon,
 		FileDocumentIcon,
+		FolderOpenIcon,
+		ContentDuplicate,
 		StatusBadge,
 	},
 	props: {
@@ -123,7 +143,7 @@ export default {
 			default: false,
 		},
 	},
-	emits: ['edit', 'archive', 'restore', 'delete'],
+	emits: ['edit', 'duplicate', 'archive', 'restore', 'delete'],
 	data() {
 		return {
 			showDeleteDialog: false,
@@ -172,16 +192,47 @@ export default {
 				currency: currency || 'EUR',
 			}).format(amount)
 		},
-		openDocument() {
-			if (!this.contract.mainDocument) return
-			const path = this.contract.mainDocument
-			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-			const fileName = path.substring(path.lastIndexOf('/') + 1)
-			const filesUrl = generateUrl('/apps/files/?dir={dir}&scrollto={file}&openfile={file}', {
-				dir: parentDir,
-				file: fileName,
+		openFolder() {
+			if (!this.contract.contractFolder) return
+			const filesUrl = generateUrl('/apps/files/?dir={dir}', {
+				dir: this.contract.contractFolder,
 			})
 			window.open(filesUrl, '_blank')
+		},
+		async openDocument() {
+			if (!this.contract.mainDocument) return
+			// Versuch 1: Nextcloud Viewer Overlay (kein neuer Tab)
+			if (window.OCA?.Viewer?.open) {
+				console.debug('[ContractManager] Opening via OCA.Viewer:', this.contract.mainDocument)
+				OCA.Viewer.open({ path: this.contract.mainDocument })
+				return
+			}
+			console.debug('[ContractManager] OCA.Viewer not available, falling back to /f/{fileId}')
+			// Versuch 2: File-ID holen und /f/{id} oeffnen (neuer Tab)
+			try {
+				const user = OC.currentUser
+				const davPath = `/remote.php/dav/files/${user}${this.contract.mainDocument}`
+				const response = await axios({
+					method: 'PROPFIND',
+					url: davPath,
+					headers: { Depth: '0' },
+					data: `<?xml version="1.0"?>
+						<d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
+							<d:prop><oc:fileid/></d:prop>
+						</d:propfind>`,
+				})
+				const match = response.data.match(/<oc:fileid>(\d+)<\/oc:fileid>/)
+				if (match) {
+					window.open(generateUrl('/f/{fileId}', { fileId: match[1] }), '_blank')
+					return
+				}
+			} catch (e) {
+				console.warn('[ContractManager] Could not resolve file ID:', e)
+			}
+			// Versuch 3: Ordner oeffnen
+			const path = this.contract.mainDocument
+			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
+			window.open(generateUrl('/apps/files/?dir={dir}', { dir: parentDir }), '_blank')
 		},
 	},
 }

@@ -26,8 +26,7 @@ class CategoryMapper extends QBMapper {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
-            ->orderBy('sort_order', 'ASC')
-            ->addOrderBy('name', 'ASC');
+            ->orderBy('name', 'ASC');
 
         return $this->findEntities($qb);
     }

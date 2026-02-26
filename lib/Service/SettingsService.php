@@ -20,9 +20,14 @@ class SettingsService {
 	private const KEY_REMINDER_DAYS_1 = 'reminder_days_1';
 	private const KEY_REMINDER_DAYS_2 = 'reminder_days_2';
 	private const KEY_EMAIL_REMINDER = 'email_reminder';
+	private const KEY_SORT_BY = 'sort_by';
+	private const KEY_SORT_DIRECTION = 'sort_direction';
 
 	private const DEFAULT_REMINDER_DAYS_1 = 14;
 	private const DEFAULT_REMINDER_DAYS_2 = 3;
+
+	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost'];
+	private const ALLOWED_SORT_DIRECTION = ['asc', 'desc'];
 
 	public function __construct(
 		private IConfig $config,
@@ -126,6 +131,60 @@ class SettingsService {
 			Application::APP_ID,
 			self::KEY_EMAIL_REMINDER,
 			$enabled ? '1' : '0'
+		);
+	}
+
+	/**
+	 * Get sort-by preference for a user (default: endDate)
+	 */
+	public function getUserSortBy(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_SORT_BY,
+			'endDate'
+		);
+	}
+
+	/**
+	 * Set sort-by preference for a user (whitelist-validated)
+	 */
+	public function setUserSortBy(string $userId, string $sortBy): void {
+		if (!in_array($sortBy, self::ALLOWED_SORT_BY, true)) {
+			return;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_SORT_BY,
+			$sortBy
+		);
+	}
+
+	/**
+	 * Get sort direction preference for a user (default: asc)
+	 */
+	public function getUserSortDirection(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_SORT_DIRECTION,
+			'asc'
+		);
+	}
+
+	/**
+	 * Set sort direction preference for a user
+	 */
+	public function setUserSortDirection(string $userId, string $direction): void {
+		if (!in_array($direction, self::ALLOWED_SORT_DIRECTION, true)) {
+			return;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_SORT_DIRECTION,
+			$direction
 		);
 	}
 
