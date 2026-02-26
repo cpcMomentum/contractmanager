@@ -37,11 +37,12 @@ class PageController extends Controller {
 		$isAdmin = $this->userId !== null && $this->groupManager->isAdmin($this->userId);
 		$this->initialState->provideInitialState('isAdmin', $isAdmin);
 
-		// Sortier-Präferenz über Initial State API bereitstellen
+		// Benutzer-Präferenzen über Initial State API bereitstellen
 		if ($this->userId !== null) {
-			$this->initialState->provideInitialState('sortPreferences', [
+			$this->initialState->provideInitialState('userPreferences', [
 				'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 				'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
+				'filters' => $this->settingsService->getUserFilters($this->userId),
 			]);
 		}
 
