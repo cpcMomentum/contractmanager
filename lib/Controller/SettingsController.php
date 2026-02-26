@@ -42,6 +42,8 @@ class SettingsController extends Controller {
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
+			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
+			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 		]);
 	}
 
@@ -49,15 +51,29 @@ class SettingsController extends Controller {
 	 * Update current user's settings
 	 */
 	#[NoAdminRequired]
-	public function update(bool $emailReminder): JSONResponse {
+	public function update(
+		?bool $emailReminder = null,
+		?string $sortBy = null,
+		?string $sortDirection = null,
+	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], 401);
 		}
 
-		$this->settingsService->setUserEmailReminder($this->userId, $emailReminder);
+		if ($emailReminder !== null) {
+			$this->settingsService->setUserEmailReminder($this->userId, $emailReminder);
+		}
+		if ($sortBy !== null) {
+			$this->settingsService->setUserSortBy($this->userId, $sortBy);
+		}
+		if ($sortDirection !== null) {
+			$this->settingsService->setUserSortDirection($this->userId, $sortDirection);
+		}
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
+			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
+			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 		]);
 	}
 

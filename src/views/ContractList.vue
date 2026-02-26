@@ -2,12 +2,28 @@
 	<div class="contract-list">
 		<div class="contract-list__header">
 			<h2>{{ t('contractmanager', 'Verträge') }}</h2>
-			<NcButton v-if="canEdit" type="primary" @click="showCreateForm = true">
-				<template #icon>
-					<PlusIcon :size="20" />
-				</template>
-				{{ t('contractmanager', 'Neuer Vertrag') }}
-			</NcButton>
+			<div class="contract-list__header-actions">
+				<NcActions :force-menu="true" type="secondary">
+					<template #icon>
+						<SortIcon :size="20" />
+					</template>
+					<NcActionButton v-for="option in sortOptions"
+						:key="option.key"
+						:close-after-click="true"
+						@click="handleSortClick(option)">
+						<template #icon>
+							<component :is="getSortIcon(option)" :size="20" />
+						</template>
+						{{ option.label }}
+					</NcActionButton>
+				</NcActions>
+				<NcButton v-if="canEdit" type="primary" @click="showCreateForm = true">
+					<template #icon>
+						<PlusIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Neuer Vertrag') }}
+				</NcButton>
+			</div>
 		</div>
 
 		<div v-if="loading" class="contract-list__loading">
@@ -55,22 +71,36 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
+import { loadState } from '@nextcloud/initial-state'
+import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
+import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
+import SortIcon from 'vue-material-design-icons/Sort.vue'
+import SortAscendingIcon from 'vue-material-design-icons/SortAscending.vue'
+import SortDescendingIcon from 'vue-material-design-icons/SortDescending.vue'
+import CircleSmallIcon from 'vue-material-design-icons/CircleSmall.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import ContractForm from '../components/ContractForm.vue'
+import SettingsService from '../services/SettingsService.js'
 
 export default {
 	name: 'ContractList',
 	components: {
+		NcActions,
+		NcActionButton,
 		NcButton,
 		NcLoadingIcon,
 		NcEmptyContent,
 		PlusIcon,
 		FileDocumentIcon,
+		SortIcon,
+		SortAscendingIcon,
+		SortDescendingIcon,
+		CircleSmallIcon,
 		ContractListItem,
 		ContractForm,
 	},
@@ -81,6 +111,7 @@ export default {
 		},
 	},
 	data() {
+		const sortPrefs = loadState('contractmanager', 'sortPreferences', { sortBy: 'endDate', sortDirection: 'asc' })
 		return {
 			showCreateForm: false,
 			showEditForm: false,
@@ -88,6 +119,14 @@ export default {
 			editingContract: null,
 			viewingContract: null,
 			formLoading: false,
+			sortBy: sortPrefs.sortBy,
+			sortDirection: sortPrefs.sortDirection,
+			sortOptions: [
+				{ key: 'endDate', label: t('contractmanager', 'Enddatum'), defaultDirection: 'asc' },
+				{ key: 'name', label: t('contractmanager', 'Name'), defaultDirection: 'asc' },
+				{ key: 'updatedAt', label: t('contractmanager', 'Zuletzt geändert'), defaultDirection: 'desc' },
+				{ key: 'cost', label: t('contractmanager', 'Kosten'), defaultDirection: 'desc' },
+			],
 		}
 	},
 	computed: {
@@ -102,7 +141,7 @@ export default {
 			if (this.categoryFilter !== null) {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
-			return filtered
+			return this.sortContracts(filtered)
 		},
 	},
 	created() {
@@ -169,6 +208,67 @@ export default {
 				this.formLoading = false
 			}
 		},
+
+		sortContracts(contracts) {
+			const sorted = [...contracts]
+			const dir = this.sortDirection === 'asc' ? 1 : -1
+
+			sorted.sort((a, b) => {
+				let cmp = 0
+				switch (this.sortBy) {
+				case 'endDate': {
+					const dateA = a.endDate ? new Date(a.endDate).getTime() : 0
+					const dateB = b.endDate ? new Date(b.endDate).getTime() : 0
+					cmp = dateA - dateB
+					break
+				}
+				case 'name':
+					cmp = (a.name || '').localeCompare(b.name || '')
+					break
+				case 'updatedAt': {
+					const updA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+					const updB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+					cmp = updA - updB
+					break
+				}
+				case 'cost':
+					cmp = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0)
+					break
+				default:
+					cmp = 0
+				}
+				return cmp * dir
+			})
+			return sorted
+		},
+
+		handleSortClick(option) {
+			if (this.sortBy === option.key) {
+				this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
+			} else {
+				this.sortBy = option.key
+				this.sortDirection = option.defaultDirection
+			}
+			this.persistSortPreference()
+		},
+
+		getSortIcon(option) {
+			if (this.sortBy !== option.key) {
+				return 'CircleSmallIcon'
+			}
+			return this.sortDirection === 'asc' ? 'SortAscendingIcon' : 'SortDescendingIcon'
+		},
+
+		async persistSortPreference() {
+			try {
+				await SettingsService.updateUserSettings({
+					sortBy: this.sortBy,
+					sortDirection: this.sortDirection,
+				})
+			} catch (error) {
+				console.error('Failed to persist sort preference:', error)
+			}
+		},
 	},
 }
 </script>
@@ -189,6 +289,12 @@ export default {
 			margin: 0;
 			font-size: 20px;
 			font-weight: 600;
+		}
+
+		&-actions {
+			display: flex;
+			align-items: center;
+			gap: 8px;
 		}
 	}
 
