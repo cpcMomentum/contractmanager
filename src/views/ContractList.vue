@@ -17,6 +17,14 @@
 						{{ option.label }}
 					</NcActionButton>
 				</NcActions>
+				<NcButton :type="hasActiveFilters ? 'warning' : 'secondary'"
+					@click="toggleFilters">
+					<template #icon>
+						<FilterOffIcon v-if="showFilters" :size="20" />
+						<FilterIcon v-else :size="20" />
+					</template>
+					{{ t('contractmanager', 'Filter') }}
+				</NcButton>
 				<NcButton v-if="canEdit" type="primary" @click="showCreateForm = true">
 					<template #icon>
 						<PlusIcon :size="20" />
@@ -24,6 +32,42 @@
 					{{ t('contractmanager', 'Neuer Vertrag') }}
 				</NcButton>
 			</div>
+		</div>
+
+		<div v-show="showFilters" class="contract-list__filters">
+			<NcSelect v-model="filterVendor"
+				:options="vendorOptions"
+				:placeholder="t('contractmanager', 'Vertragspartner')"
+				:clearable="true"
+				input-id="filter-vendor"
+				@input="persistFilters" />
+			<NcSelect v-model="filterStatuses"
+				:multiple="true"
+				:options="statusOptions"
+				:placeholder="t('contractmanager', 'Status')"
+				:clearable="false"
+				label="label"
+				track-by="id"
+				:reduce="option => option.id"
+				input-id="filter-status"
+				@input="persistFilters" />
+			<NcSelect v-model="filterContractType"
+				:options="contractTypeOptions"
+				:placeholder="t('contractmanager', 'Vertragstyp')"
+				:clearable="true"
+				label="label"
+				track-by="id"
+				:reduce="option => option.id"
+				input-id="filter-type"
+				@input="persistFilters" />
+			<NcButton v-if="hasActiveFilters"
+				type="tertiary"
+				@click="resetFilters">
+				<template #icon>
+					<CloseIcon :size="20" />
+				</template>
+				{{ t('contractmanager', 'Zurücksetzen') }}
+			</NcButton>
 		</div>
 
 		<div v-if="loading" class="contract-list__loading">
@@ -77,12 +121,16 @@ import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
+import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import SortIcon from 'vue-material-design-icons/Sort.vue'
 import SortAscendingIcon from 'vue-material-design-icons/SortAscending.vue'
 import SortDescendingIcon from 'vue-material-design-icons/SortDescending.vue'
 import CircleSmallIcon from 'vue-material-design-icons/CircleSmall.vue'
+import FilterIcon from 'vue-material-design-icons/Filter.vue'
+import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
+import CloseIcon from 'vue-material-design-icons/Close.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService.js'
@@ -95,12 +143,16 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		NcEmptyContent,
+		NcSelect,
 		PlusIcon,
 		FileDocumentIcon,
 		SortIcon,
 		SortAscendingIcon,
 		SortDescendingIcon,
 		CircleSmallIcon,
+		FilterIcon,
+		FilterOffIcon,
+		CloseIcon,
 		ContractListItem,
 		ContractForm,
 	},
@@ -111,7 +163,13 @@ export default {
 		},
 	},
 	data() {
-		const sortPrefs = loadState('contractmanager', 'sortPreferences', { sortBy: 'endDate', sortDirection: 'asc' })
+		const defaultPrefs = {
+			sortBy: 'endDate',
+			sortDirection: 'asc',
+			filters: { vendor: '', statuses: ['active', 'cancelled', 'ended'], contractType: '' },
+		}
+		const prefs = loadState('contractmanager', 'userPreferences', defaultPrefs)
+		const filters = prefs.filters || defaultPrefs.filters
 		return {
 			showCreateForm: false,
 			showEditForm: false,
@@ -119,13 +177,26 @@ export default {
 			editingContract: null,
 			viewingContract: null,
 			formLoading: false,
-			sortBy: sortPrefs.sortBy,
-			sortDirection: sortPrefs.sortDirection,
+			sortBy: prefs.sortBy,
+			sortDirection: prefs.sortDirection,
 			sortOptions: [
 				{ key: 'endDate', label: t('contractmanager', 'Enddatum'), defaultDirection: 'asc' },
 				{ key: 'name', label: t('contractmanager', 'Name'), defaultDirection: 'asc' },
 				{ key: 'updatedAt', label: t('contractmanager', 'Zuletzt geändert'), defaultDirection: 'desc' },
 				{ key: 'cost', label: t('contractmanager', 'Kosten'), defaultDirection: 'desc' },
+			],
+			showFilters: false,
+			filterVendor: filters.vendor || null,
+			filterStatuses: filters.statuses || [],
+			filterContractType: filters.contractType || null,
+			statusOptions: [
+				{ id: 'active', label: t('contractmanager', 'Aktiv') },
+				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
+				{ id: 'ended', label: t('contractmanager', 'Abgelaufen') },
+			],
+			contractTypeOptions: [
+				{ id: 'fixed', label: t('contractmanager', 'Festlaufzeit') },
+				{ id: 'auto_renewal', label: t('contractmanager', 'Automatische Verlängerung') },
 			],
 		}
 	},
@@ -135,18 +206,50 @@ export default {
 			loading: 'isLoading',
 			canEdit: 'canEdit',
 		}),
+		vendorOptions() {
+			const vendors = this.allContracts
+				.map(c => c.vendor)
+				.filter(v => v && v.trim() !== '')
+			return [...new Set(vendors)].sort((a, b) => a.localeCompare(b))
+		},
+		hasActiveFilters() {
+			if (this.filterVendor) return true
+			if (this.filterStatuses.length > 0) return true
+			if (this.filterContractType) return true
+			return false
+		},
 		contracts() {
-			// Show active, cancelled, and expired contracts (not archived)
 			let filtered = this.allContracts.filter(c => c.status !== 'archived')
+
+			// Kategorie-Filter (Sidebar)
 			if (this.categoryFilter !== null) {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
+
+			// Status-Filter (leer = kein Filter = alle anzeigen)
+			if (this.filterStatuses.length > 0) {
+				filtered = filtered.filter(c => this.filterStatuses.includes(c.status))
+			}
+
+			// Vertragspartner-Filter
+			if (this.filterVendor) {
+				filtered = filtered.filter(c => c.vendor === this.filterVendor)
+			}
+
+			// Vertragstyp-Filter
+			if (this.filterContractType) {
+				filtered = filtered.filter(c => c.contractType === this.filterContractType)
+			}
+
 			return this.sortContracts(filtered)
 		},
 	},
 	created() {
 		this.fetchContracts()
 		this.fetchCategories()
+		if (this.hasActiveFilters) {
+			this.showFilters = true
+		}
 	},
 	methods: {
 		...mapActions('contracts', ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
@@ -269,6 +372,31 @@ export default {
 				console.error('Failed to persist sort preference:', error)
 			}
 		},
+
+		toggleFilters() {
+			this.showFilters = !this.showFilters
+		},
+
+		resetFilters() {
+			this.filterVendor = null
+			this.filterStatuses = []
+			this.filterContractType = null
+			this.persistFilters()
+		},
+
+		async persistFilters() {
+			try {
+				await SettingsService.updateUserSettings({
+					filters: {
+						vendor: this.filterVendor || '',
+						statuses: this.filterStatuses,
+						contractType: this.filterContractType || '',
+					},
+				})
+			} catch (error) {
+				console.error('Failed to persist filters:', error)
+			}
+		},
 	},
 }
 </script>
@@ -295,6 +423,21 @@ export default {
 			display: flex;
 			align-items: center;
 			gap: 8px;
+		}
+	}
+
+	&__filters {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 16px;
+		padding: 12px;
+		background-color: var(--color-background-dark);
+		border-radius: var(--border-radius-large);
+
+		.v-select {
+			min-width: 180px;
+			flex: 1;
 		}
 	}
 
