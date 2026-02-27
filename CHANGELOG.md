@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-27
+
+### Added
+- Filterable contract list with vendor, status, and contract type filters (#22)
+- Sortable contract list with persistent user preference (#21)
+- Duplicate contract action (#18)
+- Folder icon in contract list to open contract folder (#15)
+
+### Changed
+- Display name renamed to "Verträge" (#17)
+- Filter and sort preferences persist per user across page reloads
+- Updated screenshots for App Store listing
+
+### Fixed
+- Categories now sorted alphabetically (#8)
+- Invalid JSON in l10n translation files (#16)
+
 ## [0.1.5] - 2026-02-23
 
 ### Fixed
@@ -85,7 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.2...v0.1.3

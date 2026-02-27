@@ -372,7 +372,7 @@ export default {
 	computed: {
 		...mapGetters('categories', ['allCategories']),
 		isEdit() {
-			return this.contract !== null
+			return this.contract !== null && this.contract.id != null
 		},
 		isValid() {
 			return (
