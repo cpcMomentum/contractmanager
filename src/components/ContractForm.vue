@@ -80,9 +80,9 @@
 						</div>
 					</div>
 
-					<div class="form-row form-row--cancellation">
+					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
 						<div>
-							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') + ' *' }}</label>
+							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') }}</label>
 							<div class="period-fields">
 								<NcTextField :value.sync="form.cancellationPeriodValue"
 									type="number"
@@ -385,9 +385,11 @@ export default {
 				&& this.form.vendor.trim() !== ''
 				&& this.form.startDate !== null
 				&& this.form.endDate !== null
-				&& this.form.cancellationPeriodValue !== ''
-				&& this.form.cancellationPeriodUnit !== null
 				&& this.form.contractType !== null
+				&& (this.form.contractType !== 'auto_renewal' || (
+					this.form.cancellationPeriodValue !== ''
+					&& this.form.cancellationPeriodUnit !== null
+				))
 			)
 		},
 		categoryOptions() {
@@ -566,9 +568,13 @@ export default {
 				status: this.form.contractStatus,
 				startDate: this.form.startDate ? this.formatDateForApi(this.form.startDate) : null,
 				endDate: this.form.endDate ? this.formatDateForApi(this.form.endDate) : null,
-				cancellationPeriod: this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit),
+				cancellationPeriod: this.form.contractType === 'auto_renewal'
+					? this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit)
+					: null,
 				contractType: this.form.contractType,
-				renewalPeriod: this.formatPeriod(this.form.renewalPeriodValue, this.form.renewalPeriodUnit),
+				renewalPeriod: this.form.contractType === 'auto_renewal'
+					? this.formatPeriod(this.form.renewalPeriodValue, this.form.renewalPeriodUnit)
+					: null,
 				cost: this.form.cost || null,
 				currency: this.form.currency,
 				contractFolder: this.form.contractFolder.trim() || null,

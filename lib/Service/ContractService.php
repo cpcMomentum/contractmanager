@@ -218,9 +218,9 @@ class ContractService {
         string $vendor,
         string $startDate,
         string $endDate,
-        string $cancellationPeriod,
         string $contractType,
         string $userId,
+        ?string $cancellationPeriod = null,
         ?int $categoryId = null,
         ?string $renewalPeriod = null,
         ?string $cost = null,
@@ -240,7 +240,7 @@ class ContractService {
         $contract->setCategoryId($categoryId);
         $contract->setStartDate(new DateTime($startDate));
         $contract->setEndDate(new DateTime($endDate));
-        $contract->setCancellationPeriod($cancellationPeriod);
+        $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
         $contract->setCost($cost);
@@ -272,8 +272,8 @@ class ContractService {
         string $vendor,
         string $startDate,
         string $endDate,
-        string $cancellationPeriod,
         string $contractType,
+        ?string $cancellationPeriod = null,
         ?int $categoryId = null,
         ?string $status = null,
         ?string $renewalPeriod = null,
@@ -301,7 +301,7 @@ class ContractService {
         }
         $contract->setStartDate(new DateTime($startDate));
         $contract->setEndDate(new DateTime($endDate));
-        $contract->setCancellationPeriod($cancellationPeriod);
+        $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
         $contract->setCost($cost);

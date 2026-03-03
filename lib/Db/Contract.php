@@ -23,8 +23,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setStartDate(DateTime $startDate)
  * @method DateTime getEndDate()
  * @method void setEndDate(DateTime $endDate)
- * @method string getCancellationPeriod()
- * @method void setCancellationPeriod(string $cancellationPeriod)
+ * @method string|null getCancellationPeriod()
+ * @method void setCancellationPeriod(?string $cancellationPeriod)
  * @method string getContractType()
  * @method void setContractType(string $contractType)
  * @method string|null getRenewalPeriod()
@@ -74,7 +74,7 @@ class Contract extends Entity implements JsonSerializable {
     protected ?int $categoryId = null;
     protected ?DateTime $startDate = null;
     protected ?DateTime $endDate = null;
-    protected string $cancellationPeriod = '';
+    protected ?string $cancellationPeriod = null;
     protected string $contractType = self::TYPE_FIXED;
     protected ?string $renewalPeriod = null;
     protected ?string $cost = null;

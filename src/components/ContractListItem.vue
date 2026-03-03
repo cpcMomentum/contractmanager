@@ -15,9 +15,10 @@
 				<span>{{ contract.vendor }}</span>
 				<span v-if="contract.cost">{{ formatCost(contract.cost, contract.currency) }}</span>
 				<span>|</span>
-				<span>{{ t('contractmanager', 'Endet:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
-				<span v-if="cancellationDeadline">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
-				<span v-if="contract.renewalPeriod">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
+				<span v-if="contract.contractType === 'auto_renewal'">{{ t('contractmanager', 'Endet:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
+				<span v-else>{{ t('contractmanager', 'Läuft aus am:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
+				<span v-if="cancellationDeadline && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
+				<span v-if="contract.renewalPeriod && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
 				<span v-if="showCreator && contract.createdBy">| {{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
 			</div>
 		</div>

@@ -36,7 +36,7 @@ class EmailService {
 	 * @param string $reminderType 'first' or 'final'
 	 * @return bool True if email was sent successfully
 	 */
-	public function sendReminder(Contract $contract, string $userId, string $deadline, string $reminderType): bool {
+	public function sendReminder(Contract $contract, string $userId, string $deadline, string $reminderType, string $contractType = 'auto_renewal'): bool {
 		// Check if user has email reminders enabled
 		if (!$this->settingsService->getUserEmailReminder($userId)) {
 			$this->logger->debug('User has email reminders disabled', [
@@ -67,13 +67,13 @@ class EmailService {
 
 		$displayName = $user->getDisplayName() ?: $userId;
 
-		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType, $displayName);
+		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType, $displayName, $contractType);
 	}
 
 	/**
 	 * Send reminder email to an address
 	 */
-	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType, string $displayName): bool {
+	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType, string $displayName, string $contractType = 'auto_renewal'): bool {
 		try {
 			$l = $this->l10nFactory->get(Application::APP_ID);
 			$message = $this->mailer->createMessage();
@@ -90,8 +90,8 @@ class EmailService {
 
 			// Build HTML body
 			$appUrl = $this->urlGenerator->linkToRouteAbsolute('contractmanager.page.index');
-			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName);
-			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName);
+			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
+			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
 
 			$message->setHtmlBody($htmlBody);
 			$message->setPlainBody($plainBody);
@@ -121,7 +121,7 @@ class EmailService {
 	/**
 	 * Build HTML email body
 	 */
-	private function buildHtmlBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l, string $displayName): string {
+	private function buildHtmlBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l, string $displayName, string $contractType = 'auto_renewal'): string {
 		$contractName = htmlspecialchars($contract->getName());
 		$vendor = htmlspecialchars($contract->getVendor());
 		$displayNameEscaped = htmlspecialchars($displayName);
@@ -133,7 +133,11 @@ class EmailService {
 		}
 
 		$greeting = $l->t('Hallo %s,', [$displayNameEscaped]);
-		$deadlineText = $l->t('Wenn du kündigen möchtest, musst du das bis zum %s tun.', [$deadline]);
+		if ($contractType === 'auto_renewal') {
+			$deadlineText = $l->t('Wenn du kündigen möchtest, musst du das bis zum %s tun.', [$deadline]);
+		} else {
+			$deadlineText = $l->t('Der Vertrag endet am %s.', [$deadline]);
+		}
 		$linkText = $l->t('Im ContractManager findest du alle Details:');
 
 		return <<<HTML
@@ -166,7 +170,7 @@ HTML;
 	/**
 	 * Build plain text email body
 	 */
-	private function buildPlainBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l, string $displayName): string {
+	private function buildPlainBody(Contract $contract, string $deadline, string $reminderType, string $appUrl, $l, string $displayName, string $contractType = 'auto_renewal'): string {
 		if ($reminderType === 'first') {
 			$intro = $l->t('dein Vertrag "%1$s" bei %2$s läuft bald ab.', [$contract->getName(), $contract->getVendor()]);
 		} else {
@@ -174,7 +178,11 @@ HTML;
 		}
 
 		$greeting = $l->t('Hallo %s,', [$displayName]);
-		$deadlineText = $l->t('Wenn du kündigen möchtest, musst du das bis zum %s tun.', [$deadline]);
+		if ($contractType === 'auto_renewal') {
+			$deadlineText = $l->t('Wenn du kündigen möchtest, musst du das bis zum %s tun.', [$deadline]);
+		} else {
+			$deadlineText = $l->t('Der Vertrag endet am %s.', [$deadline]);
+		}
 		$linkText = $l->t('Im ContractManager findest du alle Details:');
 
 		return <<<TEXT

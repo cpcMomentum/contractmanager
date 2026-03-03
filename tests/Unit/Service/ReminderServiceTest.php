@@ -316,6 +316,67 @@ class ReminderServiceTest extends TestCase {
 	}
 
 	// ========================================
+	// getReminderDeadline Tests
+	// ========================================
+
+	public function testGetReminderDeadlineForFixedReturnsEndDate(): void {
+		$endDate = new DateTime('2026-12-31');
+		$contract = $this->createContract($endDate, '', 'fixed');
+
+		$result = $this->service->getReminderDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2026-12-31', $result->format('Y-m-d'));
+	}
+
+	public function testGetReminderDeadlineForAutoRenewalReturnsCancellationDeadline(): void {
+		$endDate = new DateTime('+6 months');
+		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
+
+		$result = $this->service->getReminderDeadline($contract);
+
+		// Should be endDate minus 3 months (cancellation deadline)
+		$expected = clone $endDate;
+		$expected->modify('-3 months');
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals($expected->format('Y-m-d'), $result->format('Y-m-d'));
+	}
+
+	public function testShouldSendFirstReminderForFixedWithoutCancellationPeriod(): void {
+		// Fixed contract without cancellation period, end date 5 days from now
+		$endDate = new DateTime();
+		$endDate->modify('+5 days');
+		$contract = $this->createContract($endDate, '', 'fixed');
+		$contract->setId(1);
+
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$result = $this->service->shouldSendFirstReminder($contract);
+
+		// Should return true: we're within 14 days of end date
+		$this->assertTrue($result);
+	}
+
+	public function testGetReminderTypeUsesExpiryPrefixForFixed(): void {
+		$endDate = new DateTime();
+		$endDate->modify('+5 days');
+		$contract = $this->createContract($endDate, '', 'fixed');
+		$contract->setId(1);
+
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+
+		$expectedType = 'expiry_' . $endDate->format('Y-m-d') . '_first';
+
+		$this->reminderSentMapper->expects($this->once())
+			->method('hasBeenSent')
+			->with(1, $expectedType)
+			->willReturn(true);
+
+		$this->service->shouldSendFirstReminder($contract);
+	}
+
+	// ========================================
 	// Helper Methods
 	// ========================================
 

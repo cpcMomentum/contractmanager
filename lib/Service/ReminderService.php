@@ -192,6 +192,20 @@ class ReminderService {
 	}
 
 	/**
+	 * Get the relevant deadline for reminder calculation
+	 *
+	 * For auto_renewal contracts: cancellation deadline (endDate minus cancellationPeriod)
+	 * For fixed contracts: the end date itself (contract simply expires)
+	 */
+	public function getReminderDeadline(Contract $contract): ?DateTime {
+		if ($contract->getContractType() === 'auto_renewal') {
+			return $this->calculateCancellationDeadline($contract);
+		}
+		// Fixed: reminder is tied to the end date directly
+		return $this->getEffectiveEndDate($contract);
+	}
+
+	/**
 	 * Check if the first reminder should be sent for this contract
 	 */
 	public function shouldSendFirstReminder(Contract $contract): bool {
@@ -199,22 +213,22 @@ class ReminderService {
 			return false;
 		}
 
-		$cancellationDeadline = $this->calculateCancellationDeadline($contract);
-		if ($cancellationDeadline === null) {
+		$deadline = $this->getReminderDeadline($contract);
+		if ($deadline === null) {
 			return false;
 		}
 
 		// Get reminder days - contract override or global setting
 		$reminderDays = $contract->getReminderDays() ?? $this->settingsService->getReminderDays1();
 		$now = new DateTime();
-		$reminderDate = clone $cancellationDeadline;
+		$reminderDate = clone $deadline;
 		$reminderDate->modify("-{$reminderDays} days");
 
 		// Check if we're within the first reminder window
 		if ($now < $reminderDate) {
 			return false; // Too early
 		}
-		if ($now > $cancellationDeadline) {
+		if ($now > $deadline) {
 			return false; // Too late, deadline passed
 		}
 
@@ -235,22 +249,22 @@ class ReminderService {
 			return false;
 		}
 
-		$cancellationDeadline = $this->calculateCancellationDeadline($contract);
-		if ($cancellationDeadline === null) {
+		$deadline = $this->getReminderDeadline($contract);
+		if ($deadline === null) {
 			return false;
 		}
 
 		// Final reminder uses the second setting (default: 3 days)
 		$reminderDays = $this->settingsService->getReminderDays2();
 		$now = new DateTime();
-		$reminderDate = clone $cancellationDeadline;
+		$reminderDate = clone $deadline;
 		$reminderDate->modify("-{$reminderDays} days");
 
 		// Check if we're within the final reminder window
 		if ($now < $reminderDate) {
 			return false; // Too early
 		}
-		if ($now > $cancellationDeadline) {
+		if ($now > $deadline) {
 			return false; // Too late, deadline passed
 		}
 
@@ -292,7 +306,8 @@ class ReminderService {
 		// Use effective end date so auto-renewal contracts get new reminders per renewal period
 		$effectiveEnd = $this->getEffectiveEndDate($contract);
 		$endDateStr = $effectiveEnd?->format('Y-m-d') ?? 'unknown';
-		return "cancellation_{$endDateStr}_{$type}";
+		$prefix = $contract->getContractType() === 'auto_renewal' ? 'cancellation' : 'expiry';
+		return "{$prefix}_{$endDateStr}_{$type}";
 	}
 
 	/**
@@ -302,13 +317,14 @@ class ReminderService {
 	 * @param string $reminderType 'first' or 'final'
 	 */
 	private function sendReminders(Contract $contract, string $reminderType): void {
-		$cancellationDeadline = $this->calculateCancellationDeadline($contract);
-		if ($cancellationDeadline === null) {
+		$deadline = $this->getReminderDeadline($contract);
+		if ($deadline === null) {
 			return;
 		}
 
-		$deadlineFormatted = $cancellationDeadline->format('d.m.Y');
+		$deadlineFormatted = $deadline->format('d.m.Y');
 		$userId = $contract->getCreatedBy();
+		$contractType = $contract->getContractType();
 
 		// 1. Send Talk message if configured
 		if ($this->talkService->isTalkAvailable() && $this->talkService->isTalkConfigured()) {
@@ -316,7 +332,8 @@ class ReminderService {
 				$this->talkService->sendReminderMessage(
 					$contract->getName(),
 					$deadlineFormatted,
-					$reminderType
+					$reminderType,
+					$contractType
 				);
 			} catch (\Exception $e) {
 				$this->logger->warning('Failed to send Talk reminder: ' . $e->getMessage(), [
@@ -329,7 +346,7 @@ class ReminderService {
 		// 2. Send E-Mail if user has enabled it
 		if ($this->settingsService->getUserEmailReminder($userId)) {
 			try {
-				$this->emailService->sendReminder($contract, $userId, $deadlineFormatted, $reminderType);
+				$this->emailService->sendReminder($contract, $userId, $deadlineFormatted, $reminderType, $contractType);
 			} catch (\Exception $e) {
 				$this->logger->warning('Failed to send Email reminder: ' . $e->getMessage(), [
 					'app' => Application::APP_ID,
