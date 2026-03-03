@@ -100,8 +100,8 @@ class ContractController extends Controller {
 		string $vendor,
 		string $startDate,
 		string $endDate,
-		string $cancellationPeriod,
 		string $contractType,
+		?string $cancellationPeriod = null,
 		?int $categoryId = null,
 		?string $renewalPeriod = null,
 		?string $cost = null,
@@ -114,6 +114,9 @@ class ContractController extends Controller {
 		?string $notes = null,
 		bool $isPrivate = false,
 	): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 		// Check if user can create contracts
 		if (!$this->permissionService->canEdit($this->userId)) {
 			return new JSONResponse(['error' => 'Keine Berechtigung zum Erstellen'], Http::STATUS_FORBIDDEN);
@@ -132,9 +135,9 @@ class ContractController extends Controller {
 				$vendor,
 				$startDate,
 				$endDate,
-				$cancellationPeriod,
 				$contractType,
 				$this->userId,
+				$cancellationPeriod,
 				$categoryId,
 				$renewalPeriod,
 				$cost,
@@ -165,8 +168,8 @@ class ContractController extends Controller {
 		string $vendor,
 		string $startDate,
 		string $endDate,
-		string $cancellationPeriod,
 		string $contractType,
+		?string $cancellationPeriod = null,
 		?int $categoryId = null,
 		?string $status = null,
 		?string $renewalPeriod = null,
@@ -180,6 +183,9 @@ class ContractController extends Controller {
 		?string $notes = null,
 		?bool $isPrivate = null,
 	): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 		try {
 			$contract = $this->service->find($id);
 			$isAdmin = $this->permissionService->isAdmin($this->userId);
@@ -202,8 +208,8 @@ class ContractController extends Controller {
 				$vendor,
 				$startDate,
 				$endDate,
-				$cancellationPeriod,
 				$contractType,
+				$cancellationPeriod,
 				$categoryId,
 				$status,
 				$renewalPeriod,

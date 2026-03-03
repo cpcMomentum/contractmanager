@@ -80,9 +80,9 @@
 						</div>
 					</div>
 
-					<div class="form-row form-row--cancellation">
+					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
 						<div>
-							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') + ' *' }}</label>
+							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') }}</label>
 							<div class="period-fields">
 								<NcTextField :value.sync="form.cancellationPeriodValue"
 									type="number"
@@ -283,9 +283,12 @@
 					<div class="form-row">
 						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate" :disabled="readOnly">
 							<template #icon>
-								<LockIcon :size="20" />
+								<LockIcon v-if="form.isPrivate" :size="20" />
+								<LockOpenVariantIcon v-else :size="20" />
 							</template>
-							{{ t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)') }}
+							{{ form.isPrivate
+								? t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')
+								: t('contractmanager', 'Öffentlicher Vertrag (für alle Berechtigten sichtbar)') }}
 						</NcCheckboxRadioSwitch>
 					</div>
 				</div>
@@ -326,6 +329,7 @@ import Folder from 'vue-material-design-icons/Folder.vue'
 import File from 'vue-material-design-icons/File.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
+import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
@@ -344,6 +348,7 @@ export default {
 		File,
 		Close,
 		LockIcon,
+		LockOpenVariantIcon,
 	},
 	props: {
 		show: {
@@ -380,9 +385,11 @@ export default {
 				&& this.form.vendor.trim() !== ''
 				&& this.form.startDate !== null
 				&& this.form.endDate !== null
-				&& this.form.cancellationPeriodValue !== ''
-				&& this.form.cancellationPeriodUnit !== null
 				&& this.form.contractType !== null
+				&& (this.form.contractType !== 'auto_renewal' || (
+					this.form.cancellationPeriodValue !== ''
+					&& this.form.cancellationPeriodUnit !== null
+				))
 			)
 		},
 		categoryOptions() {
@@ -428,7 +435,10 @@ export default {
 				return null
 			}
 			const periodString = `${this.form.cancellationPeriodValue} ${this.form.cancellationPeriodUnit}`
-			const deadline = calculateCancellationDeadline(this.form.endDate, periodString)
+			const renewalPeriod = this.form.renewalPeriodValue && this.form.renewalPeriodUnit
+				? `${this.form.renewalPeriodValue} ${this.form.renewalPeriodUnit}`
+				: null
+			const deadline = calculateCancellationDeadline(this.form.endDate, periodString, this.form.contractType, renewalPeriod)
 			return deadline ? formatDate(deadline) : null
 		},
 	},
@@ -558,9 +568,13 @@ export default {
 				status: this.form.contractStatus,
 				startDate: this.form.startDate ? this.formatDateForApi(this.form.startDate) : null,
 				endDate: this.form.endDate ? this.formatDateForApi(this.form.endDate) : null,
-				cancellationPeriod: this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit),
+				cancellationPeriod: this.form.contractType === 'auto_renewal'
+					? this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit)
+					: null,
 				contractType: this.form.contractType,
-				renewalPeriod: this.formatPeriod(this.form.renewalPeriodValue, this.form.renewalPeriodUnit),
+				renewalPeriod: this.form.contractType === 'auto_renewal'
+					? this.formatPeriod(this.form.renewalPeriodValue, this.form.renewalPeriodUnit)
+					: null,
 				cost: this.form.cost || null,
 				currency: this.form.currency,
 				contractFolder: this.form.contractFolder.trim() || null,
@@ -629,7 +643,7 @@ export default {
 					dir: path,
 				})
 			}
-			window.open(filesUrl, '_blank')
+			window.open(filesUrl, '_blank', 'noopener,noreferrer')
 		},
 	},
 }
@@ -661,18 +675,6 @@ export default {
 	&--half {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 16px;
-		align-items: start;
-
-		> div {
-			display: flex;
-			flex-direction: column;
-		}
-	}
-
-	&--thirds {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
 		gap: 16px;
 		align-items: start;
 
@@ -794,4 +796,5 @@ export default {
 	white-space: nowrap;
 	margin-bottom: 2px;
 }
+
 </style>

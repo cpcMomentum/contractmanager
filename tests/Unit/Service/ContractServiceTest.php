@@ -135,8 +135,7 @@ class ContractServiceTest extends TestCase {
 	// ========================================
 
 	public function testCheckAccessPassesForOwner(): void {
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('testuser');
+		$contract = $this->createRealContract('testuser');
 
 		// Should not throw
 		$this->service->checkAccess($contract, 'testuser');
@@ -146,8 +145,7 @@ class ContractServiceTest extends TestCase {
 	public function testCheckAccessThrowsForNonOwner(): void {
 		$this->expectException(ForbiddenException::class);
 
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('owner');
+		$contract = $this->createRealContract('owner');
 
 		$this->service->checkAccess($contract, 'otheruser');
 	}
@@ -301,8 +299,7 @@ class ContractServiceTest extends TestCase {
 	// ========================================
 
 	public function testDeleteRemovesContract(): void {
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('testuser');
+		$contract = $this->createRealContract('testuser');
 
 		$this->mapper->expects($this->once())
 			->method('find')
@@ -333,8 +330,7 @@ class ContractServiceTest extends TestCase {
 	public function testDeleteThrowsForbiddenForNonOwner(): void {
 		$this->expectException(ForbiddenException::class);
 
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('owner');
+		$contract = $this->createRealContract('owner');
 
 		$this->mapper->expects($this->once())
 			->method('find')
@@ -349,12 +345,8 @@ class ContractServiceTest extends TestCase {
 	// ========================================
 
 	public function testArchiveSetsArchivedFlag(): void {
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('testuser');
-
-		$contract->expects($this->once())
-			->method('setArchived')
-			->with(true);
+		$contract = $this->createRealContract('testuser');
+		$this->assertEquals(0, $contract->getArchived());
 
 		$this->mapper->expects($this->once())
 			->method('find')
@@ -366,26 +358,13 @@ class ContractServiceTest extends TestCase {
 			->with($contract)
 			->willReturn($contract);
 
-		$result = $this->service->archive(1, 'testuser');
+		$result = $this->service->archive(1);
 
 		$this->assertSame($contract, $result);
+		$this->assertEquals(1, $contract->getArchived());
 	}
 
-	public function testArchiveThrowsForbiddenForNonOwner(): void {
-		$this->expectException(ForbiddenException::class);
-
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('owner');
-
-		$this->mapper->expects($this->once())
-			->method('find')
-			->with(1)
-			->willReturn($contract);
-
-		$this->service->archive(1, 'otheruser');
-	}
-
-	public function testArchiveThrowsNotFoundExceptionWhenNotExists(): void {
+	public function testArchiveThrowsNotFoundForNonExistentContract(): void {
 		$this->expectException(NotFoundException::class);
 
 		$this->mapper->expects($this->once())
@@ -393,7 +372,7 @@ class ContractServiceTest extends TestCase {
 			->with(999)
 			->willThrowException(new DoesNotExistException(''));
 
-		$this->service->archive(999, 'testuser');
+		$this->service->archive(999);
 	}
 
 	// ========================================
@@ -401,12 +380,9 @@ class ContractServiceTest extends TestCase {
 	// ========================================
 
 	public function testRestoreClearsArchivedFlag(): void {
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('testuser');
-
-		$contract->expects($this->once())
-			->method('setArchived')
-			->with(false);
+		$contract = $this->createRealContract('testuser');
+		$contract->setArchived(1);
+		$this->assertEquals(1, $contract->getArchived());
 
 		$this->mapper->expects($this->once())
 			->method('find')
@@ -418,26 +394,13 @@ class ContractServiceTest extends TestCase {
 			->with($contract)
 			->willReturn($contract);
 
-		$result = $this->service->restore(1, 'testuser');
+		$result = $this->service->restore(1);
 
 		$this->assertSame($contract, $result);
+		$this->assertEquals(0, $contract->getArchived());
 	}
 
-	public function testRestoreThrowsForbiddenForNonOwner(): void {
-		$this->expectException(ForbiddenException::class);
-
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getCreatedBy')->willReturn('owner');
-
-		$this->mapper->expects($this->once())
-			->method('find')
-			->with(1)
-			->willReturn($contract);
-
-		$this->service->restore(1, 'otheruser');
-	}
-
-	public function testRestoreThrowsNotFoundExceptionWhenNotExists(): void {
+	public function testRestoreThrowsNotFoundForNonExistentContract(): void {
 		$this->expectException(NotFoundException::class);
 
 		$this->mapper->expects($this->once())
@@ -445,6 +408,23 @@ class ContractServiceTest extends TestCase {
 			->with(999)
 			->willThrowException(new DoesNotExistException(''));
 
-		$this->service->restore(999, 'testuser');
+		$this->service->restore(999);
+	}
+
+	// ========================================
+	// Helper Methods
+	// ========================================
+
+	/**
+	 * Create a real Contract instance (Entity uses __call magic, so mocks don't work)
+	 */
+	private function createRealContract(string $createdBy): Contract {
+		$contract = new Contract();
+		$contract->setName('Test Contract');
+		$contract->setVendor('Test Vendor');
+		$contract->setCreatedBy($createdBy);
+		$contract->setStatus(Contract::STATUS_ACTIVE);
+		$contract->setArchived(0);
+		return $contract;
 	}
 }

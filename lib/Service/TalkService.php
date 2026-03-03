@@ -78,11 +78,19 @@ class TalkService {
 	 * @param string $reminderType 'first' or 'final'
 	 * @return bool True if message was sent successfully
 	 */
-	public function sendReminderMessage(string $contractName, string $deadline, string $reminderType): bool {
-		if ($reminderType === 'first') {
-			$message = "📋 **Kündigungserinnerung**\n\nDer Vertrag \"$contractName\" muss bis **$deadline** gekündigt werden.\n\n_Dies ist die erste Erinnerung._";
+	public function sendReminderMessage(string $contractName, string $deadline, string $reminderType, string $contractType = 'auto_renewal'): bool {
+		if ($contractType === 'auto_renewal') {
+			if ($reminderType === 'first') {
+				$message = "📋 **Kündigungserinnerung**\n\nDer Vertrag \"$contractName\" muss bis **$deadline** gekündigt werden.\n\n_Dies ist die erste Erinnerung._";
+			} else {
+				$message = "⚠️ **Letzte Kündigungserinnerung**\n\nDer Vertrag \"$contractName\" muss bis **$deadline** gekündigt werden!\n\n_Dies ist die letzte Erinnerung vor Ablauf der Kündigungsfrist._";
+			}
 		} else {
-			$message = "⚠️ **Letzte Kündigungserinnerung**\n\nDer Vertrag \"$contractName\" muss bis **$deadline** gekündigt werden!\n\n_Dies ist die letzte Erinnerung vor Ablauf der Kündigungsfrist._";
+			if ($reminderType === 'first') {
+				$message = "📋 **Vertrag läuft aus**\n\nDer Vertrag \"$contractName\" läuft am **$deadline** aus.\n\n_Dies ist die erste Erinnerung._";
+			} else {
+				$message = "⚠️ **Vertrag läuft aus**\n\nDer Vertrag \"$contractName\" läuft am **$deadline** aus!\n\n_Dies ist die letzte Erinnerung._";
+			}
 		}
 
 		return $this->sendMessage($message);
