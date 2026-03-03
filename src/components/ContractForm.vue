@@ -281,7 +281,7 @@
 				<!-- Privacy -->
 				<div class="form-section">
 					<div class="form-row">
-						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate" :disabled="readOnly" type="switch">
+						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate" :disabled="readOnly">
 							<template #icon>
 								<LockIcon v-if="form.isPrivate" :size="20" />
 								<LockOpenVariantIcon v-else :size="20" />
@@ -802,4 +802,5 @@ export default {
 	white-space: nowrap;
 	margin-bottom: 2px;
 }
+
 </style>
