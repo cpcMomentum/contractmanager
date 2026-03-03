@@ -201,7 +201,7 @@ export default {
 			const filesUrl = generateUrl('/apps/files/?dir={dir}', {
 				dir: this.contract.contractFolder,
 			})
-			window.open(filesUrl, '_blank')
+			window.open(filesUrl, '_blank', 'noopener,noreferrer')
 		},
 		async openDocument() {
 			if (!this.contract.mainDocument) return
@@ -227,7 +227,7 @@ export default {
 				})
 				const match = response.data.match(/<oc:fileid>(\d+)<\/oc:fileid>/)
 				if (match) {
-					window.open(generateUrl('/f/{fileId}', { fileId: match[1] }), '_blank')
+					window.open(generateUrl('/f/{fileId}', { fileId: match[1] }), '_blank', 'noopener,noreferrer')
 					return
 				}
 			} catch (e) {
@@ -236,7 +236,7 @@ export default {
 			// Versuch 3: Ordner oeffnen
 			const path = this.contract.mainDocument
 			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-			window.open(generateUrl('/apps/files/?dir={dir}', { dir: parentDir }), '_blank')
+			window.open(generateUrl('/apps/files/?dir={dir}', { dir: parentDir }), '_blank', 'noopener,noreferrer')
 		},
 	},
 }

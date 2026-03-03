@@ -643,7 +643,7 @@ export default {
 					dir: path,
 				})
 			}
-			window.open(filesUrl, '_blank')
+			window.open(filesUrl, '_blank', 'noopener,noreferrer')
 		},
 	},
 }
@@ -675,18 +675,6 @@ export default {
 	&--half {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 16px;
-		align-items: start;
-
-		> div {
-			display: flex;
-			flex-direction: column;
-		}
-	}
-
-	&--thirds {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
 		gap: 16px;
 		align-items: start;
 

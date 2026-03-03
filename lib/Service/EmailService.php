@@ -89,7 +89,7 @@ class EmailService {
 			$message->setTo([$toEmail]);
 
 			// Build HTML body
-			$appUrl = $this->urlGenerator->linkToRouteAbsolute('contractmanager.page.index');
+			$appUrl = htmlspecialchars($this->urlGenerator->linkToRouteAbsolute('contractmanager.page.index'), ENT_QUOTES, 'UTF-8');
 			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
 			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
 

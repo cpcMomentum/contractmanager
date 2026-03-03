@@ -114,6 +114,9 @@ class ContractController extends Controller {
 		?string $notes = null,
 		bool $isPrivate = false,
 	): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 		// Check if user can create contracts
 		if (!$this->permissionService->canEdit($this->userId)) {
 			return new JSONResponse(['error' => 'Keine Berechtigung zum Erstellen'], Http::STATUS_FORBIDDEN);
@@ -180,6 +183,9 @@ class ContractController extends Controller {
 		?string $notes = null,
 		?bool $isPrivate = null,
 	): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 		try {
 			$contract = $this->service->find($id);
 			$isAdmin = $this->permissionService->isAdmin($this->userId);

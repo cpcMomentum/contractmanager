@@ -47,10 +47,14 @@ class ContractService {
 
 		// Date validation: startDate must be before endDate
 		if (!empty($data['startDate']) && !empty($data['endDate'])) {
-			$start = new DateTime($data['startDate']);
-			$end = new DateTime($data['endDate']);
-			if ($start >= $end) {
-				$errors['endDate'] = 'Enddatum muss nach Startdatum liegen';
+			try {
+				$start = new DateTime($data['startDate']);
+				$end = new DateTime($data['endDate']);
+				if ($start >= $end) {
+					$errors['endDate'] = 'Enddatum muss nach Startdatum liegen';
+				}
+			} catch (\Exception $e) {
+				$errors['startDate'] = 'Ungültiges Datumsformat';
 			}
 		}
 
