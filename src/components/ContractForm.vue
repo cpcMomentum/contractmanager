@@ -281,11 +281,14 @@
 				<!-- Privacy -->
 				<div class="form-section">
 					<div class="form-row">
-						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate" :disabled="readOnly">
+						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate" :disabled="readOnly" type="switch">
 							<template #icon>
-								<LockIcon :size="20" />
+								<LockIcon v-if="form.isPrivate" :size="20" />
+								<LockOpenVariantIcon v-else :size="20" />
 							</template>
-							{{ t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)') }}
+							{{ form.isPrivate
+								? t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')
+								: t('contractmanager', 'Öffentlicher Vertrag (für alle Berechtigten sichtbar)') }}
 						</NcCheckboxRadioSwitch>
 					</div>
 				</div>
@@ -326,6 +329,7 @@ import Folder from 'vue-material-design-icons/Folder.vue'
 import File from 'vue-material-design-icons/File.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
+import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
@@ -344,6 +348,7 @@ export default {
 		File,
 		Close,
 		LockIcon,
+		LockOpenVariantIcon,
 	},
 	props: {
 		show: {
@@ -428,7 +433,10 @@ export default {
 				return null
 			}
 			const periodString = `${this.form.cancellationPeriodValue} ${this.form.cancellationPeriodUnit}`
-			const deadline = calculateCancellationDeadline(this.form.endDate, periodString)
+			const renewalPeriod = this.form.renewalPeriodValue && this.form.renewalPeriodUnit
+				? `${this.form.renewalPeriodValue} ${this.form.renewalPeriodUnit}`
+				: null
+			const deadline = calculateCancellationDeadline(this.form.endDate, periodString, this.form.contractType, renewalPeriod)
 			return deadline ? formatDate(deadline) : null
 		},
 	},

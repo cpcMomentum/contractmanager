@@ -35,6 +35,7 @@ composer.lock
 # Test coverage
 coverage/
 .phpunit.result.cache
+.phpunit.cache/
 
 # Nextcloud
 appinfo/signature.json

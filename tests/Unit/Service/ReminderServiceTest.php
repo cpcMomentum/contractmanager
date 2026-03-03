@@ -12,7 +12,6 @@ use OCA\ContractManager\Service\EmailService;
 use OCA\ContractManager\Service\ReminderService;
 use OCA\ContractManager\Service\SettingsService;
 use OCA\ContractManager\Service\TalkService;
-use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -20,7 +19,6 @@ class ReminderServiceTest extends TestCase {
 
 	private ContractMapper $contractMapper;
 	private ReminderSentMapper $reminderSentMapper;
-	private INotificationManager $notificationManager;
 	private SettingsService $settingsService;
 	private TalkService $talkService;
 	private EmailService $emailService;
@@ -32,7 +30,6 @@ class ReminderServiceTest extends TestCase {
 
 		$this->contractMapper = $this->createMock(ContractMapper::class);
 		$this->reminderSentMapper = $this->createMock(ReminderSentMapper::class);
-		$this->notificationManager = $this->createMock(INotificationManager::class);
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->talkService = $this->createMock(TalkService::class);
 		$this->emailService = $this->createMock(EmailService::class);
@@ -41,7 +38,6 @@ class ReminderServiceTest extends TestCase {
 		$this->service = new ReminderService(
 			$this->contractMapper,
 			$this->reminderSentMapper,
-			$this->notificationManager,
 			$this->settingsService,
 			$this->talkService,
 			$this->emailService,
@@ -139,9 +135,8 @@ class ReminderServiceTest extends TestCase {
 
 	public function testShouldSendFirstReminderReturnsFalseForInactiveContract(): void {
 		$contract = $this->createContract(new DateTime('2026-06-30'), '1 month');
-		$contract->method('getStatus')->willReturn(Contract::STATUS_CANCELLED);
-		$contract->method('getReminderEnabled')->willReturn(true);
-		$contract->method('getArchived')->willReturn(false);
+		$contract->setStatus(Contract::STATUS_CANCELLED);
+		$contract->setReminderEnabled(1);
 
 		$result = $this->service->shouldSendFirstReminder($contract);
 
@@ -150,9 +145,8 @@ class ReminderServiceTest extends TestCase {
 
 	public function testShouldSendFirstReminderReturnsFalseWhenReminderDisabled(): void {
 		$contract = $this->createContract(new DateTime('2026-06-30'), '1 month');
-		$contract->method('getStatus')->willReturn(Contract::STATUS_ACTIVE);
-		$contract->method('getReminderEnabled')->willReturn(false);
-		$contract->method('getArchived')->willReturn(false);
+		$contract->setStatus(Contract::STATUS_ACTIVE);
+		$contract->setReminderEnabled(0);
 
 		$result = $this->service->shouldSendFirstReminder($contract);
 
@@ -161,9 +155,9 @@ class ReminderServiceTest extends TestCase {
 
 	public function testShouldSendFirstReminderReturnsFalseForArchivedContract(): void {
 		$contract = $this->createContract(new DateTime('2026-06-30'), '1 month');
-		$contract->method('getStatus')->willReturn(Contract::STATUS_ACTIVE);
-		$contract->method('getReminderEnabled')->willReturn(true);
-		$contract->method('getArchived')->willReturn(true);
+		$contract->setStatus(Contract::STATUS_ACTIVE);
+		$contract->setReminderEnabled(1);
+		$contract->setArchived(1);
 
 		$result = $this->service->shouldSendFirstReminder($contract);
 
@@ -171,15 +165,13 @@ class ReminderServiceTest extends TestCase {
 	}
 
 	public function testShouldSendFirstReminderReturnsFalseWhenAlreadySent(): void {
-		// Set up contract with deadline in the past (within reminder window)
 		$endDate = new DateTime();
 		$endDate->modify('+30 days');
 		$contract = $this->createContract($endDate, '1 month');
-		$contract->method('getStatus')->willReturn(Contract::STATUS_ACTIVE);
-		$contract->method('getReminderEnabled')->willReturn(true);
-		$contract->method('getArchived')->willReturn(false);
-		$contract->method('getReminderDays')->willReturn(null);
-		$contract->method('getId')->willReturn(1);
+		$contract->setId(1);
+		$contract->setStatus(Contract::STATUS_ACTIVE);
+		$contract->setReminderEnabled(1);
+		$contract->setArchived(0);
 
 		$this->settingsService->method('getReminderDays1')->willReturn(14);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(true);
@@ -195,9 +187,8 @@ class ReminderServiceTest extends TestCase {
 
 	public function testShouldSendFinalReminderReturnsFalseForInactiveContract(): void {
 		$contract = $this->createContract(new DateTime('2026-06-30'), '1 month');
-		$contract->method('getStatus')->willReturn(Contract::STATUS_CANCELLED);
-		$contract->method('getReminderEnabled')->willReturn(true);
-		$contract->method('getArchived')->willReturn(false);
+		$contract->setStatus(Contract::STATUS_CANCELLED);
+		$contract->setReminderEnabled(1);
 
 		$result = $this->service->shouldSendFinalReminder($contract);
 
@@ -208,10 +199,10 @@ class ReminderServiceTest extends TestCase {
 		$endDate = new DateTime();
 		$endDate->modify('+10 days');
 		$contract = $this->createContract($endDate, '14 days');
-		$contract->method('getStatus')->willReturn(Contract::STATUS_ACTIVE);
-		$contract->method('getReminderEnabled')->willReturn(true);
-		$contract->method('getArchived')->willReturn(false);
-		$contract->method('getId')->willReturn(1);
+		$contract->setId(1);
+		$contract->setStatus(Contract::STATUS_ACTIVE);
+		$contract->setReminderEnabled(1);
+		$contract->setArchived(0);
 
 		$this->settingsService->method('getReminderDays2')->willReturn(3);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(true);
@@ -227,9 +218,8 @@ class ReminderServiceTest extends TestCase {
 
 	public function testShouldSendReminderCombinesFirstAndFinal(): void {
 		$contract = $this->createContract(new DateTime('2026-06-30'), '1 month');
-		$contract->method('getStatus')->willReturn(Contract::STATUS_CANCELLED);
-		$contract->method('getReminderEnabled')->willReturn(true);
-		$contract->method('getArchived')->willReturn(false);
+		$contract->setStatus(Contract::STATUS_CANCELLED);
+		$contract->setReminderEnabled(1);
 
 		$result = $this->service->shouldSendReminder($contract);
 
@@ -237,16 +227,125 @@ class ReminderServiceTest extends TestCase {
 	}
 
 	// ========================================
+	// getEffectiveEndDate Tests
+	// ========================================
+
+	public function testGetEffectiveEndDateForFixedContract(): void {
+		$endDate = new DateTime('2026-06-30');
+		$contract = $this->createContract($endDate, '3 months', 'fixed');
+
+		$result = $this->service->getEffectiveEndDate($contract);
+
+		$this->assertEquals('2026-06-30', $result->format('Y-m-d'));
+	}
+
+	public function testGetEffectiveEndDateForAutoRenewalInFuture(): void {
+		$endDate = new DateTime('+6 months');
+		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
+
+		$result = $this->service->getEffectiveEndDate($contract);
+
+		$this->assertEquals($endDate->format('Y-m-d'), $result->format('Y-m-d'));
+	}
+
+	public function testGetEffectiveEndDateForAutoRenewalInPast(): void {
+		// Contract started 2021-08-17, ends 2022-08-17, renews every 12 months
+		$endDate = new DateTime('2022-08-17');
+		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
+
+		$result = $this->service->getEffectiveEndDate($contract);
+
+		// Must be in the future
+		$this->assertGreaterThan(new DateTime(), $result);
+		// Must be on the 17th of August
+		$this->assertEquals('08-17', $result->format('m-d'));
+	}
+
+	public function testGetEffectiveEndDateWithoutRenewalPeriod(): void {
+		$endDate = new DateTime('2024-01-01');
+		$contract = $this->createContract($endDate, '1 month', 'auto_renewal');
+
+		$result = $this->service->getEffectiveEndDate($contract);
+
+		// Without renewal period, falls back to endDate
+		$this->assertEquals('2024-01-01', $result->format('Y-m-d'));
+	}
+
+	public function testCalculateCancellationDeadlineAutoRenewal(): void {
+		// End date in the past, auto_renewal with 12 months, cancellation 3 months
+		$endDate = new DateTime('2022-08-17');
+		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		// Deadline must be based on effective end date minus 3 months
+		$effectiveEnd = $this->service->getEffectiveEndDate($contract);
+		$expected = clone $effectiveEnd;
+		$expected->modify('-3 month');
+		$this->assertEquals($expected->format('Y-m-d'), $result->format('Y-m-d'));
+	}
+
+	public function testGetReminderTypeUsesEffectiveEndDate(): void {
+		// Construct a scenario where we're in the reminder window:
+		// effectiveEnd ~10 days from now, cancellationPeriod = 3 days -> deadline ~7 days from now
+		// reminderDays = 14 -> reminderDate = deadline - 14 days = ~7 days ago -> we're in window
+		$now = new DateTime();
+		$effectiveTarget = clone $now;
+		$effectiveTarget->modify('+10 days');
+
+		// Set endDate to exactly 1 month before the target, so +1 month renewal lands on target
+		$pastEnd = clone $effectiveTarget;
+		$pastEnd->modify('-1 month');
+
+		$contract = $this->createContract($pastEnd, '3 days', 'auto_renewal', '1 month');
+		$contract->setId(1);
+
+		$effectiveEnd = $this->service->getEffectiveEndDate($contract);
+		$expectedType = 'cancellation_' . $effectiveEnd->format('Y-m-d') . '_first';
+
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+
+		// Verify hasBeenSent is called with the effective date in the reminder type
+		$this->reminderSentMapper->expects($this->once())
+			->method('hasBeenSent')
+			->with(1, $expectedType)
+			->willReturn(true);
+
+		$this->service->shouldSendFirstReminder($contract);
+	}
+
+	// ========================================
 	// Helper Methods
 	// ========================================
 
 	/**
-	 * Create a mock contract with the given end date and cancellation period
+	 * Create a real Contract instance with the given properties.
+	 * Uses real Entity objects instead of mocks because Nextcloud's Entity
+	 * uses __call magic for getters/setters which PHPUnit cannot mock.
 	 */
-	private function createContract(?DateTime $endDate, string $cancellationPeriod): Contract {
-		$contract = $this->createMock(Contract::class);
-		$contract->method('getEndDate')->willReturn($endDate);
-		$contract->method('getCancellationPeriod')->willReturn($cancellationPeriod);
+	private function createContract(
+		?DateTime $endDate,
+		string $cancellationPeriod,
+		string $contractType = 'fixed',
+		?string $renewalPeriod = null
+	): Contract {
+		$contract = new Contract();
+		if ($endDate !== null) {
+			$contract->setEndDate($endDate);
+		}
+		$contract->setCancellationPeriod($cancellationPeriod);
+		$contract->setContractType($contractType);
+		if ($renewalPeriod !== null) {
+			$contract->setRenewalPeriod($renewalPeriod);
+		}
+		// Set sensible defaults
+		$contract->setName('Test Contract');
+		$contract->setVendor('Test Vendor');
+		$contract->setCreatedBy('testuser');
+		$contract->setStatus(Contract::STATUS_ACTIVE);
+		$contract->setReminderEnabled(1);
+		$contract->setArchived(0);
 		return $contract;
 	}
 }

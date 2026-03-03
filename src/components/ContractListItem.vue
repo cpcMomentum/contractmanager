@@ -15,7 +15,7 @@
 				<span>{{ contract.vendor }}</span>
 				<span v-if="contract.cost">{{ formatCost(contract.cost, contract.currency) }}</span>
 				<span>|</span>
-				<span>{{ t('contractmanager', 'Endet:') }} {{ formatDate(contract.endDate) }}</span>
+				<span>{{ t('contractmanager', 'Endet:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
 				<span v-if="cancellationDeadline">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
 				<span v-if="contract.renewalPeriod">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
 				<span v-if="showCreator && contract.createdBy">| {{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
@@ -113,7 +113,7 @@ import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import StatusBadge from './StatusBadge.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
-import { formatPeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { formatPeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
 export default {
@@ -155,7 +155,10 @@ export default {
 			if (this.contract.status !== 'active') {
 				return null
 			}
-			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod)
+			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod, this.contract.contractType, this.contract.renewalPeriod)
+		},
+		effectiveEndDate() {
+			return getEffectiveEndDate(this.contract.endDate, this.contract.contractType, this.contract.renewalPeriod)
 		},
 	},
 	methods: {

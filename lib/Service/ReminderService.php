@@ -88,11 +88,64 @@ class ReminderService {
 	}
 
 	/**
+	 * Get the effective end date for a contract, accounting for auto-renewal
+	 *
+	 * For auto_renewal contracts with an end date in the past, this method
+	 * repeatedly adds the renewal period until the date is in the future.
+	 *
+	 * @param Contract $contract The contract
+	 * @return DateTime|null The effective end date, or null if no end date set
+	 */
+	public function getEffectiveEndDate(Contract $contract): ?DateTime {
+		$endDate = $contract->getEndDate();
+		if ($endDate === null) {
+			return null;
+		}
+
+		$contractType = $contract->getContractType();
+		$renewalPeriod = $contract->getRenewalPeriod();
+
+		if ($contractType !== 'auto_renewal' || empty($renewalPeriod)) {
+			return clone $endDate;
+		}
+
+		$now = new DateTime();
+		$effective = clone $endDate;
+
+		if ($effective > $now) {
+			return $effective;
+		}
+
+		// Parse renewal period (e.g., "12 months", "1 year")
+		if (!preg_match('/^(\d+)\s+(day|days|week|weeks|month|months|year|years)$/i', trim($renewalPeriod), $matches)) {
+			return clone $endDate;
+		}
+
+		$value = (int) $matches[1];
+		$unit = strtolower(rtrim($matches[2], 's'));
+
+		// Add renewal periods until we reach a future date (max 100 iterations as safety)
+		for ($i = 0; $i < 100 && $effective <= $now; $i++) {
+			if ($unit === 'month') {
+				$effective->modify("+{$value} month");
+			} elseif ($unit === 'year') {
+				$effective->modify("+{$value} year");
+			} elseif ($unit === 'week') {
+				$effective->modify("+{$value} week");
+			} else {
+				$effective->modify("+{$value} day");
+			}
+		}
+
+		return $effective;
+	}
+
+	/**
 	 * Calculate the cancellation deadline based on end date and cancellation period
 	 * Uses conservative month-end calculation (1 month before March 31 = Feb 28, not Feb 31)
 	 */
 	public function calculateCancellationDeadline(Contract $contract): ?DateTime {
-		$endDate = $contract->getEndDate();
+		$endDate = $this->getEffectiveEndDate($contract);
 		$cancellationPeriod = $contract->getCancellationPeriod();
 
 		if ($endDate === null || empty($cancellationPeriod)) {
@@ -236,8 +289,9 @@ class ReminderService {
 	 * @return string Unique identifier
 	 */
 	private function getReminderType(Contract $contract, string $type): string {
-		// Include end date in type so if contract is renewed, a new reminder can be sent
-		$endDateStr = $contract->getEndDate()?->format('Y-m-d') ?? 'unknown';
+		// Use effective end date so auto-renewal contracts get new reminders per renewal period
+		$effectiveEnd = $this->getEffectiveEndDate($contract);
+		$endDateStr = $effectiveEnd?->format('Y-m-d') ?? 'unknown';
 		return "cancellation_{$endDateStr}_{$type}";
 	}
 
