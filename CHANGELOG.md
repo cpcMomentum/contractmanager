@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-03
+
+### Added
+- Support for fixed-term contracts without cancellation period (#28)
+- Dynamic reminders: cancellation deadline for auto_renewal, expiry date for fixed contracts (#27)
+- Code review documentation (docs/20260303_code-review.md)
+
+### Changed
+- Settings link moved to navigation footer (#1)
+- Improved privacy toggle UX (#30)
+- Cancellation period field only shown for auto_renewal contracts
+- Email and Talk reminder messages now differentiate by contract type
+
+### Security
+- Added userId null-check in ContractController (H1)
+- Added try-catch for DateTime parsing in validation (H2)
+- Added noopener/noreferrer to all window.open() calls (M4)
+- Added htmlspecialchars for email URLs (N1)
+
+### Removed
+- Unused CSS class .form-row--thirds (N3)
+
 ## [0.2.0] - 2026-02-27
 
 ### Added
@@ -102,7 +124,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.3...v0.1.4
