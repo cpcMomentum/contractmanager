@@ -96,16 +96,54 @@ export function formatPeriod(periodString) {
 }
 
 /**
+ * Get the effective end date for a contract, accounting for auto-renewal.
+ * For auto_renewal contracts with an end date in the past, repeatedly adds
+ * the renewal period until the date is in the future.
+ *
+ * @param {string|Date} endDate - Contract end date
+ * @param {string} contractType - 'fixed' or 'auto_renewal'
+ * @param {string} renewalPeriod - e.g. "12 months"
+ * @returns {Date|null} Effective end date or null
+ */
+export function getEffectiveEndDate(endDate, contractType, renewalPeriod) {
+	if (!endDate) return null
+
+	const end = endDate instanceof Date ? new Date(endDate) : new Date(endDate)
+	if (isNaN(end.getTime())) return null
+
+	if (contractType !== 'auto_renewal' || !renewalPeriod) {
+		return end
+	}
+
+	const now = new Date()
+	if (end > now) {
+		return end
+	}
+
+	// Add renewal periods until we reach a future date (max 100 iterations)
+	let effective = end
+	for (let i = 0; i < 100 && effective <= now; i++) {
+		const next = addPeriod(effective, renewalPeriod)
+		if (!next) return end
+		effective = next
+	}
+
+	return effective
+}
+
+/**
  * Calculates the cancellation deadline for a contract
  * @param {string|Date} endDate - Contract end date
  * @param {string} cancellationPeriod - e.g. "3 months"
+ * @param {string} [contractType] - 'fixed' or 'auto_renewal'
+ * @param {string} [renewalPeriod] - e.g. "12 months"
  * @returns {Date|null} Cancellation deadline or null
  */
-export function calculateCancellationDeadline(endDate, cancellationPeriod) {
+export function calculateCancellationDeadline(endDate, cancellationPeriod, contractType, renewalPeriod) {
 	if (!endDate || !cancellationPeriod) return null
 
-	const end = endDate instanceof Date ? endDate : new Date(endDate)
-	if (isNaN(end.getTime())) return null
+	const effectiveEnd = getEffectiveEndDate(endDate, contractType, renewalPeriod)
+	if (!effectiveEnd || isNaN(effectiveEnd.getTime())) return null
 
-	return subtractPeriod(end, cancellationPeriod)
+	return subtractPeriod(effectiveEnd, cancellationPeriod)
 }

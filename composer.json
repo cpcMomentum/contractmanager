@@ -20,6 +20,11 @@
             "OCA\\ContractManager\\": "lib/"
         }
     },
+    "autoload-dev": {
+        "classmap": [
+            "vendor/nextcloud/ocp/OCP"
+        ]
+    },
     "config": {
         "platform": {
             "php": "8.2"

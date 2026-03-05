@@ -15,9 +15,10 @@
 				<span>{{ contract.vendor }}</span>
 				<span v-if="contract.cost">{{ formatCost(contract.cost, contract.currency) }}</span>
 				<span>|</span>
-				<span>{{ t('contractmanager', 'Endet:') }} {{ formatDate(contract.endDate) }}</span>
-				<span v-if="cancellationDeadline">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
-				<span v-if="contract.renewalPeriod">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
+				<span v-if="contract.contractType === 'auto_renewal'">{{ t('contractmanager', 'Endet:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
+				<span v-else>{{ t('contractmanager', 'Läuft aus am:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
+				<span v-if="cancellationDeadline && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
+				<span v-if="contract.renewalPeriod && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
 				<span v-if="showCreator && contract.createdBy">| {{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
 			</div>
 		</div>
@@ -113,7 +114,7 @@ import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import StatusBadge from './StatusBadge.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
-import { formatPeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { formatPeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
 export default {
@@ -155,7 +156,10 @@ export default {
 			if (this.contract.status !== 'active') {
 				return null
 			}
-			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod)
+			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod, this.contract.contractType, this.contract.renewalPeriod)
+		},
+		effectiveEndDate() {
+			return getEffectiveEndDate(this.contract.endDate, this.contract.contractType, this.contract.renewalPeriod)
 		},
 	},
 	methods: {
@@ -197,7 +201,7 @@ export default {
 			const filesUrl = generateUrl('/apps/files/?dir={dir}', {
 				dir: this.contract.contractFolder,
 			})
-			window.open(filesUrl, '_blank')
+			window.open(filesUrl, '_blank', 'noopener,noreferrer')
 		},
 		async openDocument() {
 			if (!this.contract.mainDocument) return
@@ -223,7 +227,7 @@ export default {
 				})
 				const match = response.data.match(/<oc:fileid>(\d+)<\/oc:fileid>/)
 				if (match) {
-					window.open(generateUrl('/f/{fileId}', { fileId: match[1] }), '_blank')
+					window.open(generateUrl('/f/{fileId}', { fileId: match[1] }), '_blank', 'noopener,noreferrer')
 					return
 				}
 			} catch (e) {
@@ -232,7 +236,7 @@ export default {
 			// Versuch 3: Ordner oeffnen
 			const path = this.contract.mainDocument
 			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-			window.open(generateUrl('/apps/files/?dir={dir}', { dir: parentDir }), '_blank')
+			window.open(generateUrl('/apps/files/?dir={dir}', { dir: parentDir }), '_blank', 'noopener,noreferrer')
 		},
 	},
 }

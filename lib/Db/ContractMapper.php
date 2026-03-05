@@ -225,8 +225,6 @@ class ContractMapper extends QBMapper {
             ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
             ->andWhere($qb->expr()->isNull('deleted_at'))
             ->andWhere($qb->expr()->isNotNull('end_date'))
-            ->andWhere($qb->expr()->isNotNull('cancellation_period'))
-            ->andWhere($qb->expr()->neq('cancellation_period', $qb->createNamedParameter('')))
             ->orderBy('end_date', 'ASC');
 
         return $this->findEntities($qb);
