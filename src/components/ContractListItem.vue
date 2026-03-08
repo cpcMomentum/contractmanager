@@ -98,6 +98,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { getCurrentUser } from '@nextcloud/auth'
 import { mapGetters, mapActions } from 'vuex'
 import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
 import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
@@ -214,7 +215,7 @@ export default {
 			console.debug('[ContractManager] OCA.Viewer not available, falling back to /f/{fileId}')
 			// Versuch 2: File-ID holen und /f/{id} oeffnen (neuer Tab)
 			try {
-				const user = OC.currentUser
+				const user = getCurrentUser()?.uid
 				const davPath = `/remote.php/dav/files/${user}${this.contract.mainDocument}`
 				const response = await axios({
 					method: 'PROPFIND',
@@ -225,9 +226,11 @@ export default {
 							<d:prop><oc:fileid/></d:prop>
 						</d:propfind>`,
 				})
-				const match = response.data.match(/<oc:fileid>(\d+)<\/oc:fileid>/)
-				if (match) {
-					window.open(generateUrl('/f/{fileId}', { fileId: match[1] }), '_blank', 'noopener,noreferrer')
+				const parser = new DOMParser()
+				const xml = parser.parseFromString(response.data, 'application/xml')
+				const fileidNode = xml.getElementsByTagNameNS('http://owncloud.org/ns', 'fileid')[0]
+				if (fileidNode?.textContent) {
+					window.open(generateUrl('/f/{fileId}', { fileId: fileidNode.textContent }), '_blank', 'noopener,noreferrer')
 					return
 				}
 			} catch (e) {

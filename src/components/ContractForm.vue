@@ -80,6 +80,8 @@
 						</div>
 					</div>
 
+					<p v-if="dateError" class="date-error">{{ dateError }}</p>
+
 					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') }}</label>
@@ -385,12 +387,19 @@ export default {
 				&& this.form.vendor.trim() !== ''
 				&& this.form.startDate !== null
 				&& this.form.endDate !== null
+				&& !this.dateError
 				&& this.form.contractType !== null
 				&& (this.form.contractType !== 'auto_renewal' || (
 					this.form.cancellationPeriodValue !== ''
 					&& this.form.cancellationPeriodUnit !== null
 				))
 			)
+		},
+		dateError() {
+			if (this.form.startDate && this.form.endDate && this.form.startDate >= this.form.endDate) {
+				return t('contractmanager', 'Enddatum muss nach dem Startdatum liegen')
+			}
+			return null
 		},
 		categoryOptions() {
 			return [
@@ -785,6 +794,12 @@ export default {
 .no-document-text {
 	color: var(--color-text-maxcontrast);
 	line-height: 44px;
+}
+
+.date-error {
+	color: var(--color-error);
+	font-size: 13px;
+	margin: -8px 0 8px;
 }
 
 .selected-path {

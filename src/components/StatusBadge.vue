@@ -39,13 +39,13 @@ export default {
 	white-space: nowrap;
 
 	&.status-active {
-		background-color: #dcfce7;
-		color: #166534;
+		background-color: var(--color-success-hover, #dcfce7);
+		color: var(--color-success-text, #166534);
 	}
 
 	&.status-cancelled {
-		background-color: #fef3c7;
-		color: #92400e;
+		background-color: var(--color-warning-hover, #fef3c7);
+		color: var(--color-warning-text, #92400e);
 	}
 
 	&.status-ended {
