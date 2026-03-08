@@ -40,5 +40,9 @@ return [
         ['name' => 'settings#getPermissions', 'url' => '/api/settings/permissions', 'verb' => 'GET'],
         ['name' => 'settings#updatePermissions', 'url' => '/api/settings/permissions', 'verb' => 'PUT'],
         ['name' => 'settings#searchPrincipals', 'url' => '/api/settings/search-principals', 'verb' => 'GET'],
+
+        // AI Extraction API routes
+        ['name' => 'extraction#status', 'url' => '/api/extraction/status', 'verb' => 'GET'],
+        ['name' => 'extraction#extract', 'url' => '/api/extraction/extract', 'verb' => 'POST'],
     ]
 ];

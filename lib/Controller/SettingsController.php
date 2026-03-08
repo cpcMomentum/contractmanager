@@ -99,6 +99,10 @@ class SettingsController extends Controller {
 			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
+			'aiProvider' => $this->settingsService->getAiProvider(),
+			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? '••••••••' : '',
+			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
+			'aiModel' => $this->settingsService->getAiModel(),
 		]);
 	}
 
@@ -110,6 +114,10 @@ class SettingsController extends Controller {
 		?string $talkChatToken = null,
 		?int $reminderDays1 = null,
 		?int $reminderDays2 = null,
+		?string $aiProvider = null,
+		?string $aiApiKey = null,
+		?string $aiApiUrl = null,
+		?string $aiModel = null,
 	): JSONResponse {
 		if ($talkChatToken !== null) {
 			$this->settingsService->setTalkChatToken($talkChatToken ?: null);
@@ -123,10 +131,31 @@ class SettingsController extends Controller {
 			$this->settingsService->setReminderDays2($reminderDays2);
 		}
 
+		if ($aiProvider !== null) {
+			$this->settingsService->setAiProvider($aiProvider);
+		}
+
+		// Only update API key if it's not the masked placeholder
+		if ($aiApiKey !== null && $aiApiKey !== '••••••••') {
+			$this->settingsService->setAiApiKey($aiApiKey);
+		}
+
+		if ($aiApiUrl !== null) {
+			$this->settingsService->setAiApiUrl($aiApiUrl);
+		}
+
+		if ($aiModel !== null) {
+			$this->settingsService->setAiModel($aiModel);
+		}
+
 		return new JSONResponse([
 			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
+			'aiProvider' => $this->settingsService->getAiProvider(),
+			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? '••••••••' : '',
+			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
+			'aiModel' => $this->settingsService->getAiModel(),
 		]);
 	}
 
