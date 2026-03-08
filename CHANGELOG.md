@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-03-08
+
+### Fixed
+- Fix app update error by repackaging with correct code signature (#38)
+
 ## [0.2.2] - 2026-03-06
 
 ### Fixed
@@ -129,7 +134,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.5...v0.2.0
