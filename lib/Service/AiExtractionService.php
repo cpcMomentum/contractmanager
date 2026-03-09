@@ -72,16 +72,30 @@ class AiExtractionService {
 	private const SYSTEM_PROMPT = <<<'PROMPT'
 You are a contract data extraction assistant. Extract structured data from the provided contract document.
 
+You MUST respond with a JSON object using EXACTLY these field names:
+{
+  "name": "Contract title or name (string, required)",
+  "vendor": "Vendor, partner, or contracting party name (string, required)",
+  "startDate": "YYYY-MM-DD or null",
+  "endDate": "YYYY-MM-DD or null",
+  "contractType": "fixed" or "auto_renewal",
+  "cancellationPeriod": "e.g. 3 months, 6 weeks, or null",
+  "renewalPeriod": "e.g. 12 months, or null",
+  "cost": "decimal string without currency, e.g. 499.00, or null",
+  "currency": "EUR, USD, GBP, or CHF",
+  "costInterval": "monthly", "yearly", "one_time", or null,
+  "confidence": 0.0 to 1.0,
+  "extractionNotes": "notes about ambiguities or null"
+}
+
 Rules:
-- Extract all available fields from the document
-- Dates must be in YYYY-MM-DD format
-- For cancellationPeriod and renewalPeriod, use format like "3 months", "6 weeks", "1 year"
-- cost must be a decimal string without currency symbol, e.g. "29.99"
+- Use ONLY the field names listed above. Do NOT invent new fields.
+- "name" = the contract title or a descriptive name derived from the document
+- "vendor" = the other contracting party (provider, supplier, partner)
 - If the contract auto-renews, set contractType to "auto_renewal", otherwise "fixed"
-- Set confidence between 0.0 and 1.0 based on how clearly the data was present
-- Use extractionNotes to flag any ambiguities or assumptions
 - Documents may be in German or other languages - extract data regardless of language
 - If a field cannot be determined, set it to null
+- Respond with ONLY the JSON object, no markdown formatting
 PROMPT;
 
 	public function __construct(
