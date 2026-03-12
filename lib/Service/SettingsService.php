@@ -24,6 +24,21 @@ class SettingsService {
 	private const KEY_SORT_DIRECTION = 'sort_direction';
 	private const KEY_FILTERS = 'filters';
 
+	private const KEY_AI_PROVIDER = 'ai_provider';
+	private const KEY_AI_API_KEY = 'ai_api_key';
+	private const KEY_AI_API_URL = 'ai_api_url';
+	private const KEY_AI_MODEL = 'ai_model';
+
+	private const ALLOWED_AI_PROVIDERS = ['claude', 'openai_compatible'];
+	private const DEFAULT_AI_URLS = [
+		'claude' => 'https://api.anthropic.com',
+		'openai_compatible' => 'https://api.openai.com/v1',
+	];
+	private const DEFAULT_AI_MODELS = [
+		'claude' => 'claude-sonnet-4-5-20250514',
+		'openai_compatible' => 'gpt-4o',
+	];
+
 	private const DEFAULT_REMINDER_DAYS_1 = 14;
 	private const DEFAULT_REMINDER_DAYS_2 = 3;
 
@@ -250,6 +265,75 @@ class SettingsService {
 			self::KEY_FILTERS,
 			json_encode($validated)
 		);
+	}
+
+	// ========================================
+	// AI Settings (Admin)
+	// ========================================
+
+	public function getAiProvider(): string {
+		return $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_AI_PROVIDER,
+			''
+		);
+	}
+
+	public function setAiProvider(string $provider): void {
+		if ($provider !== '' && !in_array($provider, self::ALLOWED_AI_PROVIDERS, true)) {
+			return;
+		}
+		$this->config->setAppValue(Application::APP_ID, self::KEY_AI_PROVIDER, $provider);
+	}
+
+	public function getAiApiKey(): string {
+		return $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_AI_API_KEY,
+			''
+		);
+	}
+
+	public function setAiApiKey(string $key): void {
+		$this->config->setAppValue(Application::APP_ID, self::KEY_AI_API_KEY, $key);
+	}
+
+	public function getAiApiUrl(): string {
+		$url = $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_AI_API_URL,
+			''
+		);
+		if ($url !== '') {
+			return $url;
+		}
+		$provider = $this->getAiProvider();
+		return self::DEFAULT_AI_URLS[$provider] ?? '';
+	}
+
+	public function setAiApiUrl(string $url): void {
+		$this->config->setAppValue(Application::APP_ID, self::KEY_AI_API_URL, $url);
+	}
+
+	public function getAiModel(): string {
+		$model = $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_AI_MODEL,
+			''
+		);
+		if ($model !== '') {
+			return $model;
+		}
+		$provider = $this->getAiProvider();
+		return self::DEFAULT_AI_MODELS[$provider] ?? '';
+	}
+
+	public function setAiModel(string $model): void {
+		$this->config->setAppValue(Application::APP_ID, self::KEY_AI_MODEL, $model);
+	}
+
+	public function isAiConfigured(): bool {
+		return $this->getAiProvider() !== '' && $this->getAiApiKey() !== '';
 	}
 
 }

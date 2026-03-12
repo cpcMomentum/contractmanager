@@ -24,6 +24,7 @@
     "author": "cpcMomentum GmbH",
     "license": "AGPL-3.0-or-later",
     "dependencies": {
+        "@nextcloud/auth": "^2.5.3",
         "@nextcloud/axios": "^2.5.0",
         "@nextcloud/dialogs": "^5.3.0",
         "@nextcloud/initial-state": "^2.2.0",
