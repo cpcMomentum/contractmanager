@@ -99,7 +99,9 @@
 						</div>
 					</div>
 
-					<p v-if="dateError" class="date-error">{{ dateError }}</p>
+					<NcNoteCard v-if="dateError" type="error">
+						{{ dateError }}
+					</NcNoteCard>
 
 					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
 						<div>
@@ -344,6 +346,7 @@ import NcTextArea from '@nextcloud/vue/dist/Components/NcTextArea.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import { mapGetters } from 'vuex'
 import Folder from 'vue-material-design-icons/Folder.vue'
@@ -352,6 +355,8 @@ import Close from 'vue-material-design-icons/Close.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
 import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
+import axios from '@nextcloud/axios'
+import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
@@ -369,6 +374,7 @@ export default {
 		NcSelect,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
+		NcNoteCard,
 		Folder,
 		File,
 		Close,
@@ -636,7 +642,7 @@ export default {
 			try {
 				const picker = getFilePickerBuilder(t('contractmanager', 'Vertragsordner wählen'))
 					.setMultiSelect(false)
-					.setType(1) // Directories only
+					.setType(1)
 					.allowDirectories()
 					.build()
 				const path = await picker.pick()
@@ -652,7 +658,7 @@ export default {
 			try {
 				const picker = getFilePickerBuilder(t('contractmanager', 'Vertragsdatei wählen'))
 					.setMultiSelect(false)
-					.setType(1) // Files
+					.setType(1)
 					.setMimeTypeFilter(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
 					.build()
 				const path = await picker.pick()
@@ -743,26 +749,41 @@ export default {
 			if (!this.isValid) return
 			this.$emit('submit', this.formToPayload())
 		},
-		openInNextcloud(path) {
-			// Check if path is a file (has extension) or folder
+		async openInNextcloud(path) {
 			const isFile = path.includes('.') && !path.endsWith('/')
-			let filesUrl
 
-			if (isFile) {
-				// For files: open directly in viewer by navigating to parent dir with file selected
-				const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-				const fileName = path.substring(path.lastIndexOf('/') + 1)
-				filesUrl = generateUrl('/apps/files/?dir={dir}&scrollto={file}&openfile={file}', {
-					dir: parentDir,
-					file: fileName,
-				})
-			} else {
-				// For folders: just open the folder
-				filesUrl = generateUrl('/apps/files/?dir={dir}', {
-					dir: path,
-				})
+			if (!isFile) {
+				window.open(generateUrl('/apps/files/?dir={dir}', { dir: path }), '_blank', 'noopener,noreferrer')
+				return
 			}
-			window.open(filesUrl, '_blank', 'noopener,noreferrer')
+
+			// Datei: File-ID per WebDAV holen und /f/{id} oeffnen
+			try {
+				const user = getCurrentUser()?.uid
+				const davPath = `/remote.php/dav/files/${user}${path}`
+				const response = await axios({
+					method: 'PROPFIND',
+					url: davPath,
+					headers: { Depth: '0' },
+					data: `<?xml version="1.0"?>
+						<d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
+							<d:prop><oc:fileid/></d:prop>
+						</d:propfind>`,
+				})
+				const parser = new DOMParser()
+				const xml = parser.parseFromString(response.data, 'application/xml')
+				const fileidNode = xml.getElementsByTagNameNS('http://owncloud.org/ns', 'fileid')[0]
+				if (fileidNode?.textContent) {
+					window.open(generateUrl('/f/{fileId}', { fileId: fileidNode.textContent }), '_blank', 'noopener,noreferrer')
+					return
+				}
+			} catch (e) {
+				console.warn('[ContractManager] Could not resolve file ID:', e)
+			}
+			// Fallback: Datei in Files-App anzeigen
+			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
+			const fileName = path.substring(path.lastIndexOf('/') + 1)
+			window.open(generateUrl('/apps/files/?dir={dir}&scrollto={file}', { dir: parentDir, file: fileName }), '_blank', 'noopener,noreferrer')
 		},
 	},
 }
@@ -931,12 +952,6 @@ export default {
 	border-radius: 4px;
 	font-size: 13px;
 	color: var(--color-warning-text, #856404);
-}
-
-.date-error {
-	color: var(--color-error);
-	font-size: 13px;
-	margin: -8px 0 8px;
 }
 
 .selected-path {
