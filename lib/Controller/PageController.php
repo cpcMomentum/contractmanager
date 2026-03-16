@@ -6,9 +6,11 @@ namespace OCA\ContractManager\Controller;
 
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Service\SettingsService;
+use OCA\Viewer\Event\LoadViewer;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\Util;
@@ -21,6 +23,7 @@ class PageController extends Controller {
 		private IGroupManager $groupManager,
 		private IInitialState $initialState,
 		private SettingsService $settingsService,
+		private IEventDispatcher $eventDispatcher,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -32,6 +35,10 @@ class PageController extends Controller {
 	public function index(): TemplateResponse {
 		Util::addScript(Application::APP_ID, 'contractmanager-main');
 		Util::addStyle(Application::APP_ID, 'main');
+
+		if (class_exists(LoadViewer::class)) {
+			$this->eventDispatcher->dispatchTyped(new LoadViewer());
+		}
 
 		// Admin-Status über Initial State API bereitstellen
 		$isAdmin = $this->userId !== null && $this->groupManager->isAdmin($this->userId);

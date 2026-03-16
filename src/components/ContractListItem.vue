@@ -208,12 +208,10 @@ export default {
 			if (!this.contract.mainDocument) return
 			// Versuch 1: Nextcloud Viewer Overlay (kein neuer Tab)
 			if (window.OCA?.Viewer?.open) {
-				console.debug('[ContractManager] Opening via OCA.Viewer:', this.contract.mainDocument)
 				OCA.Viewer.open({ path: this.contract.mainDocument })
 				return
 			}
-			console.debug('[ContractManager] OCA.Viewer not available, falling back to /f/{fileId}')
-			// Versuch 2: File-ID holen und /f/{id} oeffnen (neuer Tab)
+			// Versuch 2: File-ID per WebDAV holen und /f/{id} oeffnen
 			try {
 				const user = getCurrentUser()?.uid
 				const davPath = `/remote.php/dav/files/${user}${this.contract.mainDocument}`
@@ -236,10 +234,11 @@ export default {
 			} catch (e) {
 				console.warn('[ContractManager] Could not resolve file ID:', e)
 			}
-			// Versuch 3: Ordner oeffnen
+			// Versuch 3: Datei in Files-App anzeigen (scrollto)
 			const path = this.contract.mainDocument
 			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-			window.open(generateUrl('/apps/files/?dir={dir}', { dir: parentDir }), '_blank', 'noopener,noreferrer')
+			const fileName = path.substring(path.lastIndexOf('/') + 1)
+			window.open(generateUrl('/apps/files/?dir={dir}&scrollto={file}', { dir: parentDir, file: fileName }), '_blank', 'noopener,noreferrer')
 		},
 	},
 }
