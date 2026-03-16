@@ -99,7 +99,9 @@
 						</div>
 					</div>
 
-					<p v-if="dateError" class="date-error">{{ dateError }}</p>
+					<NcNoteCard v-if="dateError" type="error">
+						{{ dateError }}
+					</NcNoteCard>
 
 					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
 						<div>
@@ -344,6 +346,7 @@ import NcTextArea from '@nextcloud/vue/dist/Components/NcTextArea.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import { mapGetters } from 'vuex'
 import Folder from 'vue-material-design-icons/Folder.vue'
@@ -371,6 +374,7 @@ export default {
 		NcSelect,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
+		NcNoteCard,
 		Folder,
 		File,
 		Close,
@@ -948,12 +952,6 @@ export default {
 	border-radius: 4px;
 	font-size: 13px;
 	color: var(--color-warning-text, #856404);
-}
-
-.date-error {
-	color: var(--color-error);
-	font-size: 13px;
-	margin: -8px 0 8px;
 }
 
 .selected-path {

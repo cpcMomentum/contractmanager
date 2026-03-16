@@ -85,7 +85,7 @@ You MUST respond with a JSON object using EXACTLY these field names:
   "currency": "EUR, USD, GBP, or CHF",
   "costInterval": "monthly", "yearly", "one_time", or null,
   "confidence": 0.0 to 1.0,
-  "extractionNotes": "notes about ambiguities or null"
+  "extractionNotes": "Hinweise zu Mehrdeutigkeiten oder null (IMMER auf Deutsch)"
 }
 
 Rules:
@@ -95,6 +95,7 @@ Rules:
 - If the contract auto-renews, set contractType to "auto_renewal", otherwise "fixed"
 - Documents may be in German or other languages - extract data regardless of language
 - If a field cannot be determined, set it to null
+- "extractionNotes" MUST always be written in German
 - Respond with ONLY the JSON object, no markdown formatting
 PROMPT;
 
