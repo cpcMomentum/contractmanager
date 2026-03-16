@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-03-12
+
+### Fixed
+- Fix "Extracted app has more than 1 folder" installation error caused by macOS metadata in tarball (#41, #38)
+
+## [0.2.3] - 2026-03-08
+
+### Fixed
+- Fix app update error by repackaging with correct code signature (#38)
+
+## [0.2.2] - 2026-03-06
+
+### Fixed
+- Repackaged release tarball to fix "Extracted app has more than 1 folder" update error (#38)
+
 ## [0.2.1] - 2026-03-03
 
 ### Added
@@ -124,7 +139,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.3...v0.2.4
+[0.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.4...v0.1.5

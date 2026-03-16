@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace OCA\ContractManager\Service;
 
 use DateTime;
+use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
+use OCP\L10N\IFactory;
 
 class ContractService {
 
@@ -23,7 +25,12 @@ class ContractService {
 
 	public function __construct(
 		private ContractMapper $mapper,
+		private IFactory $l10nFactory,
 	) {
+	}
+
+	private function l(): \OCP\IL10N {
+		return $this->l10nFactory->get(Application::APP_ID);
 	}
 
 	/**
@@ -37,12 +44,12 @@ class ContractService {
 
 		// Name is required
 		if (empty($data['name']) || trim($data['name']) === '') {
-			$errors['name'] = 'Name ist erforderlich';
+			$errors['name'] = $this->l()->t('Name is required');
 		}
 
 		// Vendor is required
 		if (empty($data['vendor']) || trim($data['vendor']) === '') {
-			$errors['vendor'] = 'Vertragspartner ist erforderlich';
+			$errors['vendor'] = $this->l()->t('Vendor is required');
 		}
 
 		// Date validation: startDate must be before endDate
@@ -51,27 +58,27 @@ class ContractService {
 				$start = new DateTime($data['startDate']);
 				$end = new DateTime($data['endDate']);
 				if ($start >= $end) {
-					$errors['endDate'] = 'Enddatum muss nach Startdatum liegen';
+					$errors['endDate'] = $this->l()->t('End date must be after start date');
 				}
 			} catch (\Exception $e) {
-				$errors['startDate'] = 'Ungültiges Datumsformat';
+				$errors['startDate'] = $this->l()->t('Invalid date format');
 			}
 		}
 
 		// Status validation
 		if (!empty($data['status']) && !in_array($data['status'], self::VALID_STATUSES, true)) {
-			$errors['status'] = 'Ungültiger Status';
+			$errors['status'] = $this->l()->t('Invalid status');
 		}
 
 		// String length validation (L2 Security Fix)
 		if (!empty($data['name']) && strlen($data['name']) > self::MAX_STRING_LENGTH) {
-			$errors['name'] = 'Name ist zu lang (max. ' . self::MAX_STRING_LENGTH . ' Zeichen)';
+			$errors['name'] = $this->l()->t('Name is too long (max. %s characters)', [self::MAX_STRING_LENGTH]);
 		}
 		if (!empty($data['vendor']) && strlen($data['vendor']) > self::MAX_STRING_LENGTH) {
-			$errors['vendor'] = 'Vertragspartner ist zu lang (max. ' . self::MAX_STRING_LENGTH . ' Zeichen)';
+			$errors['vendor'] = $this->l()->t('Vendor is too long (max. %s characters)', [self::MAX_STRING_LENGTH]);
 		}
 		if (!empty($data['notes']) && strlen($data['notes']) > self::MAX_NOTES_LENGTH) {
-			$errors['notes'] = 'Notizen sind zu lang (max. ' . self::MAX_NOTES_LENGTH . ' Zeichen)';
+			$errors['notes'] = $this->l()->t('Notes are too long (max. %s characters)', [self::MAX_NOTES_LENGTH]);
 		}
 
 		if (!empty($errors)) {
@@ -94,7 +101,7 @@ class ContractService {
 
 		// Private contracts are only visible to creator
 		if ($contract->getIsPrivate() && $contract->getCreatedBy() !== $userId) {
-			throw new ForbiddenException('Kein Zugriff auf diesen privaten Vertrag');
+			throw new ForbiddenException($this->l()->t('No access to this private contract'));
 		}
 	}
 
@@ -113,7 +120,7 @@ class ContractService {
 
 		// Then check write permission
 		if (!$isAdmin && !$isEditor) {
-			throw new ForbiddenException('Keine Berechtigung zum Bearbeiten');
+			throw new ForbiddenException($this->l()->t('No permission to edit'));
 		}
 	}
 
@@ -131,7 +138,7 @@ class ContractService {
 		}
 
 		if ($contract->getCreatedBy() !== $userId) {
-			throw new ForbiddenException('Nur eigene Verträge können wiederhergestellt werden');
+			throw new ForbiddenException($this->l()->t('Only own contracts can be restored'));
 		}
 	}
 
@@ -143,7 +150,7 @@ class ContractService {
 	 */
 	public function checkAccess(Contract $contract, string $userId): void {
 		if ($contract->getCreatedBy() !== $userId) {
-			throw new ForbiddenException('Kein Zugriff auf diesen Vertrag');
+			throw new ForbiddenException($this->l()->t('No access to this contract'));
 		}
 	}
 

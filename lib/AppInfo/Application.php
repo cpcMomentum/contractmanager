@@ -14,6 +14,12 @@ class Application extends App implements IBootstrap {
 
     public function __construct() {
         parent::__construct(self::APP_ID);
+
+        // Load composer autoloader for third-party dependencies (smalot/pdfparser)
+        $autoloader = __DIR__ . '/../../vendor/autoload.php';
+        if (file_exists($autoloader)) {
+            require_once $autoloader;
+        }
     }
 
     public function register(IRegistrationContext $context): void {

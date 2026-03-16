@@ -6,6 +6,7 @@ namespace OCA\ContractManager\Service;
 
 use OCA\ContractManager\AppInfo\Application;
 use OCP\App\IAppManager;
+use OCP\L10N\IFactory;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -27,6 +28,7 @@ class TalkService {
 		private IAppManager $appManager,
 		private SettingsService $settingsService,
 		private LoggerInterface $logger,
+		private IFactory $l10nFactory,
 	) {
 	}
 
@@ -79,17 +81,31 @@ class TalkService {
 	 * @return bool True if message was sent successfully
 	 */
 	public function sendReminderMessage(string $contractName, string $deadline, string $reminderType, string $contractType = 'auto_renewal'): bool {
+		$l = $this->l10nFactory->get(Application::APP_ID);
+
 		if ($contractType === 'auto_renewal') {
 			if ($reminderType === 'first') {
-				$message = "📋 **Kündigungserinnerung**\n\nDer Vertrag \"$contractName\" muss bis **$deadline** gekündigt werden.\n\n_Dies ist die erste Erinnerung._";
+				$title = $l->t('Cancellation reminder');
+				$body = $l->t('The contract "%1$s" must be cancelled by **%2$s**.', [$contractName, $deadline]);
+				$footer = $l->t('This is the first reminder.');
+				$message = "📋 **$title**\n\n$body\n\n_{$footer}_";
 			} else {
-				$message = "⚠️ **Letzte Kündigungserinnerung**\n\nDer Vertrag \"$contractName\" muss bis **$deadline** gekündigt werden!\n\n_Dies ist die letzte Erinnerung vor Ablauf der Kündigungsfrist._";
+				$title = $l->t('Final cancellation reminder');
+				$body = $l->t('The contract "%1$s" must be cancelled by **%2$s**!', [$contractName, $deadline]);
+				$footer = $l->t('This is the final reminder before the cancellation deadline.');
+				$message = "⚠️ **$title**\n\n$body\n\n_{$footer}_";
 			}
 		} else {
 			if ($reminderType === 'first') {
-				$message = "📋 **Vertrag läuft aus**\n\nDer Vertrag \"$contractName\" läuft am **$deadline** aus.\n\n_Dies ist die erste Erinnerung._";
+				$title = $l->t('Contract expiring');
+				$body = $l->t('The contract "%1$s" expires on **%2$s**.', [$contractName, $deadline]);
+				$footer = $l->t('This is the first reminder.');
+				$message = "📋 **$title**\n\n$body\n\n_{$footer}_";
 			} else {
-				$message = "⚠️ **Vertrag läuft aus**\n\nDer Vertrag \"$contractName\" läuft am **$deadline** aus!\n\n_Dies ist die letzte Erinnerung._";
+				$title = $l->t('Contract expiring');
+				$body = $l->t('The contract "%1$s" expires on **%2$s**!', [$contractName, $deadline]);
+				$footer = $l->t('This is the final reminder.');
+				$message = "⚠️ **$title**\n\n$body\n\n_{$footer}_";
 			}
 		}
 

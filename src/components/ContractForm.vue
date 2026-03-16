@@ -5,6 +5,25 @@
 		@close="$emit('close')">
 		<div class="contract-form">
 			<form @submit.prevent="handleSubmit">
+				<!-- AI Extraction -->
+				<div v-if="aiAvailable && !isEdit && !readOnly" class="form-section ai-section">
+					<div class="ai-extract-row">
+						<NcButton type="secondary"
+							:disabled="extracting"
+							@click="analyzeDocument">
+							<template #icon>
+								<NcLoadingIcon v-if="extracting" :size="20" />
+								<FileSearchIcon v-else :size="20" />
+							</template>
+							{{ extracting ? t('contractmanager', 'Analysiere...') : t('contractmanager', 'Dokument analysieren') }}
+						</NcButton>
+						<span class="ai-hint">{{ t('contractmanager', 'PDF-Vertrag analysieren und Felder automatisch ausfüllen') }}</span>
+					</div>
+					<p v-if="extractionNotes" class="extraction-notes">
+						{{ extractionNotes }}
+					</p>
+				</div>
+
 				<!-- Basic Info -->
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Grunddaten') }}</h3>
@@ -79,6 +98,8 @@
 								:clearable="false" />
 						</div>
 					</div>
+
+					<p v-if="dateError" class="date-error">{{ dateError }}</p>
 
 					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
 						<div>
@@ -330,9 +351,15 @@ import File from 'vue-material-design-icons/File.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
+import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
+import axios from '@nextcloud/axios'
+import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { getFilePickerBuilder as getFilePickerBuilderForAnalysis } from '@nextcloud/dialogs'
+import ExtractionService from '../services/ExtractionService.js'
+import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
 
 export default {
 	name: 'ContractForm',
@@ -349,6 +376,7 @@ export default {
 		Close,
 		LockIcon,
 		LockOpenVariantIcon,
+		FileSearchIcon,
 	},
 	props: {
 		show: {
@@ -372,6 +400,9 @@ export default {
 	data() {
 		return {
 			form: this.getInitialForm(),
+			aiAvailable: false,
+			extracting: false,
+			extractionNotes: null,
 		}
 	},
 	computed: {
@@ -385,12 +416,19 @@ export default {
 				&& this.form.vendor.trim() !== ''
 				&& this.form.startDate !== null
 				&& this.form.endDate !== null
+				&& !this.dateError
 				&& this.form.contractType !== null
 				&& (this.form.contractType !== 'auto_renewal' || (
 					this.form.cancellationPeriodValue !== ''
 					&& this.form.cancellationPeriodUnit !== null
 				))
 			)
+		},
+		dateError() {
+			if (this.form.startDate && this.form.endDate && this.form.startDate >= this.form.endDate) {
+				return t('contractmanager', 'Enddatum muss nach dem Startdatum liegen')
+			}
+			return null
 		},
 		categoryOptions() {
 			return [
@@ -441,6 +479,14 @@ export default {
 			const deadline = calculateCancellationDeadline(this.form.endDate, periodString, this.form.contractType, renewalPeriod)
 			return deadline ? formatDate(deadline) : null
 		},
+	},
+	async created() {
+		try {
+			const status = await ExtractionService.getStatus()
+			this.aiAvailable = status.configured
+		} catch (e) {
+			this.aiAvailable = false
+		}
 	},
 	watch: {
 		show(newVal) {
@@ -592,7 +638,7 @@ export default {
 			try {
 				const picker = getFilePickerBuilder(t('contractmanager', 'Vertragsordner wählen'))
 					.setMultiSelect(false)
-					.setType(1) // Directories only
+					.setType(1)
 					.allowDirectories()
 					.build()
 				const path = await picker.pick()
@@ -608,7 +654,7 @@ export default {
 			try {
 				const picker = getFilePickerBuilder(t('contractmanager', 'Vertragsdatei wählen'))
 					.setMultiSelect(false)
-					.setType(1) // Files
+					.setType(1)
 					.setMimeTypeFilter(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
 					.build()
 				const path = await picker.pick()
@@ -620,30 +666,120 @@ export default {
 				console.debug('File picker cancelled', e)
 			}
 		},
+		async analyzeDocument() {
+			try {
+				const picker = getFilePickerBuilderForAnalysis(t('contractmanager', 'PDF-Vertrag auswählen'))
+					.setMultiSelect(false)
+					.setType(1)
+					.setMimeTypeFilter(['application/pdf'])
+					.build()
+				const path = await picker.pick()
+				if (!path) return
+
+				this.extracting = true
+				this.extractionNotes = null
+
+				const result = await ExtractionService.extractFromPdf(path)
+
+				if (result.success && result.data) {
+					this.applyExtractedData(result.data)
+
+					if (result.data.confidence < 0.5) {
+						showWarning(t('contractmanager', 'Niedrige Erkennungsgenauigkeit – bitte alle Felder prüfen'))
+					} else {
+						showSuccess(t('contractmanager', 'Vertragsdaten erfolgreich erkannt'))
+					}
+
+					if (result.data.extractionNotes) {
+						this.extractionNotes = result.data.extractionNotes
+					}
+
+					// Set the document as main document
+					this.form.mainDocument = path
+				} else {
+					showError(result.error || t('contractmanager', 'Analyse fehlgeschlagen'))
+				}
+			} catch (e) {
+				console.error('Document analysis failed:', e)
+				const message = e.response?.data?.error || t('contractmanager', 'Analyse fehlgeschlagen')
+				showError(message)
+			} finally {
+				this.extracting = false
+			}
+		},
+		applyExtractedData(data) {
+			if (data.name) this.form.name = data.name
+			if (data.vendor) this.form.vendor = data.vendor
+			if (data.contractType) this.form.contractType = data.contractType
+			if (data.currency) this.form.currency = data.currency
+			if (data.cost) this.form.cost = data.cost
+			if (data.startDate) {
+				const start = new Date(data.startDate)
+				if (!isNaN(start.getTime())) {
+					this.form.startDate = start
+					this.form.startDateFormatted = this.formatDateDisplay(start)
+				}
+			}
+			if (data.endDate) {
+				const end = new Date(data.endDate)
+				if (!isNaN(end.getTime())) {
+					this.form.endDate = end
+					this.form.endDateFormatted = this.formatDateDisplay(end)
+				}
+			}
+			if (data.cancellationPeriod) {
+				const cp = this.parsePeriodForForm(data.cancellationPeriod)
+				this.form.cancellationPeriodValue = cp.value
+				this.form.cancellationPeriodUnit = cp.unit
+			}
+			if (data.renewalPeriod) {
+				const rp = this.parsePeriodForForm(data.renewalPeriod)
+				this.form.renewalPeriodValue = rp.value
+				this.form.renewalPeriodUnit = rp.unit
+			}
+			if (data.contractStatus) {
+				this.form.contractStatus = data.contractStatus
+			}
+		},
 		handleSubmit() {
 			if (!this.isValid) return
 			this.$emit('submit', this.formToPayload())
 		},
-		openInNextcloud(path) {
-			// Check if path is a file (has extension) or folder
+		async openInNextcloud(path) {
 			const isFile = path.includes('.') && !path.endsWith('/')
-			let filesUrl
 
-			if (isFile) {
-				// For files: open directly in viewer by navigating to parent dir with file selected
-				const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-				const fileName = path.substring(path.lastIndexOf('/') + 1)
-				filesUrl = generateUrl('/apps/files/?dir={dir}&scrollto={file}&openfile={file}', {
-					dir: parentDir,
-					file: fileName,
-				})
-			} else {
-				// For folders: just open the folder
-				filesUrl = generateUrl('/apps/files/?dir={dir}', {
-					dir: path,
-				})
+			if (!isFile) {
+				window.open(generateUrl('/apps/files/?dir={dir}', { dir: path }), '_blank', 'noopener,noreferrer')
+				return
 			}
-			window.open(filesUrl, '_blank', 'noopener,noreferrer')
+
+			// Datei: File-ID per WebDAV holen und /f/{id} oeffnen
+			try {
+				const user = getCurrentUser()?.uid
+				const davPath = `/remote.php/dav/files/${user}${path}`
+				const response = await axios({
+					method: 'PROPFIND',
+					url: davPath,
+					headers: { Depth: '0' },
+					data: `<?xml version="1.0"?>
+						<d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
+							<d:prop><oc:fileid/></d:prop>
+						</d:propfind>`,
+				})
+				const parser = new DOMParser()
+				const xml = parser.parseFromString(response.data, 'application/xml')
+				const fileidNode = xml.getElementsByTagNameNS('http://owncloud.org/ns', 'fileid')[0]
+				if (fileidNode?.textContent) {
+					window.open(generateUrl('/f/{fileId}', { fileId: fileidNode.textContent }), '_blank', 'noopener,noreferrer')
+					return
+				}
+			} catch (e) {
+				console.warn('[ContractManager] Could not resolve file ID:', e)
+			}
+			// Fallback: Datei in Files-App anzeigen
+			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
+			const fileName = path.substring(path.lastIndexOf('/') + 1)
+			window.open(generateUrl('/apps/files/?dir={dir}&scrollto={file}', { dir: parentDir, file: fileName }), '_blank', 'noopener,noreferrer')
 		},
 	},
 }
@@ -785,6 +921,39 @@ export default {
 .no-document-text {
 	color: var(--color-text-maxcontrast);
 	line-height: 44px;
+}
+
+.ai-section {
+	background: var(--color-primary-element-light, #e8f0fe);
+	padding: 16px;
+	border-radius: 8px;
+	margin-bottom: 24px;
+}
+
+.ai-extract-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.ai-hint {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.extraction-notes {
+	margin-top: 8px;
+	padding: 8px 12px;
+	background: var(--color-warning-hover, #fff3cd);
+	border-radius: 4px;
+	font-size: 13px;
+	color: var(--color-warning-text, #856404);
+}
+
+.date-error {
+	color: var(--color-error);
+	font-size: 13px;
+	margin: -8px 0 8px;
 }
 
 .selected-path {

@@ -13,6 +13,7 @@ use OCA\ContractManager\Service\ValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 class ContractController extends Controller {
@@ -21,6 +22,7 @@ class ContractController extends Controller {
 		IRequest $request,
 		private ContractService $service,
 		private PermissionService $permissionService,
+		private IL10N $l,
 		private ?string $userId,
 	) {
 		parent::__construct(Application::APP_ID, $request);
@@ -119,7 +121,7 @@ class ContractController extends Controller {
 		}
 		// Check if user can create contracts
 		if (!$this->permissionService->canEdit($this->userId)) {
-			return new JSONResponse(['error' => 'Keine Berechtigung zum Erstellen'], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(['error' => $this->l->t('No permission to create')], Http::STATUS_FORBIDDEN);
 		}
 
 		try {

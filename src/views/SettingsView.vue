@@ -147,6 +147,56 @@
 				</div>
 			</div>
 
+			<!-- AI Extraction Settings -->
+			<div class="settings-section admin-section">
+				<h3>
+					<ShieldIcon :size="20" class="admin-icon" />
+					{{ t('contractmanager', 'KI-Vertragsanalyse') }}
+				</h3>
+				<p class="settings-description">
+					{{ t('contractmanager', 'Automatische Erkennung von Vertragsdaten aus PDF-Dokumenten.') }}
+				</p>
+
+				<div class="settings-item">
+					<label class="settings-label">{{ t('contractmanager', 'KI-Provider') }}</label>
+					<NcSelect v-model="adminSettings.aiProvider"
+						:options="aiProviderOptions"
+						:placeholder="t('contractmanager', 'Deaktiviert')"
+						label="label"
+						track-by="value"
+						:reduce="option => option.value"
+						:clearable="true"
+						class="settings-input" />
+				</div>
+
+				<template v-if="adminSettings.aiProvider">
+					<div class="settings-item">
+						<label class="settings-label">{{ t('contractmanager', 'API Key') }}</label>
+						<NcTextField :value.sync="adminSettings.aiApiKey"
+							type="password"
+							:placeholder="t('contractmanager', 'API Key eingeben')"
+							class="settings-input" />
+					</div>
+
+					<div class="settings-item">
+						<label class="settings-label">{{ t('contractmanager', 'API URL') }}</label>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Standard-URL wird automatisch gesetzt. Für Ollama z.B. http://localhost:11434/v1') }}
+						</p>
+						<NcTextField :value.sync="adminSettings.aiApiUrl"
+							:placeholder="aiDefaultUrl"
+							class="settings-input" />
+					</div>
+
+					<div class="settings-item">
+						<label class="settings-label">{{ t('contractmanager', 'Modell') }}</label>
+						<NcTextField :value.sync="adminSettings.aiModel"
+							:placeholder="aiDefaultModel"
+							class="settings-input" />
+					</div>
+				</template>
+			</div>
+
 			<div class="settings-actions">
 				<NcButton type="primary" :disabled="savingAdmin" @click="saveAdminSettings">
 					<template #icon>
@@ -286,6 +336,10 @@ export default {
 				talkChatToken: '',
 				reminderDays1: 14,
 				reminderDays2: 3,
+				aiProvider: '',
+				aiApiKey: '',
+				aiApiUrl: '',
+				aiModel: '',
 			},
 			permissionSettings: {
 				editors: [],
@@ -303,6 +357,20 @@ export default {
 		...mapGetters('categories', {
 			categories: 'allCategories',
 		}),
+		aiProviderOptions() {
+			return [
+				{ value: 'claude', label: 'Claude (Anthropic)' },
+				{ value: 'openai_compatible', label: t('contractmanager', 'OpenAI-kompatibel (Mistral, Ollama, OpenAI, ...)') },
+			]
+		},
+		aiDefaultUrl() {
+			if (this.adminSettings.aiProvider === 'claude') return 'https://api.anthropic.com'
+			return 'https://api.openai.com/v1'
+		},
+		aiDefaultModel() {
+			if (this.adminSettings.aiProvider === 'claude') return 'claude-sonnet-4-5-20250514'
+			return 'gpt-4o'
+		},
 	},
 	async created() {
 		this.fetchCategories()
@@ -333,6 +401,10 @@ export default {
 					talkChatToken: settings.talkChatToken || '',
 					reminderDays1: settings.reminderDays1 || 14,
 					reminderDays2: settings.reminderDays2 || 3,
+					aiProvider: settings.aiProvider || '',
+					aiApiKey: settings.aiApiKey || '',
+					aiApiUrl: settings.aiApiUrl || '',
+					aiModel: settings.aiModel || '',
 				}
 			} catch (error) {
 				console.error('Failed to load admin settings:', error)
@@ -430,11 +502,19 @@ export default {
 					talkChatToken: this.adminSettings.talkChatToken,
 					reminderDays1: parseInt(this.adminSettings.reminderDays1, 10),
 					reminderDays2: parseInt(this.adminSettings.reminderDays2, 10),
+					aiProvider: this.adminSettings.aiProvider || '',
+					aiApiKey: this.adminSettings.aiApiKey,
+					aiApiUrl: this.adminSettings.aiApiUrl,
+					aiModel: this.adminSettings.aiModel,
 				})
 				this.adminSettings = {
 					talkChatToken: result.talkChatToken || '',
 					reminderDays1: result.reminderDays1 || 14,
 					reminderDays2: result.reminderDays2 || 3,
+					aiProvider: result.aiProvider || '',
+					aiApiKey: result.aiApiKey || '',
+					aiApiUrl: result.aiApiUrl || '',
+					aiModel: result.aiModel || '',
 				}
 				showSuccess(this.t('contractmanager', 'Admin-Einstellungen gespeichert'))
 			} catch (error) {
