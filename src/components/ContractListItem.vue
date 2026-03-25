@@ -116,6 +116,7 @@ import StatusBadge from './StatusBadge.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
+import { isUrl } from '../utils/documentUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
 export default {
@@ -206,12 +207,17 @@ export default {
 		},
 		async openDocument() {
 			if (!this.contract.mainDocument) return
-			// Versuch 1: Nextcloud Viewer Overlay (kein neuer Tab)
+			// URL (intern oder extern): direkt oeffnen
+			if (isUrl(this.contract.mainDocument)) {
+				window.open(this.contract.mainDocument, '_blank', 'noopener,noreferrer')
+				return
+			}
+			// Legacy-Pfad: Versuch 1 - Nextcloud Viewer Overlay (kein neuer Tab)
 			if (window.OCA?.Viewer?.open) {
 				OCA.Viewer.open({ path: this.contract.mainDocument })
 				return
 			}
-			// Versuch 2: File-ID per WebDAV holen und /f/{id} oeffnen
+			// Legacy-Pfad: Versuch 2 - File-ID per WebDAV holen und /f/{id} oeffnen
 			try {
 				const user = getCurrentUser()?.uid
 				const davPath = `/remote.php/dav/files/${user}${this.contract.mainDocument}`
