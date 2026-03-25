@@ -22,7 +22,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     <version>0.2.5</version>
     <licence>AGPL-3.0-or-later</licence>
 
-    <author homepage="https://github.com/cpcMomentum">Axel Deffner</author>
+    <author mail="axel.deffner@cpcmomentum.com" homepage="https://github.com/cpcMomentum">Axel Deffner</author>
 
     <namespace>ContractManager</namespace>
 
@@ -46,6 +46,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     <background-jobs>
         <job>OCA\ContractManager\BackgroundJob\ReminderJob</job>
         <job>OCA\ContractManager\BackgroundJob\TrashCleanupJob</job>
+        <job>OCA\ContractManager\BackgroundJob\StatusUpdateJob</job>
     </background-jobs>
 
     <navigations>

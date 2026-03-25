@@ -224,26 +224,28 @@
 							</div>
 						</div>
 						<div>
-							<label class="form-label">{{ t('contractmanager', 'Hauptvertragsdatei') }}</label>
+							<label class="form-label">{{ t('contractmanager', 'Vertragsdokument') }}</label>
 							<span v-if="form.mainDocument" class="selected-path" :title="form.mainDocument">
-								{{ form.mainDocument.split('/').filter(s => s).pop() }}
+								<OpenInNewIcon v-if="isExternalDocument" :size="14" class="external-icon" />
+								{{ documentDisplayName }}
 							</span>
 							<div class="document-buttons">
 								<span v-if="readOnly && !form.mainDocument" class="no-document-text">
-									{{ t('contractmanager', 'Keine Datei ausgewählt') }}
+									{{ t('contractmanager', 'Kein Dokument verknüpft') }}
 								</span>
 								<NcButton v-else-if="form.mainDocument"
 									type="primary"
 									:title="form.mainDocument"
-									@click="openInNextcloud(form.mainDocument)">
+									@click="openDocument(form.mainDocument)">
 									<template #icon>
-										<File :size="20" />
+										<OpenInNewIcon v-if="isExternalDocument" :size="20" />
+										<File v-else :size="20" />
 									</template>
 									{{ t('contractmanager', 'Öffnen') }}
 								</NcButton>
 								<NcButton v-else
 									type="secondary"
-									@click="openFilePicker">
+									@click="openSmartPicker">
 									<template #icon>
 										<File :size="20" />
 									</template>
@@ -251,7 +253,7 @@
 								</NcButton>
 								<NcButton v-if="form.mainDocument && !readOnly"
 									type="secondary"
-									@click="openFilePicker">
+									@click="openSmartPicker">
 									{{ t('contractmanager', 'Ändern') }}
 								</NcButton>
 								<NcButton v-if="form.mainDocument && !readOnly"
@@ -348,10 +350,12 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadi
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
+import { getLinkWithPicker } from '@nextcloud/vue/dist/Functions/reference.js'
 import { mapGetters } from 'vuex'
 import Folder from 'vue-material-design-icons/Folder.vue'
 import File from 'vue-material-design-icons/File.vue'
 import Close from 'vue-material-design-icons/Close.vue'
+import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
 import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
@@ -360,7 +364,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
-import { getFilePickerBuilder as getFilePickerBuilderForAnalysis } from '@nextcloud/dialogs'
+import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import ExtractionService from '../services/ExtractionService.js'
 import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
 
@@ -378,6 +382,7 @@ export default {
 		Folder,
 		File,
 		Close,
+		OpenInNewIcon,
 		LockIcon,
 		LockOpenVariantIcon,
 		FileSearchIcon,
@@ -413,6 +418,12 @@ export default {
 		...mapGetters('categories', ['allCategories']),
 		isEdit() {
 			return this.contract !== null && this.contract.id != null
+		},
+		documentDisplayName() {
+			return getDisplayName(this.form.mainDocument)
+		},
+		isExternalDocument() {
+			return isUrl(this.form.mainDocument) && !isInternalUrl(this.form.mainDocument)
 		},
 		isValid() {
 			return (
@@ -654,25 +665,20 @@ export default {
 				console.debug('Folder picker cancelled', e)
 			}
 		},
-		async openFilePicker() {
+		async openSmartPicker() {
 			try {
-				const picker = getFilePickerBuilder(t('contractmanager', 'Vertragsdatei wählen'))
-					.setMultiSelect(false)
-					.setType(1)
-					.setMimeTypeFilter(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
-					.build()
-				const path = await picker.pick()
-				if (path) {
-					this.form.mainDocument = path
+				const link = await getLinkWithPicker()
+				if (link) {
+					this.form.mainDocument = link
 				}
 			} catch (e) {
-				// User cancelled - do nothing
-				console.debug('File picker cancelled', e)
+				// User cancelled - getLinkWithPicker rejects on cancel
+				console.debug('Smart Picker cancelled', e)
 			}
 		},
 		async analyzeDocument() {
 			try {
-				const picker = getFilePickerBuilderForAnalysis(t('contractmanager', 'PDF-Vertrag auswählen'))
+				const picker = getFilePickerBuilder(t('contractmanager', 'PDF-Vertrag auswählen'))
 					.setMultiSelect(false)
 					.setType(1)
 					.setMimeTypeFilter(['application/pdf'])
@@ -749,7 +755,15 @@ export default {
 			if (!this.isValid) return
 			this.$emit('submit', this.formToPayload())
 		},
-		async openInNextcloud(path) {
+		async openDocument(value) {
+			// URL (intern oder extern): direkt oeffnen
+			if (isUrl(value)) {
+				window.open(value, '_blank', 'noopener,noreferrer')
+				return
+			}
+
+			// Legacy-Pfad: bestehende Logik
+			const path = value
 			const isFile = path.includes('.') && !path.endsWith('/')
 
 			if (!isFile) {
