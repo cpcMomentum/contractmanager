@@ -124,17 +124,27 @@ class ReminderService {
 		$value = (int) $matches[1];
 		$unit = strtolower(rtrim($matches[2], 's'));
 
-		// Add renewal periods until we reach a future date (max 100 iterations as safety)
-		for ($i = 0; $i < 100 && $effective <= $now; $i++) {
-			if ($unit === 'month') {
-				$effective->modify("+{$value} month");
-			} elseif ($unit === 'year') {
-				$effective->modify("+{$value} year");
-			} elseif ($unit === 'week') {
-				$effective->modify("+{$value} week");
-			} else {
-				$effective->modify("+{$value} day");
-			}
+		// Calculate number of periods needed mathematically (O(1) instead of O(n))
+		$diffDays = (int) $now->diff($effective)->format('%a');
+		$periodsNeeded = 0;
+
+		if ($unit === 'day') {
+			$periodsNeeded = (int) ceil($diffDays / $value);
+		} elseif ($unit === 'week') {
+			$periodsNeeded = (int) ceil($diffDays / ($value * 7));
+		} elseif ($unit === 'month') {
+			$periodsNeeded = (int) ceil($diffDays / ($value * 30.44));
+		} elseif ($unit === 'year') {
+			$periodsNeeded = (int) ceil($diffDays / ($value * 365.25));
+		}
+
+		// Jump directly to the estimated period
+		$totalValue = $value * $periodsNeeded;
+		$effective->modify("+{$totalValue} {$unit}");
+
+		// Adjust if estimate was slightly off (max 3 iterations for month-length variance)
+		while ($effective <= $now) {
+			$effective->modify("+{$value} {$unit}");
 		}
 
 		return $effective;
