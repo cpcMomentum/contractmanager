@@ -120,12 +120,41 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod) {
 		return end
 	}
 
-	// Add renewal periods until we reach a future date (max 100 iterations)
-	let effective = end
-	for (let i = 0; i < 100 && effective <= now; i++) {
+	// Calculate number of periods needed mathematically (O(1) instead of O(n))
+	const period = parsePeriod(renewalPeriod)
+	if (!period) return end
+
+	const diffMs = now.getTime() - end.getTime()
+	const diffDays = diffMs / (1000 * 60 * 60 * 24)
+	let periodsNeeded = 0
+
+	if (period.unit.startsWith('day')) {
+		periodsNeeded = Math.ceil(diffDays / period.value)
+	} else if (period.unit.startsWith('week')) {
+		periodsNeeded = Math.ceil(diffDays / (period.value * 7))
+	} else if (period.unit.startsWith('month')) {
+		periodsNeeded = Math.ceil(diffDays / (period.value * 30.44))
+	} else if (period.unit.startsWith('year')) {
+		periodsNeeded = Math.ceil(diffDays / (period.value * 365.25))
+	}
+
+	// Jump directly to the estimated period
+	const effective = new Date(end)
+	if (period.unit.startsWith('month')) {
+		effective.setMonth(effective.getMonth() + period.value * periodsNeeded)
+	} else if (period.unit.startsWith('year')) {
+		effective.setFullYear(effective.getFullYear() + period.value * periodsNeeded)
+	} else if (period.unit.startsWith('week')) {
+		effective.setDate(effective.getDate() + period.value * 7 * periodsNeeded)
+	} else {
+		effective.setDate(effective.getDate() + period.value * periodsNeeded)
+	}
+
+	// Adjust if estimate was slightly off (max 3 iterations for month-length variance)
+	while (effective <= now) {
 		const next = addPeriod(effective, renewalPeriod)
 		if (!next) return end
-		effective = next
+		effective.setTime(next.getTime())
 	}
 
 	return effective
