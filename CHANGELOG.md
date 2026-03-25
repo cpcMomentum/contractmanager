@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-03-25
+
+### Added
+- Smart Picker fuer Vertragsdokument: Unterstuetzt jetzt externe URLs zusaetzlich zu Nextcloud-Dateien (#48)
+- Automatische Statusaenderung: Abgelaufene befristete Vertraege werden taeglich auf "Beendet" gesetzt (#53)
+
+### Fixed
+- Falsche Datumsberechnung bei monatlichen Vertraegen aelter als ~8 Jahre durch Iterations-Limit (#51)
+
 ## [0.2.5] - 2026-03-16
 
 ### Fixed
