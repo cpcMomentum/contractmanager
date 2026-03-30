@@ -28,20 +28,21 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Grunddaten') }}</h3>
 
-					<div class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</label>
-						<NcTextField :value.sync="form.name"
-							:required="true"
-							:disabled="readOnly"
-							:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')" />
-					</div>
-
-					<div class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
-						<NcTextField :value.sync="form.vendor"
-							:required="true"
-							:disabled="readOnly"
-							:placeholder="t('contractmanager', 'z.B. Microsoft')" />
+					<div class="form-row form-row--half">
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</label>
+							<NcTextField :value.sync="form.name"
+								:required="true"
+								:disabled="readOnly"
+								:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')" />
+						</div>
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
+							<NcTextField :value.sync="form.vendor"
+								:required="true"
+								:disabled="readOnly"
+								:placeholder="t('contractmanager', 'z.B. Microsoft')" />
+						</div>
 					</div>
 
 					<div class="form-row form-row--half">
@@ -103,50 +104,47 @@
 						{{ dateError }}
 					</NcNoteCard>
 
-					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
+					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--periods">
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') }}</label>
-							<div class="period-fields">
-								<NcTextField :value.sync="form.cancellationPeriodValue"
-									type="number"
-									min="1"
-									:required="true"
-									:disabled="readOnly"
-									class="period-number" />
-								<NcSelect v-model="form.cancellationPeriodUnit"
-									:options="periodUnitOptions"
-									:disabled="readOnly"
-									label="label"
-									track-by="value"
-									:reduce="option => option.value"
-									:clearable="false"
-									class="period-unit" />
-							</div>
+							<NcTextField :value.sync="form.cancellationPeriodValue"
+								type="number"
+								min="1"
+								:required="true"
+								:disabled="readOnly" />
 						</div>
-						<div v-if="calculatedCancellationDeadline" class="field-deadline">
+						<div>
+							<label class="form-label">&nbsp;</label>
+							<NcSelect v-model="form.cancellationPeriodUnit"
+								:options="periodUnitOptions"
+								:disabled="readOnly"
+								label="label"
+								track-by="value"
+								:reduce="option => option.value"
+								:clearable="false" />
+						</div>
+						<div v-if="calculatedCancellationDeadline">
 							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
 							<NcTextField :value="calculatedCancellationDeadline"
 								:disabled="true"
 								class="deadline-field" />
 						</div>
-					</div>
-
-					<div v-if="form.contractType === 'auto_renewal'" class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Verlängerungsintervall') }}</label>
-						<div class="period-fields">
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Verlängerung') }}</label>
 							<NcTextField :value.sync="form.renewalPeriodValue"
 								type="number"
 								min="1"
-								:disabled="readOnly"
-								class="period-number" />
+								:disabled="readOnly" />
+						</div>
+						<div>
+							<label class="form-label">&nbsp;</label>
 							<NcSelect v-model="form.renewalPeriodUnit"
 								:options="periodUnitOptions"
 								:disabled="readOnly"
 								label="label"
 								track-by="value"
 								:reduce="option => option.value"
-								:clearable="false"
-								class="period-unit" />
+								:clearable="false" />
 						</div>
 					</div>
 				</div>
@@ -155,8 +153,8 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Kosten') }}</h3>
 
-					<div class="form-row form-row--half">
-						<div>
+					<div class="form-row form-row--costs">
+						<div class="field-cost">
 							<label class="form-label">{{ t('contractmanager', 'Betrag (netto)') }}</label>
 							<NcTextField :value.sync="form.cost"
 								type="number"
@@ -164,7 +162,7 @@
 								:disabled="readOnly"
 								:placeholder="t('contractmanager', '0.00')" />
 						</div>
-						<div>
+						<div class="field-currency">
 							<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
 							<NcSelect v-model="form.currency"
 								:options="currencyOptions"
@@ -288,6 +286,29 @@
 					</div>
 				</div>
 
+				<!-- Custom Fields -->
+				<div v-if="hasCustomFields" class="form-section">
+					<h3>{{ t('contractmanager', 'Zusatzfelder') }}</h3>
+
+					<div v-if="customFieldLabels.customFieldLabel1" class="form-row">
+						<label class="form-label">{{ customFieldLabels.customFieldLabel1 }}</label>
+						<NcTextField :value.sync="form.customField1"
+							:disabled="readOnly" />
+					</div>
+
+					<div v-if="customFieldLabels.customFieldLabel2" class="form-row">
+						<label class="form-label">{{ customFieldLabels.customFieldLabel2 }}</label>
+						<NcTextField :value.sync="form.customField2"
+							:disabled="readOnly" />
+					</div>
+
+					<div v-if="customFieldLabels.customFieldLabel3" class="form-row">
+						<label class="form-label">{{ customFieldLabels.customFieldLabel3 }}</label>
+						<NcTextField :value.sync="form.customField3"
+							:disabled="readOnly" />
+					</div>
+				</div>
+
 				<!-- Notes -->
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Notizen') }}</h3>
@@ -366,6 +387,7 @@ import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import ExtractionService from '../services/ExtractionService.js'
+import SettingsService from '../services/SettingsService.js'
 import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
 
 export default {
@@ -412,6 +434,11 @@ export default {
 			aiAvailable: false,
 			extracting: false,
 			extractionNotes: null,
+			customFieldLabels: {
+				customFieldLabel1: '',
+				customFieldLabel2: '',
+				customFieldLabel3: '',
+			},
 		}
 	},
 	computed: {
@@ -483,6 +510,11 @@ export default {
 				{ value: 'ended', label: t('contractmanager', 'Beendet') },
 			]
 		},
+		hasCustomFields() {
+			return this.customFieldLabels.customFieldLabel1
+				|| this.customFieldLabels.customFieldLabel2
+				|| this.customFieldLabels.customFieldLabel3
+		},
 		calculatedCancellationDeadline() {
 			if (!this.form.endDate || !this.form.cancellationPeriodValue || !this.form.cancellationPeriodUnit) {
 				return null
@@ -501,6 +533,14 @@ export default {
 			this.aiAvailable = status.configured
 		} catch (e) {
 			this.aiAvailable = false
+		}
+		try {
+			const settings = await SettingsService.getUserSettings()
+			if (settings.customFieldLabels) {
+				this.customFieldLabels = settings.customFieldLabels
+			}
+		} catch (e) {
+			console.debug('Failed to load custom field labels:', e)
 		}
 	},
 	watch: {
@@ -542,6 +582,9 @@ export default {
 				reminderDays: '',
 				notes: '',
 				isPrivate: false,
+				customField1: '',
+				customField2: '',
+				customField3: '',
 			}
 		},
 		formatDateDisplay(date) {
@@ -619,6 +662,9 @@ export default {
 				reminderDays: contract.reminderDays ? String(contract.reminderDays) : '',
 				notes: contract.notes || '',
 				isPrivate: contract.isPrivate === true || contract.isPrivate === 1,
+				customField1: contract.customField1 || '',
+				customField2: contract.customField2 || '',
+				customField3: contract.customField3 || '',
 			}
 		},
 		formToPayload() {
@@ -644,6 +690,9 @@ export default {
 				reminderDays: this.form.reminderDays ? parseInt(this.form.reminderDays, 10) : null,
 				notes: this.form.notes.trim() || null,
 				isPrivate: this.form.isPrivate,
+				customField1: this.form.customField1.trim() || null,
+				customField2: this.form.customField2.trim() || null,
+				customField3: this.form.customField3.trim() || null,
 			}
 		},
 		formatDateForApi(date) {
@@ -811,10 +860,10 @@ export default {
 }
 
 .form-section {
-	margin-bottom: 24px;
+	margin-bottom: 20px;
 
 	h3 {
-		margin-bottom: 12px;
+		margin-bottom: 8px;
 		font-size: 14px;
 		font-weight: 600;
 		color: var(--color-text-maxcontrast);
@@ -824,12 +873,12 @@ export default {
 }
 
 .form-row {
-	margin-bottom: 16px;
+	margin-bottom: 12px;
 
 	&--half {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 16px;
+		gap: 12px;
 		align-items: start;
 
 		> div {
@@ -840,8 +889,8 @@ export default {
 
 	&--dates {
 		display: grid;
-		grid-template-columns: 130px 130px 1fr;
-		gap: 16px;
+		grid-template-columns: 120px 120px 1fr;
+		gap: 12px;
 		align-items: start;
 
 		> div {
@@ -849,13 +898,27 @@ export default {
 			flex-direction: column;
 		}
 	}
+
+	&--costs {
+		display: flex;
+		gap: 12px;
+		align-items: start;
+
+		.field-cost {
+			flex: 0 0 150px;
+		}
+
+		.field-currency {
+			flex: 0 0 100px;
+		}
+	}
 }
 
 .field-date {
-	max-width: 130px;
+	max-width: 120px;
 
 	:deep(.input-field) {
-		max-width: 130px;
+		max-width: 120px;
 	}
 }
 
@@ -902,24 +965,33 @@ export default {
 	min-width: 120px;
 }
 
-.form-row--cancellation {
-	display: flex;
-	gap: 16px;
-	align-items: flex-start;
+.form-row--periods {
+	display: grid;
+	grid-template-columns: 55px 160px 110px 55px 160px;
+	gap: 12px;
+	align-items: start;
 
 	> div {
 		display: flex;
 		flex-direction: column;
+		min-width: 0;
+	}
+
+	:deep(.v-select.select) {
+		min-width: 0 !important;
+		width: 100% !important;
+		margin: 0 !important;
+	}
+
+	:deep(.select) {
+		min-width: 0 !important;
+		width: 100% !important;
+		margin: 0 !important;
 	}
 }
 
-.field-deadline {
-	min-width: 140px;
-	margin-left: 60px;
-
+.deadline-field {
 	:deep(.input-field) {
-		max-width: 140px;
-
 		input {
 			color: var(--color-main-text) !important;
 			-webkit-text-fill-color: var(--color-main-text) !important;

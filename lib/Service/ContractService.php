@@ -80,6 +80,12 @@ class ContractService {
 		if (!empty($data['notes']) && strlen($data['notes']) > self::MAX_NOTES_LENGTH) {
 			$errors['notes'] = $this->l()->t('Notes are too long (max. %s characters)', [self::MAX_NOTES_LENGTH]);
 		}
+		for ($i = 1; $i <= 3; $i++) {
+			$key = 'customField' . $i;
+			if (!empty($data[$key]) && strlen($data[$key]) > self::MAX_STRING_LENGTH) {
+				$errors[$key] = $this->l()->t('Field is too long (max. %s characters)', [self::MAX_STRING_LENGTH]);
+			}
+		}
 
 		if (!empty($errors)) {
 			throw new ValidationException($errors);
@@ -243,6 +249,9 @@ class ContractService {
         ?int $reminderDays = null,
         ?string $notes = null,
         bool $isPrivate = false,
+        ?string $customField1 = null,
+        ?string $customField2 = null,
+        ?string $customField3 = null,
     ): Contract {
         $contract = new Contract();
         $contract->setName($name);
@@ -263,6 +272,9 @@ class ContractService {
         $contract->setReminderDays($reminderDays);
         $contract->setNotes($notes);
         $contract->setIsPrivate($isPrivate);
+        $contract->setCustomField1($customField1);
+        $contract->setCustomField2($customField2);
+        $contract->setCustomField3($customField3);
         $contract->setCreatedBy($userId);
         $contract->setCreatedAt(new DateTime());
         $contract->setUpdatedAt(new DateTime());
@@ -297,6 +309,9 @@ class ContractService {
         ?int $reminderDays = null,
         ?string $notes = null,
         ?bool $isPrivate = null,
+        ?string $customField1 = null,
+        ?string $customField2 = null,
+        ?string $customField3 = null,
     ): Contract {
         try {
             $contract = $this->mapper->find($id);
@@ -326,6 +341,9 @@ class ContractService {
         if ($isPrivate !== null) {
             $contract->setIsPrivate($isPrivate);
         }
+        $contract->setCustomField1($customField1);
+        $contract->setCustomField2($customField2);
+        $contract->setCustomField3($customField3);
         $contract->setUpdatedAt(new DateTime());
 
         return $this->mapper->update($contract);

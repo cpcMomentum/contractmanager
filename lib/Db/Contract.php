@@ -51,6 +51,12 @@ use OCP\AppFramework\Db\Entity;
  * @method void setCreatedAt(DateTime $createdAt)
  * @method DateTime getUpdatedAt()
  * @method void setUpdatedAt(DateTime $updatedAt)
+ * @method string|null getCustomField1()
+ * @method void setCustomField1(?string $customField1)
+ * @method string|null getCustomField2()
+ * @method void setCustomField2(?string $customField2)
+ * @method string|null getCustomField3()
+ * @method void setCustomField3(?string $customField3)
  * @method int getArchived()
  * @method int getIsPrivate()
  * @method DateTime|null getDeletedAt()
@@ -85,6 +91,9 @@ class Contract extends Entity implements JsonSerializable {
     protected int $reminderEnabled = 1;
     protected ?int $reminderDays = null;
     protected ?string $notes = null;
+    protected ?string $customField1 = null;
+    protected ?string $customField2 = null;
+    protected ?string $customField3 = null;
     protected int $archived = 0;
     protected int $isPrivate = 0;
     protected ?DateTime $deletedAt = null;
@@ -159,6 +168,9 @@ class Contract extends Entity implements JsonSerializable {
             'reminderEnabled' => (bool) $this->reminderEnabled,
             'reminderDays' => $this->reminderDays,
             'notes' => $this->notes,
+            'customField1' => $this->customField1,
+            'customField2' => $this->customField2,
+            'customField3' => $this->customField3,
             'archived' => (bool) $this->archived,
             'isPrivate' => (bool) $this->isPrivate,
             'deletedAt' => $this->deletedAt?->format('c'),
