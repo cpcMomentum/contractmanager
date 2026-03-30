@@ -147,6 +147,28 @@
 				</div>
 			</div>
 
+			<!-- Custom Fields Settings -->
+			<div class="settings-section admin-section">
+				<h3>
+					<ShieldIcon :size="20" class="admin-icon" />
+					{{ t('contractmanager', 'Zusatzfelder') }}
+				</h3>
+				<p class="settings-description">
+					{{ t('contractmanager', 'Aktivieren Sie bis zu 3 optionale Zusatzfelder für Verträge.') }}
+				</p>
+
+				<div v-for="n in 3" :key="'cf' + n" class="settings-item custom-field-item">
+					<NcCheckboxRadioSwitch :checked="customFieldEnabled(n)"
+						@update:checked="toggleCustomField(n, $event)">
+						{{ t('contractmanager', 'Zusatzfeld {n}', { n }) }}
+					</NcCheckboxRadioSwitch>
+					<NcTextField v-if="customFieldEnabled(n)"
+						:value.sync="adminSettings['customFieldLabel' + n]"
+						:placeholder="customFieldPlaceholders[n - 1]"
+						class="settings-input custom-field-label" />
+				</div>
+			</div>
+
 			<!-- AI Extraction Settings -->
 			<div class="settings-section admin-section">
 				<h3>
@@ -336,6 +358,9 @@ export default {
 				talkChatToken: '',
 				reminderDays1: 14,
 				reminderDays2: 3,
+				customFieldLabel1: '',
+				customFieldLabel2: '',
+				customFieldLabel3: '',
 				aiProvider: '',
 				aiApiKey: '',
 				aiApiUrl: '',
@@ -357,6 +382,13 @@ export default {
 		...mapGetters('categories', {
 			categories: 'allCategories',
 		}),
+		customFieldPlaceholders() {
+			return [
+				t('contractmanager', 'z.B. Versicherungsnummer'),
+				t('contractmanager', 'z.B. Zugeordnet an'),
+				t('contractmanager', 'z.B. Kostenstelle'),
+			]
+		},
 		aiProviderOptions() {
 			return [
 				{ value: 'claude', label: 'Claude (Anthropic)' },
@@ -385,6 +417,18 @@ export default {
 	methods: {
 		...mapActions('categories', ['fetchCategories', 'createCategory', 'updateCategory', 'deleteCategory']),
 
+		customFieldEnabled(n) {
+			return this.adminSettings['customFieldLabel' + n] !== ''
+		},
+
+		toggleCustomField(n, enabled) {
+			if (enabled) {
+				this.adminSettings['customFieldLabel' + n] = this.customFieldPlaceholders[n - 1].replace('z.B. ', '')
+			} else {
+				this.adminSettings['customFieldLabel' + n] = ''
+			}
+		},
+
 		async loadUserSettings() {
 			try {
 				const settings = await SettingsService.getUserSettings()
@@ -401,6 +445,9 @@ export default {
 					talkChatToken: settings.talkChatToken || '',
 					reminderDays1: settings.reminderDays1 || 14,
 					reminderDays2: settings.reminderDays2 || 3,
+					customFieldLabel1: settings.customFieldLabel1 || '',
+					customFieldLabel2: settings.customFieldLabel2 || '',
+					customFieldLabel3: settings.customFieldLabel3 || '',
 					aiProvider: settings.aiProvider || '',
 					aiApiKey: settings.aiApiKey || '',
 					aiApiUrl: settings.aiApiUrl || '',
@@ -502,6 +549,9 @@ export default {
 					talkChatToken: this.adminSettings.talkChatToken,
 					reminderDays1: parseInt(this.adminSettings.reminderDays1, 10),
 					reminderDays2: parseInt(this.adminSettings.reminderDays2, 10),
+					customFieldLabel1: this.adminSettings.customFieldLabel1,
+					customFieldLabel2: this.adminSettings.customFieldLabel2,
+					customFieldLabel3: this.adminSettings.customFieldLabel3,
 					aiProvider: this.adminSettings.aiProvider || '',
 					aiApiKey: this.adminSettings.aiApiKey,
 					aiApiUrl: this.adminSettings.aiApiUrl,
@@ -511,6 +561,9 @@ export default {
 					talkChatToken: result.talkChatToken || '',
 					reminderDays1: result.reminderDays1 || 14,
 					reminderDays2: result.reminderDays2 || 3,
+					customFieldLabel1: result.customFieldLabel1 || '',
+					customFieldLabel2: result.customFieldLabel2 || '',
+					customFieldLabel3: result.customFieldLabel3 || '',
 					aiProvider: result.aiProvider || '',
 					aiApiKey: result.aiApiKey || '',
 					aiApiUrl: result.aiApiUrl || '',
@@ -743,6 +796,12 @@ export default {
 	background: var(--color-background-dark);
 	border-radius: 16px;
 	font-size: 13px;
+}
+
+.custom-field-item {
+	.custom-field-label {
+		margin-top: 8px;
+	}
 }
 
 .settings-actions {

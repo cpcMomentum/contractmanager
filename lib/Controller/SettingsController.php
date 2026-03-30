@@ -45,6 +45,7 @@ class SettingsController extends Controller {
 			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
+			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
 		]);
 	}
 
@@ -99,6 +100,9 @@ class SettingsController extends Controller {
 			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
+			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
+			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
+			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? '••••••••' : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
@@ -114,6 +118,9 @@ class SettingsController extends Controller {
 		?string $talkChatToken = null,
 		?int $reminderDays1 = null,
 		?int $reminderDays2 = null,
+		?string $customFieldLabel1 = null,
+		?string $customFieldLabel2 = null,
+		?string $customFieldLabel3 = null,
 		?string $aiProvider = null,
 		?string $aiApiKey = null,
 		?string $aiApiUrl = null,
@@ -129,6 +136,18 @@ class SettingsController extends Controller {
 
 		if ($reminderDays2 !== null) {
 			$this->settingsService->setReminderDays2($reminderDays2);
+		}
+
+		if ($customFieldLabel1 !== null) {
+			$this->settingsService->setCustomFieldLabel(1, $customFieldLabel1);
+		}
+
+		if ($customFieldLabel2 !== null) {
+			$this->settingsService->setCustomFieldLabel(2, $customFieldLabel2);
+		}
+
+		if ($customFieldLabel3 !== null) {
+			$this->settingsService->setCustomFieldLabel(3, $customFieldLabel3);
 		}
 
 		if ($aiProvider !== null) {
@@ -152,6 +171,9 @@ class SettingsController extends Controller {
 			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
+			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
+			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
+			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? '••••••••' : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
