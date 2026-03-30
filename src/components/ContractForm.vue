@@ -264,17 +264,25 @@
 										</template>
 										{{ t('contractmanager', 'Öffnen') }}
 									</NcButton>
-									<NcButton v-else
-										type="secondary"
-										@click="openSmartPicker">
-										<template #icon>
-											<File :size="20" />
-										</template>
-										{{ t('contractmanager', 'Wählen') }}
-									</NcButton>
+									<template v-if="!form.mainDocument && !readOnly">
+										<NcButton type="secondary"
+											@click="openFilePicker">
+											<template #icon>
+												<File :size="20" />
+											</template>
+											{{ t('contractmanager', 'Datei wählen') }}
+										</NcButton>
+										<NcButton type="tertiary"
+											@click="showUrlInput = !showUrlInput">
+											<template #icon>
+												<OpenInNewIcon :size="20" />
+											</template>
+											{{ t('contractmanager', 'Externer Link') }}
+										</NcButton>
+									</template>
 									<NcButton v-if="form.mainDocument && !readOnly"
 										type="secondary"
-										@click="openSmartPicker">
+										@click="openFilePicker">
 										{{ t('contractmanager', 'Ändern') }}
 									</NcButton>
 									<NcButton v-if="form.mainDocument && !readOnly"
@@ -284,6 +292,14 @@
 										<template #icon>
 											<Close :size="20" />
 										</template>
+									</NcButton>
+								</div>
+								<div v-if="showUrlInput && !readOnly && !form.mainDocument" class="url-input-row">
+									<NcTextField :value.sync="urlInput"
+										:placeholder="t('contractmanager', 'https://...')"
+										@keydown.enter.native.prevent="addExternalUrl" />
+									<NcButton type="primary" @click="addExternalUrl">
+										{{ t('contractmanager', 'Hinzufügen') }}
 									</NcButton>
 								</div>
 							</div>
@@ -368,7 +384,6 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadi
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
-import { getLinkWithPicker } from '@nextcloud/vue/dist/Functions/reference.js'
 import { mapGetters } from 'vuex'
 import Folder from 'vue-material-design-icons/Folder.vue'
 import File from 'vue-material-design-icons/File.vue'
@@ -433,6 +448,8 @@ export default {
 			aiAvailable: false,
 			extracting: false,
 			extractionNotes: null,
+			showUrlInput: false,
+			urlInput: '',
 			customFieldLabels: {
 				customFieldLabel1: '',
 				customFieldLabel2: '',
@@ -728,16 +745,30 @@ export default {
 				console.debug('Folder picker cancelled', e)
 			}
 		},
-		async openSmartPicker() {
+		async openFilePicker() {
 			try {
-				const link = await getLinkWithPicker()
-				if (link) {
-					this.form.mainDocument = link
+				const picker = getFilePickerBuilder(t('contractmanager', 'Vertragsdokument wählen'))
+					.setMultiSelect(false)
+					.setType(1)
+					.build()
+				const path = await picker.pick()
+				if (path) {
+					this.form.mainDocument = path
 				}
 			} catch (e) {
-				// User cancelled - getLinkWithPicker rejects on cancel
-				console.debug('Smart Picker cancelled', e)
+				console.debug('File picker cancelled', e)
 			}
+		},
+		addExternalUrl() {
+			const url = this.urlInput.trim()
+			if (!url) return
+			if (!isUrl(url)) {
+				showError(t('contractmanager', 'Bitte eine gültige URL eingeben (https://...)'))
+				return
+			}
+			this.form.mainDocument = url
+			this.urlInput = ''
+			this.showUrlInput = false
 		},
 		async analyzeDocument() {
 			try {
@@ -818,26 +849,25 @@ export default {
 			if (!this.isValid) return
 			this.$emit('submit', this.formToPayload())
 		},
+		openInNextcloud(folder) {
+			if (!folder) return
+			window.open(generateUrl('/apps/files/?dir={dir}', { dir: folder }), '_blank', 'noopener,noreferrer')
+		},
 		async openDocument(value) {
-			// URL (intern oder extern): direkt oeffnen
+			// Externe/interne URLs: direkt im neuen Tab oeffnen
 			if (isUrl(value)) {
 				window.open(value, '_blank', 'noopener,noreferrer')
 				return
 			}
-
-			// Legacy-Pfad: bestehende Logik
-			const path = value
-			const isFile = path.includes('.') && !path.endsWith('/')
-
-			if (!isFile) {
-				window.open(generateUrl('/apps/files/?dir={dir}', { dir: path }), '_blank', 'noopener,noreferrer')
+			// Nextcloud Viewer Overlay (bevorzugt, kein neuer Tab)
+			if (window.OCA?.Viewer?.open) {
+				OCA.Viewer.open({ path: value })
 				return
 			}
-
-			// Datei: File-ID per WebDAV holen und /f/{id} oeffnen
+			// Fallback: File-ID per WebDAV holen
 			try {
 				const user = getCurrentUser()?.uid
-				const davPath = `/remote.php/dav/files/${user}${path}`
+				const davPath = `/remote.php/dav/files/${user}${value}`
 				const response = await axios({
 					method: 'PROPFIND',
 					url: davPath,
@@ -857,9 +887,9 @@ export default {
 			} catch (e) {
 				console.warn('[ContractManager] Could not resolve file ID:', e)
 			}
-			// Fallback: Datei in Files-App anzeigen
-			const parentDir = path.substring(0, path.lastIndexOf('/')) || '/'
-			const fileName = path.substring(path.lastIndexOf('/') + 1)
+			// Letzter Fallback: Files-App scrollto
+			const parentDir = value.substring(0, value.lastIndexOf('/')) || '/'
+			const fileName = value.substring(value.lastIndexOf('/') + 1)
 			window.open(generateUrl('/apps/files/?dir={dir}&scrollto={file}', { dir: parentDir, file: fileName }), '_blank', 'noopener,noreferrer')
 		},
 	},
@@ -1042,6 +1072,13 @@ export default {
 .document-buttons--compact {
 	gap: 4px;
 	height: auto;
+}
+
+.url-input-row {
+	display: flex;
+	gap: 8px;
+	align-items: flex-end;
+	margin-top: 4px;
 }
 
 .no-document-text {
