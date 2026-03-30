@@ -71,6 +71,8 @@ class Contract extends Entity implements JsonSerializable {
     public const TYPE_AUTO_RENEWAL = 'auto_renewal';
 
     public const INTERVAL_MONTHLY = 'monthly';
+    public const INTERVAL_QUARTERLY = 'quarterly';
+    public const INTERVAL_SEMI_ANNUAL = 'semi_annual';
     public const INTERVAL_YEARLY = 'yearly';
     public const INTERVAL_ONE_TIME = 'one_time';
 

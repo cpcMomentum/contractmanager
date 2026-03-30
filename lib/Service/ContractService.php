@@ -20,6 +20,14 @@ class ContractService {
 		Contract::STATUS_ENDED,
 	];
 
+	private const VALID_INTERVALS = [
+		Contract::INTERVAL_MONTHLY,
+		Contract::INTERVAL_QUARTERLY,
+		Contract::INTERVAL_SEMI_ANNUAL,
+		Contract::INTERVAL_YEARLY,
+		Contract::INTERVAL_ONE_TIME,
+	];
+
 	private const MAX_STRING_LENGTH = 500;
 	private const MAX_NOTES_LENGTH = 5000;
 
@@ -68,6 +76,11 @@ class ContractService {
 		// Status validation
 		if (!empty($data['status']) && !in_array($data['status'], self::VALID_STATUSES, true)) {
 			$errors['status'] = $this->l()->t('Invalid status');
+		}
+
+		// Cost interval validation
+		if (!empty($data['costInterval']) && !in_array($data['costInterval'], self::VALID_INTERVALS, true)) {
+			$errors['costInterval'] = $this->l()->t('Invalid cost interval');
 		}
 
 		// String length validation (L2 Security Fix)
