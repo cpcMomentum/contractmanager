@@ -28,20 +28,19 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Grunddaten') }}</h3>
 
-					<div class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</label>
-						<NcTextField :value.sync="form.name"
-							:required="true"
-							:disabled="readOnly"
-							:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')" />
-					</div>
-
-					<div class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
-						<NcTextField :value.sync="form.vendor"
-							:required="true"
-							:disabled="readOnly"
-							:placeholder="t('contractmanager', 'z.B. Microsoft')" />
+					<div class="form-row form-row--half">
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</label>
+							<NcTextField :value.sync="form.name"
+								:disabled="readOnly"
+								:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')" />
+						</div>
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
+							<NcTextField :value.sync="form.vendor"
+								:disabled="readOnly"
+								:placeholder="t('contractmanager', 'z.B. Microsoft')" />
+						</div>
 					</div>
 
 					<div class="form-row form-row--half">
@@ -66,13 +65,31 @@
 								:clearable="false" />
 						</div>
 					</div>
+
+					<div v-if="hasCustomFields" class="form-row form-row--custom">
+						<div v-if="customFieldLabels.customFieldLabel1">
+							<label class="form-label">{{ customFieldLabels.customFieldLabel1 }}</label>
+							<NcTextField :value.sync="form.customField1"
+								:disabled="readOnly" />
+						</div>
+						<div v-if="customFieldLabels.customFieldLabel2">
+							<label class="form-label">{{ customFieldLabels.customFieldLabel2 }}</label>
+							<NcTextField :value.sync="form.customField2"
+								:disabled="readOnly" />
+						</div>
+						<div v-if="customFieldLabels.customFieldLabel3">
+							<label class="form-label">{{ customFieldLabels.customFieldLabel3 }}</label>
+							<NcTextField :value.sync="form.customField3"
+								:disabled="readOnly" />
+						</div>
+					</div>
 				</div>
 
 				<!-- Dates -->
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Laufzeit') }}</h3>
 
-					<div class="form-row form-row--dates">
+					<div :class="['form-row', showCancellationDeadline ? 'form-row--dates-extended' : 'form-row--dates']">
 						<div class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Startdatum') + ' *' }}</label>
 							<NcTextField :value.sync="form.startDateFormatted"
@@ -86,6 +103,12 @@
 								:placeholder="t('contractmanager', 'TT.MM.JJJJ')"
 								:disabled="readOnly"
 								@blur="parseEndDate" />
+						</div>
+						<div v-if="showCancellationDeadline" class="field-date">
+							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
+							<NcTextField :value="calculatedCancellationDeadline"
+								:disabled="true"
+								class="deadline-field" />
 						</div>
 						<div class="field-type">
 							<label class="form-label">{{ t('contractmanager', 'Vertragstyp') + ' *' }}</label>
@@ -103,71 +126,35 @@
 						{{ dateError }}
 					</NcNoteCard>
 
-					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--cancellation">
+					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--periods">
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') }}</label>
-							<div class="period-fields">
-								<NcTextField :value.sync="form.cancellationPeriodValue"
-									type="number"
-									min="1"
-									:required="true"
-									:disabled="readOnly"
-									class="period-number" />
-								<NcSelect v-model="form.cancellationPeriodUnit"
-									:options="periodUnitOptions"
-									:disabled="readOnly"
-									label="label"
-									track-by="value"
-									:reduce="option => option.value"
-									:clearable="false"
-									class="period-unit" />
-							</div>
-						</div>
-						<div v-if="calculatedCancellationDeadline" class="field-deadline">
-							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
-							<NcTextField :value="calculatedCancellationDeadline"
-								:disabled="true"
-								class="deadline-field" />
-						</div>
-					</div>
-
-					<div v-if="form.contractType === 'auto_renewal'" class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Verlängerungsintervall') }}</label>
-						<div class="period-fields">
-							<NcTextField :value.sync="form.renewalPeriodValue"
+							<NcTextField :value.sync="form.cancellationPeriodValue"
 								type="number"
 								min="1"
-								:disabled="readOnly"
-								class="period-number" />
-							<NcSelect v-model="form.renewalPeriodUnit"
+								:disabled="readOnly" />
+						</div>
+						<div>
+							<label class="form-label">&nbsp;</label>
+							<NcSelect v-model="form.cancellationPeriodUnit"
 								:options="periodUnitOptions"
 								:disabled="readOnly"
 								label="label"
 								track-by="value"
 								:reduce="option => option.value"
-								:clearable="false"
-								class="period-unit" />
+								:clearable="false" />
 						</div>
-					</div>
-				</div>
-
-				<!-- Costs -->
-				<div class="form-section">
-					<h3>{{ t('contractmanager', 'Kosten') }}</h3>
-
-					<div class="form-row form-row--half">
 						<div>
-							<label class="form-label">{{ t('contractmanager', 'Betrag (netto)') }}</label>
-							<NcTextField :value.sync="form.cost"
+							<label class="form-label">{{ t('contractmanager', 'Verlängerung') }}</label>
+							<NcTextField :value.sync="form.renewalPeriodValue"
 								type="number"
-								step="0.01"
-								:disabled="readOnly"
-								:placeholder="t('contractmanager', '0.00')" />
+								min="1"
+								:disabled="readOnly" />
 						</div>
 						<div>
-							<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
-							<NcSelect v-model="form.currency"
-								:options="currencyOptions"
+							<label class="form-label">&nbsp;</label>
+							<NcSelect v-model="form.renewalPeriodUnit"
+								:options="periodUnitOptions"
 								:disabled="readOnly"
 								label="label"
 								track-by="value"
@@ -177,114 +164,145 @@
 					</div>
 				</div>
 
-				<!-- Documents -->
+				<!-- Costs / Documents / Reminder -->
 				<div class="form-section">
-					<h3>{{ t('contractmanager', 'Dokumente') }}</h3>
-
-					<div class="form-row form-row--half">
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Vertragsordner') }}</label>
-							<span v-if="form.contractFolder" class="selected-path" :title="form.contractFolder">
-								{{ form.contractFolder.split('/').filter(s => s).pop() }}
-							</span>
-							<div class="document-buttons">
-								<span v-if="readOnly && !form.contractFolder" class="no-document-text">
-									{{ t('contractmanager', 'Kein Ordner ausgewählt') }}
-								</span>
-								<NcButton v-else-if="form.contractFolder"
-									type="primary"
-									:title="form.contractFolder"
-									@click="openInNextcloud(form.contractFolder)">
-									<template #icon>
-										<Folder :size="20" />
-									</template>
-									{{ t('contractmanager', 'Öffnen') }}
-								</NcButton>
-								<NcButton v-else
-									type="secondary"
-									@click="openFolderPicker">
-									<template #icon>
-										<Folder :size="20" />
-									</template>
-									{{ t('contractmanager', 'Wählen') }}
-								</NcButton>
-								<NcButton v-if="form.contractFolder && !readOnly"
-									type="secondary"
-									@click="openFolderPicker">
-									{{ t('contractmanager', 'Ändern') }}
-								</NcButton>
-								<NcButton v-if="form.contractFolder && !readOnly"
-									type="tertiary"
-									:title="t('contractmanager', 'Entfernen')"
-									@click="form.contractFolder = ''">
-									<template #icon>
-										<Close :size="20" />
-									</template>
-								</NcButton>
+					<div class="form-row form-row--triple">
+						<!-- Kosten -->
+						<div class="triple-column">
+							<h3>{{ t('contractmanager', 'Kosten') }}</h3>
+							<div class="cost-top">
+								<div class="field-cost">
+									<label class="form-label">{{ t('contractmanager', 'Betrag (netto)') }}</label>
+									<NcTextField :value.sync="form.cost"
+										type="number"
+										step="0.01"
+										:disabled="readOnly"
+										:placeholder="t('contractmanager', '0.00')" />
+								</div>
+								<div class="field-currency">
+									<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
+									<NcSelect v-model="form.currency"
+										:options="currencyOptions"
+										:disabled="readOnly"
+										label="label"
+										track-by="value"
+										:reduce="option => option.value"
+										:clearable="false" />
+								</div>
+							</div>
+							<div class="cost-bottom">
+								<label class="form-label">{{ t('contractmanager', 'Zahlweise') }}</label>
+								<NcSelect v-model="form.costInterval"
+									:options="costIntervalOptions"
+									:disabled="readOnly"
+									label="label"
+									track-by="value"
+									:reduce="option => option.value"
+									:clearable="false" />
 							</div>
 						</div>
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Vertragsdokument') }}</label>
-							<span v-if="form.mainDocument" class="selected-path" :title="form.mainDocument">
-								<OpenInNewIcon v-if="isExternalDocument" :size="14" class="external-icon" />
-								{{ documentDisplayName }}
-							</span>
-							<div class="document-buttons">
-								<span v-if="readOnly && !form.mainDocument" class="no-document-text">
-									{{ t('contractmanager', 'Kein Dokument verknüpft') }}
+
+						<!-- Dokumente -->
+						<div class="triple-column">
+							<h3>{{ t('contractmanager', 'Dokumente') }}</h3>
+							<div class="doc-row">
+								<label class="form-label">{{ t('contractmanager', 'Vertragsordner') }}</label>
+								<span v-if="form.contractFolder" class="selected-path" :title="form.contractFolder">
+									{{ form.contractFolder.split('/').filter(s => s).pop() }}
 								</span>
-								<NcButton v-else-if="form.mainDocument"
-									type="primary"
-									:title="form.mainDocument"
-									@click="openDocument(form.mainDocument)">
-									<template #icon>
-										<OpenInNewIcon v-if="isExternalDocument" :size="20" />
-										<File v-else :size="20" />
-									</template>
-									{{ t('contractmanager', 'Öffnen') }}
-								</NcButton>
-								<NcButton v-else
-									type="secondary"
-									@click="openSmartPicker">
-									<template #icon>
-										<File :size="20" />
-									</template>
-									{{ t('contractmanager', 'Wählen') }}
-								</NcButton>
-								<NcButton v-if="form.mainDocument && !readOnly"
-									type="secondary"
-									@click="openSmartPicker">
-									{{ t('contractmanager', 'Ändern') }}
-								</NcButton>
-								<NcButton v-if="form.mainDocument && !readOnly"
-									type="tertiary"
-									:title="t('contractmanager', 'Entfernen')"
-									@click="form.mainDocument = ''">
-									<template #icon>
-										<Close :size="20" />
-									</template>
-								</NcButton>
+								<div class="document-buttons document-buttons--compact">
+									<span v-if="readOnly && !form.contractFolder" class="no-document-text">
+										{{ t('contractmanager', 'Kein Ordner') }}
+									</span>
+									<NcButton v-else-if="form.contractFolder"
+										type="primary"
+										@click="openInNextcloud(form.contractFolder)">
+										<template #icon>
+											<Folder :size="20" />
+										</template>
+										{{ t('contractmanager', 'Öffnen') }}
+									</NcButton>
+									<NcButton v-else
+										type="secondary"
+										@click="openFolderPicker">
+										<template #icon>
+											<Folder :size="20" />
+										</template>
+										{{ t('contractmanager', 'Wählen') }}
+									</NcButton>
+									<NcButton v-if="form.contractFolder && !readOnly"
+										type="secondary"
+										@click="openFolderPicker">
+										{{ t('contractmanager', 'Ändern') }}
+									</NcButton>
+									<NcButton v-if="form.contractFolder && !readOnly"
+										type="tertiary"
+										:title="t('contractmanager', 'Entfernen')"
+										@click="form.contractFolder = ''">
+										<template #icon>
+											<Close :size="20" />
+										</template>
+									</NcButton>
+								</div>
+							</div>
+							<div class="doc-row">
+								<label class="form-label">{{ t('contractmanager', 'Vertragsdokument') }}</label>
+								<span v-if="form.mainDocument" class="selected-path" :title="form.mainDocument">
+									<OpenInNewIcon v-if="isExternalDocument" :size="14" class="external-icon" />
+									{{ documentDisplayName }}
+								</span>
+								<div class="document-buttons document-buttons--compact">
+									<span v-if="readOnly && !form.mainDocument" class="no-document-text">
+										{{ t('contractmanager', 'Kein Dokument') }}
+									</span>
+									<NcButton v-else-if="form.mainDocument"
+										type="primary"
+										@click="openDocument(form.mainDocument)">
+										<template #icon>
+											<OpenInNewIcon v-if="isExternalDocument" :size="20" />
+											<File v-else :size="20" />
+										</template>
+										{{ t('contractmanager', 'Öffnen') }}
+									</NcButton>
+									<NcButton v-else
+										type="secondary"
+										@click="openSmartPicker">
+										<template #icon>
+											<File :size="20" />
+										</template>
+										{{ t('contractmanager', 'Wählen') }}
+									</NcButton>
+									<NcButton v-if="form.mainDocument && !readOnly"
+										type="secondary"
+										@click="openSmartPicker">
+										{{ t('contractmanager', 'Ändern') }}
+									</NcButton>
+									<NcButton v-if="form.mainDocument && !readOnly"
+										type="tertiary"
+										:title="t('contractmanager', 'Entfernen')"
+										@click="form.mainDocument = ''">
+										<template #icon>
+											<Close :size="20" />
+										</template>
+									</NcButton>
+								</div>
 							</div>
 						</div>
-					</div>
-				</div>
 
-				<!-- Reminder -->
-				<div class="form-section">
-					<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
-
-					<div class="form-row">
-						<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
-							{{ t('contractmanager', 'Erinnerung aktivieren') }}
-						</NcCheckboxRadioSwitch>
-					</div>
-
-					<div v-if="form.reminderEnabled" class="form-row">
-						<NcTextField :label="t('contractmanager', 'Erinnerung X Tage vorher (optional)')"
-							:value.sync="form.reminderDays"
-							type="number"
-							:disabled="readOnly"
-							:placeholder="t('contractmanager', 'Standard verwenden')" />
+						<!-- Erinnerung -->
+						<div class="triple-column">
+							<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
+							<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
+								{{ t('contractmanager', 'Erinnerung aktivieren') }}
+							</NcCheckboxRadioSwitch>
+							<div v-if="form.reminderEnabled" class="reminder-days">
+								<NcTextField :label="t('contractmanager', 'X Tage vorher')"
+									:value.sync="form.reminderDays"
+									type="number"
+									:disabled="readOnly"
+									:placeholder="t('contractmanager', 'Standard')" />
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -358,6 +376,7 @@ import Close from 'vue-material-design-icons/Close.vue'
 import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
+import Pencil from 'vue-material-design-icons/Pencil.vue'
 import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
@@ -366,6 +385,7 @@ import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import ExtractionService from '../services/ExtractionService.js'
+import SettingsService from '../services/SettingsService.js'
 import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
 
 export default {
@@ -385,6 +405,7 @@ export default {
 		OpenInNewIcon,
 		LockIcon,
 		LockOpenVariantIcon,
+		Pencil,
 		FileSearchIcon,
 	},
 	props: {
@@ -412,6 +433,11 @@ export default {
 			aiAvailable: false,
 			extracting: false,
 			extractionNotes: null,
+			customFieldLabels: {
+				customFieldLabel1: '',
+				customFieldLabel2: '',
+				customFieldLabel3: '',
+			},
 		}
 	},
 	computed: {
@@ -468,6 +494,15 @@ export default {
 				{ value: 'GBP', label: 'GBP' },
 			]
 		},
+		costIntervalOptions() {
+			return [
+				{ value: 'monthly', label: t('contractmanager', 'Monatlich') },
+				{ value: 'quarterly', label: t('contractmanager', 'Quartalsweise') },
+				{ value: 'semi_annual', label: t('contractmanager', 'Halbjährlich') },
+				{ value: 'yearly', label: t('contractmanager', 'Jährlich') },
+				{ value: 'one_time', label: t('contractmanager', 'Einmalig') },
+			]
+		},
 		periodUnitOptions() {
 			return [
 				{ value: 'days', label: t('contractmanager', 'Tage') },
@@ -482,6 +517,14 @@ export default {
 				{ value: 'cancelled', label: t('contractmanager', 'Gekündigt') },
 				{ value: 'ended', label: t('contractmanager', 'Beendet') },
 			]
+		},
+		showCancellationDeadline() {
+			return this.form.contractType === 'auto_renewal' && this.calculatedCancellationDeadline
+		},
+		hasCustomFields() {
+			return this.customFieldLabels.customFieldLabel1
+				|| this.customFieldLabels.customFieldLabel2
+				|| this.customFieldLabels.customFieldLabel3
 		},
 		calculatedCancellationDeadline() {
 			if (!this.form.endDate || !this.form.cancellationPeriodValue || !this.form.cancellationPeriodUnit) {
@@ -501,6 +544,14 @@ export default {
 			this.aiAvailable = status.configured
 		} catch (e) {
 			this.aiAvailable = false
+		}
+		try {
+			const settings = await SettingsService.getUserSettings()
+			if (settings.customFieldLabels) {
+				this.customFieldLabels = settings.customFieldLabels
+			}
+		} catch (e) {
+			console.debug('Failed to load custom field labels:', e)
 		}
 	},
 	watch: {
@@ -536,12 +587,16 @@ export default {
 				renewalPeriodUnit: 'months',
 				cost: '',
 				currency: 'EUR',
+				costInterval: 'monthly',
 				contractFolder: '',
 				mainDocument: '',
 				reminderEnabled: true,
 				reminderDays: '',
 				notes: '',
 				isPrivate: false,
+				customField1: '',
+				customField2: '',
+				customField3: '',
 			}
 		},
 		formatDateDisplay(date) {
@@ -613,12 +668,16 @@ export default {
 				renewalPeriodUnit: renewal.unit,
 				cost: contract.cost || '',
 				currency: contract.currency || 'EUR',
+				costInterval: contract.costInterval || 'monthly',
 				contractFolder: contract.contractFolder || '',
 				mainDocument: contract.mainDocument || '',
 				reminderEnabled: contract.reminderEnabled !== false,
 				reminderDays: contract.reminderDays ? String(contract.reminderDays) : '',
 				notes: contract.notes || '',
 				isPrivate: contract.isPrivate === true || contract.isPrivate === 1,
+				customField1: contract.customField1 || '',
+				customField2: contract.customField2 || '',
+				customField3: contract.customField3 || '',
 			}
 		},
 		formToPayload() {
@@ -638,12 +697,16 @@ export default {
 					: null,
 				cost: this.form.cost || null,
 				currency: this.form.currency,
+				costInterval: this.form.costInterval || null,
 				contractFolder: this.form.contractFolder.trim() || null,
 				mainDocument: this.form.mainDocument.trim() || null,
 				reminderEnabled: this.form.reminderEnabled,
 				reminderDays: this.form.reminderDays ? parseInt(this.form.reminderDays, 10) : null,
 				notes: this.form.notes.trim() || null,
 				isPrivate: this.form.isPrivate,
+				customField1: this.form.customField1.trim() || null,
+				customField2: this.form.customField2.trim() || null,
+				customField3: this.form.customField3.trim() || null,
 			}
 		},
 		formatDateForApi(date) {
@@ -811,10 +874,10 @@ export default {
 }
 
 .form-section {
-	margin-bottom: 24px;
+	margin-bottom: 20px;
 
 	h3 {
-		margin-bottom: 12px;
+		margin-bottom: 8px;
 		font-size: 14px;
 		font-weight: 600;
 		color: var(--color-text-maxcontrast);
@@ -824,12 +887,12 @@ export default {
 }
 
 .form-row {
-	margin-bottom: 16px;
+	margin-bottom: 12px;
 
 	&--half {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 16px;
+		gap: 12px;
 		align-items: start;
 
 		> div {
@@ -840,8 +903,8 @@ export default {
 
 	&--dates {
 		display: grid;
-		grid-template-columns: 130px 130px 1fr;
-		gap: 16px;
+		grid-template-columns: 120px 120px 1fr;
+		gap: 12px;
 		align-items: start;
 
 		> div {
@@ -849,18 +912,49 @@ export default {
 			flex-direction: column;
 		}
 	}
+
+	&--custom {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 12px;
+		align-items: start;
+
+		> div {
+			display: flex;
+			flex-direction: column;
+		}
+	}
+
+	&--dates-extended {
+		display: grid;
+		grid-template-columns: 120px 120px 120px 1fr;
+		gap: 12px;
+		align-items: start;
+
+		> div {
+			display: flex;
+			flex-direction: column;
+		}
+	}
+
+	&--triple {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		gap: 20px;
+		align-items: start;
+	}
 }
 
 .field-date {
-	max-width: 130px;
+	max-width: 120px;
 
 	:deep(.input-field) {
-		max-width: 130px;
+		max-width: 120px;
 	}
 }
 
 .field-type {
-	min-width: 200px;
+	min-width: 140px;
 }
 
 .form-label {
@@ -902,24 +996,33 @@ export default {
 	min-width: 120px;
 }
 
-.form-row--cancellation {
-	display: flex;
-	gap: 16px;
-	align-items: flex-start;
+.form-row--periods {
+	display: grid;
+	grid-template-columns: 55px 160px 55px 160px;
+	gap: 12px;
+	align-items: start;
 
 	> div {
 		display: flex;
 		flex-direction: column;
+		min-width: 0;
+	}
+
+	:deep(.v-select.select) {
+		min-width: 0 !important;
+		width: 100% !important;
+		margin: 0 !important;
+	}
+
+	:deep(.select) {
+		min-width: 0 !important;
+		width: 100% !important;
+		margin: 0 !important;
 	}
 }
 
-.field-deadline {
-	min-width: 140px;
-	margin-left: 60px;
-
+.deadline-field {
 	:deep(.input-field) {
-		max-width: 140px;
-
 		input {
 			color: var(--color-main-text) !important;
 			-webkit-text-fill-color: var(--color-main-text) !important;
@@ -936,16 +1039,71 @@ export default {
 	height: 44px;
 }
 
+.document-buttons--compact {
+	gap: 4px;
+	height: auto;
+}
+
 .no-document-text {
 	color: var(--color-text-maxcontrast);
-	line-height: 44px;
+	font-size: 13px;
+}
+
+.triple-column {
+	display: flex;
+	flex-direction: column;
+
+	h3 {
+		margin-bottom: 8px;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--color-text-maxcontrast);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+}
+
+.cost-top {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+
+	.field-cost {
+		flex: 0 0 120px;
+	}
+
+	.field-currency {
+		flex: 0 0 72px;
+
+		:deep(.v-select.select) {
+			min-width: 0 !important;
+		}
+	}
+}
+
+.cost-bottom {
+	:deep(.v-select.select) {
+		min-width: 0 !important;
+	}
+}
+
+.doc-row {
+	margin-bottom: 8px;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+}
+
+.reminder-days {
+	margin-top: 8px;
 }
 
 .ai-section {
 	background: var(--color-primary-element-light, #e8f0fe);
 	padding: 16px;
 	border-radius: 8px;
-	margin-bottom: 24px;
+	margin-bottom: 20px;
 }
 
 .ai-extract-row {

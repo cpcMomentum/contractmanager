@@ -115,6 +115,9 @@ class ContractController extends Controller {
 		?int $reminderDays = null,
 		?string $notes = null,
 		bool $isPrivate = false,
+		?string $customField1 = null,
+		?string $customField2 = null,
+		?string $customField3 = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -130,6 +133,9 @@ class ContractController extends Controller {
 				'vendor' => $vendor,
 				'startDate' => $startDate,
 				'endDate' => $endDate,
+				'customField1' => $customField1,
+				'customField2' => $customField2,
+				'customField3' => $customField3,
 			]);
 
 			$contract = $this->service->create(
@@ -151,6 +157,9 @@ class ContractController extends Controller {
 				$reminderDays,
 				$notes,
 				$isPrivate,
+				$customField1,
+				$customField2,
+				$customField3,
 			);
 
 			return new JSONResponse($contract, Http::STATUS_CREATED);
@@ -184,6 +193,9 @@ class ContractController extends Controller {
 		?int $reminderDays = null,
 		?string $notes = null,
 		?bool $isPrivate = null,
+		?string $customField1 = null,
+		?string $customField2 = null,
+		?string $customField3 = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -202,6 +214,9 @@ class ContractController extends Controller {
 				'endDate' => $endDate,
 				'status' => $status,
 				'notes' => $notes,
+				'customField1' => $customField1,
+				'customField2' => $customField2,
+				'customField3' => $customField3,
 			]);
 
 			$updatedContract = $this->service->update(
@@ -224,6 +239,9 @@ class ContractController extends Controller {
 				$reminderDays,
 				$notes,
 				$isPrivate,
+				$customField1,
+				$customField2,
+				$customField3,
 			);
 
 			return new JSONResponse($updatedContract);

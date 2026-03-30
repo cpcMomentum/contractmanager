@@ -24,6 +24,8 @@ class SettingsService {
 	private const KEY_SORT_DIRECTION = 'sort_direction';
 	private const KEY_FILTERS = 'filters';
 
+	private const KEY_CUSTOM_FIELD_LABEL_PREFIX = 'custom_field_label_';
+
 	private const KEY_AI_PROVIDER = 'ai_provider';
 	private const KEY_AI_API_KEY = 'ai_api_key';
 	private const KEY_AI_API_URL = 'ai_api_url';
@@ -127,6 +129,51 @@ class SettingsService {
 			self::KEY_REMINDER_DAYS_2,
 			(string)max(1, $days)
 		);
+	}
+
+	// ========================================
+	// Custom Field Labels (Admin)
+	// ========================================
+
+	/**
+	 * Get label for a custom field (1-3)
+	 */
+	public function getCustomFieldLabel(int $fieldNumber): string {
+		if ($fieldNumber < 1 || $fieldNumber > 3) {
+			return '';
+		}
+		return $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_CUSTOM_FIELD_LABEL_PREFIX . $fieldNumber,
+			''
+		);
+	}
+
+	/**
+	 * Set label for a custom field (1-3)
+	 */
+	public function setCustomFieldLabel(int $fieldNumber, string $label): void {
+		if ($fieldNumber < 1 || $fieldNumber > 3) {
+			return;
+		}
+		$this->config->setAppValue(
+			Application::APP_ID,
+			self::KEY_CUSTOM_FIELD_LABEL_PREFIX . $fieldNumber,
+			trim($label)
+		);
+	}
+
+	/**
+	 * Get all custom field labels
+	 *
+	 * @return array{customFieldLabel1: string, customFieldLabel2: string, customFieldLabel3: string}
+	 */
+	public function getCustomFieldLabels(): array {
+		return [
+			'customFieldLabel1' => $this->getCustomFieldLabel(1),
+			'customFieldLabel2' => $this->getCustomFieldLabel(2),
+			'customFieldLabel3' => $this->getCustomFieldLabel(3),
+		];
 	}
 
 	// ========================================
