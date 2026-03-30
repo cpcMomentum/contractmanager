@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-30
+
+### Added
+- Benutzerdefinierte Zusatzfelder: Bis zu 3 admin-konfigurierbare Felder pro Vertrag (#58)
+- Zahlweise (Zahlungsintervall): Monatlich, Quartalsweise, Halbjaehrlich, Jaehrlich, Einmalig (#59)
+- Externer Link Button: Externe URLs als Vertragsdokument hinterlegen
+
+### Changed
+- Formular-Redesign: Zusatzfelder in Grunddaten integriert, Kuendigen-bis in Laufzeit-Zeile, Kosten/Dokumente/Erinnerung als 3-Spalten-Layout
+- Vertragsdokument oeffnet im Nextcloud Viewer Overlay statt in neuem Tab
+- File Picker statt Smart Picker fuer Dokumentauswahl (weniger irrelevante Optionen)
+
+### Fixed
+- Vertragsordner "Oeffnen" Button funktioniert wieder (fehlende Methode)
+- Rote Pflichtfeld-Markierung bei leerem Formular entfernt (HTML5 required Bug)
+
 ## [0.2.6] - 2026-03-25
 
 ### Added
