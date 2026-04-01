@@ -161,6 +161,10 @@ export default {
 			type: Number,
 			default: null,
 		},
+		searchQuery: {
+			type: String,
+			default: '',
+		},
 	},
 	data() {
 		const defaultPrefs = {
@@ -220,6 +224,19 @@ export default {
 		},
 		contracts() {
 			let filtered = this.allContracts.filter(c => c.status !== 'archived')
+
+			// Volltextsuche (Sidebar-Suchfeld)
+			if (this.searchQuery.trim()) {
+				const query = this.searchQuery.trim().toLowerCase()
+				filtered = filtered.filter(c => {
+					return (c.name || '').toLowerCase().includes(query)
+						|| (c.vendor || '').toLowerCase().includes(query)
+						|| (c.notes || '').toLowerCase().includes(query)
+						|| (c.customField1 || '').toLowerCase().includes(query)
+						|| (c.customField2 || '').toLowerCase().includes(query)
+						|| (c.customField3 || '').toLowerCase().includes(query)
+				})
+			}
 
 			// Kategorie-Filter (Sidebar)
 			if (this.categoryFilter !== null) {

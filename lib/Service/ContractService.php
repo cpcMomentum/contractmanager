@@ -239,8 +239,8 @@ class ContractService {
     /**
      * @return Contract[]
      */
-    public function search(string $query, string $userId): array {
-        return $this->mapper->search($query, $userId);
+    public function search(string $query, string $userId, bool $isAdmin = false, ?int $limit = null, ?int $offset = null): array {
+        return $this->mapper->search($query, $userId, $isAdmin, $limit, $offset);
     }
 
     public function create(

@@ -1,6 +1,18 @@
 <template>
 	<NcContent app-name="contractmanager">
 		<NcAppNavigation>
+			<div class="nav-search">
+				<NcTextField :value.sync="searchQuery"
+					:label="t('contractmanager', 'Verträge durchsuchen …')"
+					:show-trailing-button="searchQuery !== ''"
+					trailing-button-icon="close"
+					@trailing-button-click="searchQuery = ''">
+					<template #icon>
+						<MagnifyIcon :size="20" />
+					</template>
+				</NcTextField>
+			</div>
+
 			<NcAppNavigationItem :name="t('contractmanager', 'Verträge')"
 				:class="{ active: currentView === 'contracts' && selectedCategoryId === null }"
 				@click="showAllContracts">
@@ -65,7 +77,7 @@
 		</NcAppNavigation>
 
 		<NcAppContent>
-			<ContractList v-if="currentView === 'contracts'" :category-filter="selectedCategoryId" />
+			<ContractList v-if="currentView === 'contracts'" :category-filter="selectedCategoryId" :search-query="searchQuery" />
 			<ArchiveView v-else-if="currentView === 'archive'" />
 			<TrashView v-else-if="currentView === 'trash'" />
 			<SettingsView v-else-if="currentView === 'settings'" />
@@ -79,7 +91,9 @@ import NcAppNavigation from '@nextcloud/vue/dist/Components/NcAppNavigation.js'
 import NcAppNavigationItem from '@nextcloud/vue/dist/Components/NcAppNavigationItem.js'
 import NcAppContent from '@nextcloud/vue/dist/Components/NcAppContent.js'
 import NcCounterBubble from '@nextcloud/vue/dist/Components/NcCounterBubble.js'
+import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
+import MagnifyIcon from 'vue-material-design-icons/Magnify.vue'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
@@ -98,7 +112,9 @@ export default {
 		NcAppNavigationItem,
 		NcAppContent,
 		NcCounterBubble,
+		NcTextField,
 		FileDocumentIcon,
+		MagnifyIcon,
 		ArchiveIcon,
 		CogIcon,
 		TagIcon,
@@ -112,6 +128,7 @@ export default {
 		return {
 			currentView: 'contracts',
 			selectedCategoryId: null,
+			searchQuery: '',
 		}
 	},
 	computed: {
@@ -157,5 +174,9 @@ export default {
 
 .category-item {
 	padding-left: 16px;
+}
+
+.nav-search {
+	padding: 8px 10px;
 }
 </style>
