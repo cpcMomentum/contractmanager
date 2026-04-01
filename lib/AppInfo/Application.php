@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\ContractManager\AppInfo;
 
+use OCA\ContractManager\Search\ContractSearchProvider;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -23,7 +24,7 @@ class Application extends App implements IBootstrap {
     }
 
     public function register(IRegistrationContext $context): void {
-        // Reminders are sent via Talk and E-Mail, no Nextcloud notifications
+        $context->registerSearchProvider(ContractSearchProvider::class);
     }
 
     public function boot(IBootContext $context): void {
