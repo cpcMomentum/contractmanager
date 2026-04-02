@@ -29,11 +29,27 @@
 			:loading="formLoading"
 			@close="closeForm"
 			@submit="handleFormSubmit" />
+
+		<NcDialog v-if="showRestoreDialog"
+			:name="t('contractmanager', 'Vertrag wiederherstellen')"
+			@close="showRestoreDialog = false">
+			<p>{{ t('contractmanager', 'Vertrag "{name}" wiederherstellen?', { name: restoringContract ? restoringContract.name : '' }) }}</p>
+			<template #actions>
+				<NcButton @click="showRestoreDialog = false">
+					{{ t('contractmanager', 'Abbrechen') }}
+				</NcButton>
+				<NcButton type="primary" @click="confirmRestore">
+					{{ t('contractmanager', 'Wiederherstellen') }}
+				</NcButton>
+			</template>
+		</NcDialog>
 	</div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
+import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
+import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
@@ -43,6 +59,8 @@ import ContractForm from '../components/ContractForm.vue'
 export default {
 	name: 'ArchiveView',
 	components: {
+		NcButton,
+		NcDialog,
 		NcLoadingIcon,
 		NcEmptyContent,
 		ArchiveIcon,
@@ -52,7 +70,9 @@ export default {
 	data() {
 		return {
 			showEditForm: false,
+			showRestoreDialog: false,
 			editingContract: null,
+			restoringContract: null,
 			formLoading: false,
 		}
 	},
@@ -75,13 +95,20 @@ export default {
 			this.showEditForm = true
 		},
 
-		async handleRestore(contract) {
-			if (confirm(t('contractmanager', 'Vertrag "{name}" wiederherstellen?', { name: contract.name }))) {
-				try {
-					await this.restoreContract(contract.id)
-				} catch (error) {
-					console.error('Failed to restore contract:', error)
-				}
+		handleRestore(contract) {
+			this.restoringContract = contract
+			this.showRestoreDialog = true
+		},
+
+		async confirmRestore() {
+			if (!this.restoringContract) return
+			try {
+				await this.restoreContract(this.restoringContract.id)
+			} catch (error) {
+				console.error('Failed to restore contract:', error)
+			} finally {
+				this.showRestoreDialog = false
+				this.restoringContract = null
 			}
 		},
 

@@ -98,11 +98,12 @@
 								@blur="parseStartDate" />
 						</div>
 						<div class="field-date">
-							<label class="form-label">{{ t('contractmanager', 'Enddatum') + ' *' }}</label>
+							<label class="form-label">{{ t('contractmanager', 'Enddatum') }}</label>
 							<NcTextField :value.sync="form.endDateFormatted"
-								:placeholder="t('contractmanager', 'TT.MM.JJJJ')"
+								:placeholder="t('contractmanager', 'TT.MM.JJJJ oder leer für unbefristet')"
 								:disabled="readOnly"
-								@blur="parseEndDate" />
+								@blur="parseEndDate"
+								@input="onEndDateInput" />
 						</div>
 						<div v-if="showCancellationDeadline" class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
@@ -308,16 +309,21 @@
 						<!-- Erinnerung -->
 						<div class="triple-column">
 							<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
-							<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
-								{{ t('contractmanager', 'Erinnerung aktivieren') }}
-							</NcCheckboxRadioSwitch>
-							<div v-if="form.reminderEnabled" class="reminder-days">
-								<NcTextField :label="t('contractmanager', 'X Tage vorher')"
-									:value.sync="form.reminderDays"
-									type="number"
-									:disabled="readOnly"
-									:placeholder="t('contractmanager', 'Standard')" />
-							</div>
+							<NcNoteCard v-if="!form.endDate" type="warning">
+								{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
+							</NcNoteCard>
+							<template v-else>
+								<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
+									{{ t('contractmanager', 'Erinnerung aktivieren') }}
+								</NcCheckboxRadioSwitch>
+								<div v-if="form.reminderEnabled" class="reminder-days">
+									<NcTextField :label="t('contractmanager', 'X Tage vorher')"
+										:value.sync="form.reminderDays"
+										type="number"
+										:disabled="readOnly"
+										:placeholder="t('contractmanager', 'Standard')" />
+								</div>
+							</template>
 						</div>
 					</div>
 				</div>
@@ -473,7 +479,6 @@ export default {
 				this.form.name.trim() !== ''
 				&& this.form.vendor.trim() !== ''
 				&& this.form.startDate !== null
-				&& this.form.endDate !== null
 				&& !this.dateError
 				&& this.form.contractType !== null
 				&& (this.form.contractType !== 'auto_renewal' || (
@@ -501,6 +506,7 @@ export default {
 			return [
 				{ value: 'fixed', label: t('contractmanager', 'Befristet') },
 				{ value: 'auto_renewal', label: t('contractmanager', 'Automatische Verlängerung') },
+				{ value: 'unlimited', label: t('contractmanager', 'Unbefristet') },
 			]
 		},
 		currencyOptions() {
@@ -585,6 +591,13 @@ export default {
 				}
 			},
 		},
+		'form.endDate'(newVal) {
+			if (newVal === null) {
+				this.form.reminderEnabled = false
+			} else {
+				this.form.reminderEnabled = true
+			}
+		},
 	},
 	methods: {
 		getInitialForm() {
@@ -643,6 +656,11 @@ export default {
 				this.form.endDateFormatted = this.formatDateDisplay(date)
 			}
 		},
+		onEndDateInput(value) {
+			if (!value || value.trim() === '') {
+				this.form.endDate = null
+			}
+		},
 		parsePeriodForForm(periodString, defaultValue = '') {
 			// Parse format like "3 months" into value and unit for form fields
 			if (!periodString) return { value: defaultValue, unit: 'months' }
@@ -698,13 +716,16 @@ export default {
 			}
 		},
 		formToPayload() {
+			// Parse dates fresh from formatted fields to avoid stale state
+			const startDate = this.parseDateInput(this.form.startDateFormatted)
+			const endDate = this.parseDateInput(this.form.endDateFormatted)
 			return {
 				name: this.form.name.trim(),
 				vendor: this.form.vendor.trim(),
 				categoryId: this.form.categoryId,
 				status: this.form.contractStatus,
-				startDate: this.form.startDate ? this.formatDateForApi(this.form.startDate) : null,
-				endDate: this.form.endDate ? this.formatDateForApi(this.form.endDate) : null,
+				startDate: startDate ? this.formatDateForApi(startDate) : null,
+				endDate: endDate ? this.formatDateForApi(endDate) : null,
 				cancellationPeriod: this.form.contractType === 'auto_renewal'
 					? this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit)
 					: null,

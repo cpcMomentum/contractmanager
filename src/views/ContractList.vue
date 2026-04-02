@@ -110,6 +110,20 @@
 			:contract="viewingContract"
 			:read-only="true"
 			@close="closeForm" />
+
+		<NcDialog v-if="showArchiveDialog"
+			:name="t('contractmanager', 'Vertrag archivieren')"
+			@close="showArchiveDialog = false">
+			<p>{{ t('contractmanager', 'Vertrag "{name}" wirklich archivieren?', { name: archivingContract ? archivingContract.name : '' }) }}</p>
+			<template #actions>
+				<NcButton @click="showArchiveDialog = false">
+					{{ t('contractmanager', 'Abbrechen') }}
+				</NcButton>
+				<NcButton type="warning" @click="confirmArchive">
+					{{ t('contractmanager', 'Archivieren') }}
+				</NcButton>
+			</template>
+		</NcDialog>
 	</div>
 </template>
 
@@ -119,6 +133,7 @@ import { loadState } from '@nextcloud/initial-state'
 import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
 import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
+import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
@@ -141,6 +156,7 @@ export default {
 		NcActions,
 		NcActionButton,
 		NcButton,
+		NcDialog,
 		NcLoadingIcon,
 		NcEmptyContent,
 		NcSelect,
@@ -178,8 +194,10 @@ export default {
 			showCreateForm: false,
 			showEditForm: false,
 			showViewForm: false,
+			showArchiveDialog: false,
 			editingContract: null,
 			viewingContract: null,
+			archivingContract: null,
 			formLoading: false,
 			sortBy: prefs.sortBy,
 			sortDirection: prefs.sortDirection,
@@ -292,13 +310,20 @@ export default {
 			this.showViewForm = true
 		},
 
-		async handleArchive(contract) {
-			if (confirm(t('contractmanager', 'Vertrag "{name}" wirklich archivieren?', { name: contract.name }))) {
-				try {
-					await this.archiveContract(contract.id)
-				} catch (error) {
-					console.error('Failed to archive contract:', error)
-				}
+		handleArchive(contract) {
+			this.archivingContract = contract
+			this.showArchiveDialog = true
+		},
+
+		async confirmArchive() {
+			if (!this.archivingContract) return
+			try {
+				await this.archiveContract(this.archivingContract.id)
+			} catch (error) {
+				console.error('Failed to archive contract:', error)
+			} finally {
+				this.showArchiveDialog = false
+				this.archivingContract = null
 			}
 		},
 

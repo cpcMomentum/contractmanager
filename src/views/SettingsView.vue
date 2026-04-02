@@ -310,12 +310,27 @@
 				</div>
 			</div>
 		</div>
+
+		<NcDialog v-if="showDeleteCategoryDialog"
+			:name="t('contractmanager', 'Kategorie löschen')"
+			@close="showDeleteCategoryDialog = false">
+			<p>{{ t('contractmanager', 'Kategorie "{name}" wirklich löschen?', { name: deletingCategory ? deletingCategory.name : '' }) }}</p>
+			<template #actions>
+				<NcButton @click="showDeleteCategoryDialog = false">
+					{{ t('contractmanager', 'Abbrechen') }}
+				</NcButton>
+				<NcButton type="error" @click="executeDeleteCategory">
+					{{ t('contractmanager', 'Löschen') }}
+				</NcButton>
+			</template>
+		</NcDialog>
 	</div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
+import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
@@ -337,6 +352,7 @@ export default {
 	name: 'SettingsView',
 	components: {
 		NcButton,
+		NcDialog,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 		NcTextField,
@@ -352,6 +368,8 @@ export default {
 	},
 	data() {
 		return {
+			showDeleteCategoryDialog: false,
+			deletingCategory: null,
 			emailReminder: false,
 			savingAdmin: false,
 			adminSettings: {
@@ -620,17 +638,22 @@ export default {
 			}
 		},
 
-		async confirmDeleteCategory(category) {
-			if (!confirm(this.t('contractmanager', 'Kategorie "{name}" wirklich löschen?', { name: category.name }))) {
-				return
-			}
+		confirmDeleteCategory(category) {
+			this.deletingCategory = category
+			this.showDeleteCategoryDialog = true
+		},
 
+		async executeDeleteCategory() {
+			if (!this.deletingCategory) return
 			try {
-				await this.deleteCategory(category.id)
+				await this.deleteCategory(this.deletingCategory.id)
 				showSuccess(this.t('contractmanager', 'Kategorie gelöscht'))
 			} catch (error) {
 				console.error('Failed to delete category:', error)
 				showError(this.t('contractmanager', 'Fehler beim Löschen der Kategorie'))
+			} finally {
+				this.showDeleteCategoryDialog = false
+				this.deletingCategory = null
 			}
 		},
 	},
