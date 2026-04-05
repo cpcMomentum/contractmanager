@@ -68,9 +68,10 @@
 					</template>
 					{{ t('contractmanager', 'Bearbeiten') }}
 				</NcActionButton>
-				<NcActionButton v-if="isAdmin"
+				<NcActionButton v-if="canEdit"
 					class="delete-action"
-					@click.stop="confirmDelete">
+					:close-after-click="true"
+					@click="showDeleteDialog = true">
 					<template #icon>
 						<DeleteIcon :size="20" />
 					</template>
@@ -81,18 +82,10 @@
 
 		<!-- Delete confirmation dialog -->
 		<NcDialog v-if="showDeleteDialog"
-			:name="t('contractmanager', 'Vertrag endgültig löschen?')"
-			@close="showDeleteDialog = false">
-			<p>{{ t('contractmanager', 'Der Vertrag wird unwiderruflich gelöscht.') }}</p>
-			<template #actions>
-				<NcButton @click="showDeleteDialog = false">
-					{{ t('contractmanager', 'Abbrechen') }}
-				</NcButton>
-				<NcButton type="error" @click="handleDelete">
-					{{ t('contractmanager', 'Löschen') }}
-				</NcButton>
-			</template>
-		</NcDialog>
+			:name="t('contractmanager', 'Vertrag löschen')"
+			:message="t('contractmanager', 'Der Vertrag wird in den Papierkorb verschoben und nach 30 Tagen automatisch gelöscht. Bis dahin kann er wiederhergestellt werden.')"
+			:buttons="deleteDialogButtons"
+			@update:open="showDeleteDialog = $event" />
 	</div>
 </template>
 
@@ -163,6 +156,19 @@ export default {
 		effectiveEndDate() {
 			return getEffectiveEndDate(this.contract.endDate, this.contract.contractType, this.contract.renewalPeriod)
 		},
+		deleteDialogButtons() {
+			return [
+				{
+					label: t('contractmanager', 'Abbrechen'),
+					callback: () => { this.showDeleteDialog = false },
+				},
+				{
+					label: t('contractmanager', 'In Papierkorb'),
+					type: 'warning',
+					callback: () => { this.handleDelete() },
+				},
+			]
+		},
 	},
 	methods: {
 		...mapActions('contracts', ['deleteContract']),
@@ -174,9 +180,6 @@ export default {
 			} else {
 				this.$emit('view', this.contract)
 			}
-		},
-		confirmDelete() {
-			this.showDeleteDialog = true
 		},
 		async handleDelete() {
 			try {
