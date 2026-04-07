@@ -19,6 +19,7 @@
 				<span v-else>{{ t('contractmanager', 'Läuft aus am:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
 				<span v-if="cancellationDeadline && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
 				<span v-if="contract.renewalPeriod && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
+				<span v-if="mode === 'trash' && contract.deletedAt">| {{ t('contractmanager', 'Gelöscht:') }} {{ formatDate(contract.deletedAt) }}</span>
 				<span v-if="showCreator && contract.createdBy">| {{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
 			</div>
 		</div>
@@ -40,35 +41,36 @@
 				</template>
 			</NcButton>
 			<NcActions :force-menu="true">
-				<NcActionButton v-if="!contract.archived && canEdit"
+				<NcActionButton v-if="!contract.archived && canEdit && mode !== 'trash'"
 					@click.stop="$emit('archive', contract)">
 					<template #icon>
 						<ArchiveIcon :size="20" />
 					</template>
 					{{ t('contractmanager', 'Archivieren') }}
 				</NcActionButton>
-				<NcActionButton v-if="contract.archived && canEdit"
-					@click.stop="$emit('restore', contract)">
+				<NcActionButton v-if="(contract.archived || mode === 'trash') && canEdit"
+					:close-after-click="true"
+					@click="$emit('restore', contract)">
 					<template #icon>
 						<RestoreIcon :size="20" />
 					</template>
 					{{ t('contractmanager', 'Wiederherstellen') }}
 				</NcActionButton>
-				<NcActionButton v-if="canEdit"
+				<NcActionButton v-if="canEdit && mode !== 'trash'"
 					@click.stop="$emit('duplicate', contract)">
 					<template #icon>
 						<ContentDuplicate :size="20" />
 					</template>
 					{{ t('contractmanager', 'Duplizieren') }}
 				</NcActionButton>
-				<NcActionButton v-if="canEdit"
+				<NcActionButton v-if="canEdit && mode !== 'trash'"
 					@click.stop="$emit('edit', contract)">
 					<template #icon>
 						<PencilIcon :size="20" />
 					</template>
 					{{ t('contractmanager', 'Bearbeiten') }}
 				</NcActionButton>
-				<NcActionButton v-if="canEdit"
+				<NcActionButton v-if="canEdit && mode !== 'trash'"
 					class="delete-action"
 					:close-after-click="true"
 					@click="showDeleteDialog = true">
@@ -76,6 +78,15 @@
 						<DeleteIcon :size="20" />
 					</template>
 					{{ t('contractmanager', 'Löschen') }}
+				</NcActionButton>
+				<NcActionButton v-if="mode === 'trash' && isAdmin"
+					class="delete-action"
+					:close-after-click="true"
+					@click="$emit('delete-permanently', contract)">
+					<template #icon>
+						<DeleteForeverIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Endgültig löschen') }}
 				</NcActionButton>
 			</NcActions>
 		</div>
@@ -101,6 +112,7 @@ import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
 import RestoreIcon from 'vue-material-design-icons/Restore.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import DeleteForeverIcon from 'vue-material-design-icons/DeleteForever.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import FolderOpenIcon from 'vue-material-design-icons/FolderOpen.vue'
@@ -123,6 +135,7 @@ export default {
 		RestoreIcon,
 		PencilIcon,
 		DeleteIcon,
+		DeleteForeverIcon,
 		LockIcon,
 		FileDocumentIcon,
 		FolderOpenIcon,
@@ -138,8 +151,12 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+		mode: {
+			type: String,
+			default: 'default',
+		},
 	},
-	emits: ['edit', 'duplicate', 'archive', 'restore', 'delete'],
+	emits: ['edit', 'duplicate', 'archive', 'restore', 'delete', 'delete-permanently'],
 	data() {
 		return {
 			showDeleteDialog: false,

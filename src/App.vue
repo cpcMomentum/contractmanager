@@ -49,6 +49,11 @@
 				<template #icon>
 					<ArchiveIcon :size="20" />
 				</template>
+				<template #counter>
+					<NcCounterBubble v-if="archivedCount > 0">
+						{{ archivedCount }}
+					</NcCounterBubble>
+				</template>
 			</NcAppNavigationItem>
 
 			<NcAppNavigationItem v-if="canEdit"
@@ -133,9 +138,12 @@ export default {
 	},
 	computed: {
 		...mapGetters('categories', ['allCategories']),
-		...mapGetters('contracts', ['allContracts', 'trashedContracts', 'canEdit']),
+		...mapGetters('contracts', ['allContracts', 'archivedContracts', 'trashedContracts', 'canEdit']),
 		contractCount() {
 			return this.allContracts.filter(c => c.status !== 'archived').length
+		},
+		archivedCount() {
+			return this.archivedContracts.length
 		},
 		trashedCount() {
 			return this.trashedContracts.length
@@ -144,12 +152,13 @@ export default {
 	created() {
 		this.fetchCategories()
 		this.fetchContracts()
+		this.fetchArchivedContracts()
 		this.fetchPermissions()
 		this.fetchTrashedContracts()
 	},
 	methods: {
 		...mapActions('categories', ['fetchCategories']),
-		...mapActions('contracts', ['fetchContracts', 'fetchPermissions', 'fetchTrashedContracts']),
+		...mapActions('contracts', ['fetchContracts', 'fetchArchivedContracts', 'fetchPermissions', 'fetchTrashedContracts']),
 		showAllContracts() {
 			this.currentView = 'contracts'
 			this.selectedCategoryId = null

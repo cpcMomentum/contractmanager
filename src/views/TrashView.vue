@@ -33,37 +33,13 @@
 		</NcEmptyContent>
 
 		<div v-else class="trash-view__items">
-			<div v-for="contract in trashedContracts"
+			<ContractListItem v-for="contract in trashedContracts"
 				:key="contract.id"
-				class="trash-item">
-				<div class="trash-item__info">
-					<span class="trash-item__name">{{ contract.name }}</span>
-					<span class="trash-item__vendor">{{ contract.vendor }}</span>
-					<span v-if="isAdmin" class="trash-item__creator">
-						({{ contract.createdBy }})
-					</span>
-					<span class="trash-item__date">
-						{{ t('contractmanager', 'Gelöscht:') }} {{ formatDate(contract.deletedAt) }}
-					</span>
-				</div>
-				<div class="trash-item__actions">
-					<NcButton type="secondary"
-						@click="handleRestore(contract)">
-						<template #icon>
-							<RestoreIcon :size="20" />
-						</template>
-						{{ t('contractmanager', 'Wiederherstellen') }}
-					</NcButton>
-					<NcButton v-if="isAdmin"
-						type="error"
-						@click="confirmPermanentDelete(contract)">
-						<template #icon>
-							<DeleteForeverIcon :size="20" />
-						</template>
-						{{ t('contractmanager', 'Endgültig löschen') }}
-					</NcButton>
-				</div>
-			</div>
+				:contract="contract"
+				:show-creator="isAdmin"
+				mode="trash"
+				@restore="handleRestore"
+				@delete-permanently="confirmPermanentDelete" />
 		</div>
 
 		<NcDialog v-if="showDeleteDialog"
@@ -104,8 +80,7 @@ import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
 import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
 import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
-import DeleteForeverIcon from 'vue-material-design-icons/DeleteForever.vue'
-import RestoreIcon from 'vue-material-design-icons/Restore.vue'
+import ContractListItem from '../components/ContractListItem.vue'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
 export default {
@@ -117,8 +92,7 @@ export default {
 		NcNoteCard,
 		NcDialog,
 		DeleteIcon,
-		DeleteForeverIcon,
-		RestoreIcon,
+		ContractListItem,
 	},
 	data() {
 		return {
@@ -146,16 +120,6 @@ export default {
 			'deletePermanently',
 			'emptyTrash',
 		]),
-
-		formatDate(dateString) {
-			if (!dateString) return ''
-			const date = new Date(dateString)
-			return date.toLocaleDateString('de-DE', {
-				day: '2-digit',
-				month: '2-digit',
-				year: 'numeric',
-			})
-		},
 
 		async handleRestore(contract) {
 			try {
@@ -235,47 +199,8 @@ export default {
 	&__items {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
-		margin-top: 16px;
-	}
-}
-
-.trash-item {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 12px 16px;
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius-large);
-
-	&__info {
-		display: flex;
-		flex-direction: column;
 		gap: 4px;
-	}
-
-	&__name {
-		font-weight: 600;
-	}
-
-	&__vendor {
-		color: var(--color-text-maxcontrast);
-		font-size: 0.9em;
-	}
-
-	&__creator {
-		color: var(--color-text-maxcontrast);
-		font-size: 0.85em;
-	}
-
-	&__date {
-		color: var(--color-text-maxcontrast);
-		font-size: 0.85em;
-	}
-
-	&__actions {
-		display: flex;
-		gap: 8px;
+		margin-top: 16px;
 	}
 }
 </style>
