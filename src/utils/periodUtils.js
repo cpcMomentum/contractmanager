@@ -38,7 +38,12 @@ export function subtractPeriod(date, periodString) {
 	} else if (unit.startsWith('week')) {
 		result.setDate(result.getDate() - (value * 7))
 	} else if (unit.startsWith('month')) {
+		const originalDay = result.getDate()
 		result.setMonth(result.getMonth() - value)
+		// Month-end overflow: e.g. March 31 - 1 month = March 3 instead of Feb 28
+		if (result.getDate() !== originalDay) {
+			result.setDate(0) // Last day of previous month
+		}
 	} else if (unit.startsWith('year')) {
 		result.setFullYear(result.getFullYear() - value)
 	}
@@ -64,7 +69,12 @@ export function addPeriod(date, periodString) {
 	} else if (unit.startsWith('week')) {
 		result.setDate(result.getDate() + (value * 7))
 	} else if (unit.startsWith('month')) {
+		const originalDay = result.getDate()
 		result.setMonth(result.getMonth() + value)
+		// Month-end overflow: e.g. Jan 31 + 1 month = March 3 instead of Feb 28
+		if (result.getDate() !== originalDay) {
+			result.setDate(0) // Last day of previous month
+		}
 	} else if (unit.startsWith('year')) {
 		result.setFullYear(result.getFullYear() + value)
 	}
