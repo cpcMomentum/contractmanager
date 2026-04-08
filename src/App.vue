@@ -43,6 +43,21 @@
 				</template>
 			</NcAppNavigationItem>
 
+			<NcAppNavigationItem v-if="uncategorizedCount > 0"
+				:name="t('contractmanager', 'Ohne Kategorie')"
+				:class="{ active: currentView === 'contracts' && selectedCategoryId === 'uncategorized' }"
+				class="category-item"
+				@click="filterByCategory('uncategorized')">
+				<template #icon>
+					<TagIcon :size="20" />
+				</template>
+				<template #counter>
+					<NcCounterBubble>
+						{{ uncategorizedCount }}
+					</NcCounterBubble>
+				</template>
+			</NcAppNavigationItem>
+
 			<NcAppNavigationItem :name="t('contractmanager', 'Archiv')"
 				:class="{ active: currentView === 'archive' }"
 				@click="currentView = 'archive'; selectedCategoryId = null">
@@ -141,6 +156,9 @@ export default {
 		...mapGetters('contracts', ['allContracts', 'archivedContracts', 'trashedContracts', 'canEdit']),
 		contractCount() {
 			return this.allContracts.filter(c => c.status !== 'archived').length
+		},
+		uncategorizedCount() {
+			return this.allContracts.filter(c => c.status !== 'archived' && !c.categoryId).length
 		},
 		archivedCount() {
 			return this.archivedContracts.length
