@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-08
+
+### Added
+- Suchfeld in der Sidebar: Client-seitige Volltextsuche ueber Name, Vertragspartner, Notizen und Zusatzfelder (#60)
+- Globale Nextcloud-Suche: Vertraege erscheinen in der einheitlichen NC-Suche (#60)
+- Vertragstyp "Unbefristet": Enddatum ist kein Pflichtfeld mehr (#49, #67)
+- Filter "Ohne Kategorie" in der Sidebar mit Counter (#71)
+- Sortieroption "Kuendigen bis" in der Vertragsliste (#70)
+- Archiv-Counter in der Sidebar
+- Editoren koennen Vertraege in den Papierkorb verschieben (Soft-Delete)
+
+### Fixed
+- Kuendigungsdatum-Berechnung bei Monatsende korrigiert (z.B. 31.03 minus 1 Monat = 28.02 statt 03.03) (#72)
+- Browser-Confirm-Dialoge durch Nextcloud NcDialog ersetzt (Archivieren, Wiederherstellen, Kategorie loeschen)
+- NcDialog-Buttons nutzen buttons-Prop statt actions-Slot (verhindert Re-Trigger beim Schliessen)
+- Papierkorb nutzt ContractListItem (konsistentes Layout mit Vertragsliste und Archiv)
+- Erinnerung wird automatisch deaktiviert wenn Enddatum entfernt wird
+- Datumsvalidierung: Ungueltige Eingaben werden geleert mit Fehlermeldung
+
+### Changed
+- Loeschen-Dialog zeigt Hinweis auf 30-Tage Auto-Cleanup
+
 ## [0.3.0] - 2026-03-30
 
 ### Added
