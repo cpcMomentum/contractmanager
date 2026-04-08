@@ -542,20 +542,20 @@ export default {
 				await SettingsService.updatePermissionSettings({
 					[field]: ids,
 				})
-				showSuccess(this.t('contractmanager', 'Einstellung gespeichert'))
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
 			} catch (error) {
 				console.error('Failed to save permission settings:', error)
-				showError(this.t('contractmanager', 'Fehler beim Speichern'))
+				showError(t('contractmanager', 'Fehler beim Speichern'))
 			}
 		},
 
 		async onEmailReminderChange(value) {
 			try {
 				await SettingsService.updateUserSettings({ emailReminder: value })
-				showSuccess(this.t('contractmanager', 'Einstellung gespeichert'))
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
 			} catch (error) {
 				console.error('Failed to save user settings:', error)
-				showError(this.t('contractmanager', 'Fehler beim Speichern'))
+				showError(t('contractmanager', 'Fehler beim Speichern'))
 				this.emailReminder = !value
 			}
 		},
@@ -587,10 +587,10 @@ export default {
 					aiApiUrl: result.aiApiUrl || '',
 					aiModel: result.aiModel || '',
 				}
-				showSuccess(this.t('contractmanager', 'Admin-Einstellungen gespeichert'))
+				showSuccess(t('contractmanager', 'Admin-Einstellungen gespeichert'))
 			} catch (error) {
 				console.error('Failed to save admin settings:', error)
-				showError(this.t('contractmanager', 'Fehler beim Speichern der Admin-Einstellungen'))
+				showError(t('contractmanager', 'Fehler beim Speichern der Admin-Einstellungen'))
 			} finally {
 				this.savingAdmin = false
 			}
@@ -603,10 +603,10 @@ export default {
 			try {
 				await this.createCategory(this.newCategoryName.trim())
 				this.newCategoryName = ''
-				showSuccess(this.t('contractmanager', 'Kategorie hinzugefügt'))
+				showSuccess(t('contractmanager', 'Kategorie hinzugefügt'))
 			} catch (error) {
 				console.error('Failed to add category:', error)
-				showError(this.t('contractmanager', 'Fehler beim Hinzufügen der Kategorie'))
+				showError(t('contractmanager', 'Fehler beim Hinzufügen der Kategorie'))
 			} finally {
 				this.addingCategory = false
 			}
@@ -631,10 +631,10 @@ export default {
 					name: this.editingCategoryName.trim(),
 				})
 				this.cancelEdit()
-				showSuccess(this.t('contractmanager', 'Kategorie aktualisiert'))
+				showSuccess(t('contractmanager', 'Kategorie aktualisiert'))
 			} catch (error) {
 				console.error('Failed to update category:', error)
-				showError(this.t('contractmanager', 'Fehler beim Aktualisieren der Kategorie'))
+				showError(t('contractmanager', 'Fehler beim Aktualisieren der Kategorie'))
 			}
 		},
 
@@ -647,10 +647,10 @@ export default {
 			if (!this.deletingCategory) return
 			try {
 				await this.deleteCategory(this.deletingCategory.id)
-				showSuccess(this.t('contractmanager', 'Kategorie gelöscht'))
+				showSuccess(t('contractmanager', 'Kategorie gelöscht'))
 			} catch (error) {
 				console.error('Failed to delete category:', error)
-				showError(this.t('contractmanager', 'Fehler beim Löschen der Kategorie'))
+				showError(t('contractmanager', 'Fehler beim Löschen der Kategorie'))
 			} finally {
 				this.showDeleteCategoryDialog = false
 				this.deletingCategory = null
