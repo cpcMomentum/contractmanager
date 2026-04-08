@@ -110,6 +110,20 @@
 			:contract="viewingContract"
 			:read-only="true"
 			@close="closeForm" />
+
+		<NcDialog v-if="showArchiveDialog"
+			:name="t('contractmanager', 'Vertrag archivieren')"
+			@close="showArchiveDialog = false">
+			<p>{{ t('contractmanager', 'Vertrag "{name}" wirklich archivieren?', { name: archivingContract ? archivingContract.name : '' }) }}</p>
+			<template #actions>
+				<NcButton @click="showArchiveDialog = false">
+					{{ t('contractmanager', 'Abbrechen') }}
+				</NcButton>
+				<NcButton type="warning" @click="confirmArchive">
+					{{ t('contractmanager', 'Archivieren') }}
+				</NcButton>
+			</template>
+		</NcDialog>
 	</div>
 </template>
 
@@ -119,6 +133,7 @@ import { loadState } from '@nextcloud/initial-state'
 import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
 import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
+import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
@@ -132,6 +147,7 @@ import FilterIcon from 'vue-material-design-icons/Filter.vue'
 import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import ContractListItem from '../components/ContractListItem.vue'
+import { calculateCancellationDeadline } from '../utils/periodUtils.js'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService.js'
 
@@ -141,6 +157,7 @@ export default {
 		NcActions,
 		NcActionButton,
 		NcButton,
+		NcDialog,
 		NcLoadingIcon,
 		NcEmptyContent,
 		NcSelect,
@@ -158,8 +175,12 @@ export default {
 	},
 	props: {
 		categoryFilter: {
-			type: Number,
+			type: [Number, String],
 			default: null,
+		},
+		searchQuery: {
+			type: String,
+			default: '',
 		},
 	},
 	data() {
@@ -174,8 +195,10 @@ export default {
 			showCreateForm: false,
 			showEditForm: false,
 			showViewForm: false,
+			showArchiveDialog: false,
 			editingContract: null,
 			viewingContract: null,
+			archivingContract: null,
 			formLoading: false,
 			sortBy: prefs.sortBy,
 			sortDirection: prefs.sortDirection,
@@ -184,6 +207,7 @@ export default {
 				{ key: 'name', label: t('contractmanager', 'Name'), defaultDirection: 'asc' },
 				{ key: 'updatedAt', label: t('contractmanager', 'Zuletzt geändert'), defaultDirection: 'desc' },
 				{ key: 'cost', label: t('contractmanager', 'Kosten'), defaultDirection: 'desc' },
+				{ key: 'cancellationDeadline', label: t('contractmanager', 'Kündigen bis'), defaultDirection: 'asc' },
 			],
 			showFilters: false,
 			filterVendor: filters.vendor || null,
@@ -221,8 +245,23 @@ export default {
 		contracts() {
 			let filtered = this.allContracts.filter(c => c.status !== 'archived')
 
+			// Volltextsuche (Sidebar-Suchfeld)
+			if (this.searchQuery.trim()) {
+				const query = this.searchQuery.trim().toLowerCase()
+				filtered = filtered.filter(c => {
+					return (c.name || '').toLowerCase().includes(query)
+						|| (c.vendor || '').toLowerCase().includes(query)
+						|| (c.notes || '').toLowerCase().includes(query)
+						|| (c.customField1 || '').toLowerCase().includes(query)
+						|| (c.customField2 || '').toLowerCase().includes(query)
+						|| (c.customField3 || '').toLowerCase().includes(query)
+				})
+			}
+
 			// Kategorie-Filter (Sidebar)
-			if (this.categoryFilter !== null) {
+			if (this.categoryFilter === 'uncategorized') {
+				filtered = filtered.filter(c => !c.categoryId)
+			} else if (this.categoryFilter !== null) {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
 
@@ -275,13 +314,20 @@ export default {
 			this.showViewForm = true
 		},
 
-		async handleArchive(contract) {
-			if (confirm(t('contractmanager', 'Vertrag "{name}" wirklich archivieren?', { name: contract.name }))) {
-				try {
-					await this.archiveContract(contract.id)
-				} catch (error) {
-					console.error('Failed to archive contract:', error)
-				}
+		handleArchive(contract) {
+			this.archivingContract = contract
+			this.showArchiveDialog = true
+		},
+
+		async confirmArchive() {
+			if (!this.archivingContract) return
+			try {
+				await this.archiveContract(this.archivingContract.id)
+			} catch (error) {
+				console.error('Failed to archive contract:', error)
+			} finally {
+				this.showArchiveDialog = false
+				this.archivingContract = null
 			}
 		},
 
@@ -337,6 +383,14 @@ export default {
 				case 'cost':
 					cmp = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0)
 					break
+				case 'cancellationDeadline': {
+					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod)
+					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod)
+					const timeA = deadlineA ? deadlineA.getTime() : 0
+					const timeB = deadlineB ? deadlineB.getTime() : 0
+					cmp = timeA - timeB
+					break
+				}
 				default:
 					cmp = 0
 				}

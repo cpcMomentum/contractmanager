@@ -310,12 +310,27 @@
 				</div>
 			</div>
 		</div>
+
+		<NcDialog v-if="showDeleteCategoryDialog"
+			:name="t('contractmanager', 'Kategorie löschen')"
+			@close="showDeleteCategoryDialog = false">
+			<p>{{ t('contractmanager', 'Kategorie "{name}" wirklich löschen?', { name: deletingCategory ? deletingCategory.name : '' }) }}</p>
+			<template #actions>
+				<NcButton @click="showDeleteCategoryDialog = false">
+					{{ t('contractmanager', 'Abbrechen') }}
+				</NcButton>
+				<NcButton type="error" @click="executeDeleteCategory">
+					{{ t('contractmanager', 'Löschen') }}
+				</NcButton>
+			</template>
+		</NcDialog>
 	</div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
+import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
@@ -337,6 +352,7 @@ export default {
 	name: 'SettingsView',
 	components: {
 		NcButton,
+		NcDialog,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 		NcTextField,
@@ -352,6 +368,8 @@ export default {
 	},
 	data() {
 		return {
+			showDeleteCategoryDialog: false,
+			deletingCategory: null,
 			emailReminder: false,
 			savingAdmin: false,
 			adminSettings: {
@@ -524,20 +542,20 @@ export default {
 				await SettingsService.updatePermissionSettings({
 					[field]: ids,
 				})
-				showSuccess(this.t('contractmanager', 'Einstellung gespeichert'))
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
 			} catch (error) {
 				console.error('Failed to save permission settings:', error)
-				showError(this.t('contractmanager', 'Fehler beim Speichern'))
+				showError(t('contractmanager', 'Fehler beim Speichern'))
 			}
 		},
 
 		async onEmailReminderChange(value) {
 			try {
 				await SettingsService.updateUserSettings({ emailReminder: value })
-				showSuccess(this.t('contractmanager', 'Einstellung gespeichert'))
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
 			} catch (error) {
 				console.error('Failed to save user settings:', error)
-				showError(this.t('contractmanager', 'Fehler beim Speichern'))
+				showError(t('contractmanager', 'Fehler beim Speichern'))
 				this.emailReminder = !value
 			}
 		},
@@ -569,10 +587,10 @@ export default {
 					aiApiUrl: result.aiApiUrl || '',
 					aiModel: result.aiModel || '',
 				}
-				showSuccess(this.t('contractmanager', 'Admin-Einstellungen gespeichert'))
+				showSuccess(t('contractmanager', 'Admin-Einstellungen gespeichert'))
 			} catch (error) {
 				console.error('Failed to save admin settings:', error)
-				showError(this.t('contractmanager', 'Fehler beim Speichern der Admin-Einstellungen'))
+				showError(t('contractmanager', 'Fehler beim Speichern der Admin-Einstellungen'))
 			} finally {
 				this.savingAdmin = false
 			}
@@ -585,10 +603,10 @@ export default {
 			try {
 				await this.createCategory(this.newCategoryName.trim())
 				this.newCategoryName = ''
-				showSuccess(this.t('contractmanager', 'Kategorie hinzugefügt'))
+				showSuccess(t('contractmanager', 'Kategorie hinzugefügt'))
 			} catch (error) {
 				console.error('Failed to add category:', error)
-				showError(this.t('contractmanager', 'Fehler beim Hinzufügen der Kategorie'))
+				showError(t('contractmanager', 'Fehler beim Hinzufügen der Kategorie'))
 			} finally {
 				this.addingCategory = false
 			}
@@ -613,24 +631,29 @@ export default {
 					name: this.editingCategoryName.trim(),
 				})
 				this.cancelEdit()
-				showSuccess(this.t('contractmanager', 'Kategorie aktualisiert'))
+				showSuccess(t('contractmanager', 'Kategorie aktualisiert'))
 			} catch (error) {
 				console.error('Failed to update category:', error)
-				showError(this.t('contractmanager', 'Fehler beim Aktualisieren der Kategorie'))
+				showError(t('contractmanager', 'Fehler beim Aktualisieren der Kategorie'))
 			}
 		},
 
-		async confirmDeleteCategory(category) {
-			if (!confirm(this.t('contractmanager', 'Kategorie "{name}" wirklich löschen?', { name: category.name }))) {
-				return
-			}
+		confirmDeleteCategory(category) {
+			this.deletingCategory = category
+			this.showDeleteCategoryDialog = true
+		},
 
+		async executeDeleteCategory() {
+			if (!this.deletingCategory) return
 			try {
-				await this.deleteCategory(category.id)
-				showSuccess(this.t('contractmanager', 'Kategorie gelöscht'))
+				await this.deleteCategory(this.deletingCategory.id)
+				showSuccess(t('contractmanager', 'Kategorie gelöscht'))
 			} catch (error) {
 				console.error('Failed to delete category:', error)
-				showError(this.t('contractmanager', 'Fehler beim Löschen der Kategorie'))
+				showError(t('contractmanager', 'Fehler beim Löschen der Kategorie'))
+			} finally {
+				this.showDeleteCategoryDialog = false
+				this.deletingCategory = null
 			}
 		},
 	},

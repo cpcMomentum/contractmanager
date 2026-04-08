@@ -239,15 +239,15 @@ class ContractService {
     /**
      * @return Contract[]
      */
-    public function search(string $query, string $userId): array {
-        return $this->mapper->search($query, $userId);
+    public function search(string $query, string $userId, bool $isAdmin = false, ?int $limit = null, ?int $offset = null): array {
+        return $this->mapper->search($query, $userId, $isAdmin, $limit, $offset);
     }
 
     public function create(
         string $name,
         string $vendor,
         string $startDate,
-        string $endDate,
+        ?string $endDate,
         string $contractType,
         string $userId,
         ?string $cancellationPeriod = null,
@@ -272,7 +272,7 @@ class ContractService {
         $contract->setStatus(Contract::STATUS_ACTIVE);
         $contract->setCategoryId($categoryId);
         $contract->setStartDate(new DateTime($startDate));
-        $contract->setEndDate(new DateTime($endDate));
+        $contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
@@ -281,7 +281,8 @@ class ContractService {
         $contract->setCostInterval($costInterval);
         $contract->setContractFolder($contractFolder);
         $contract->setMainDocument($mainDocument);
-        $contract->setReminderEnabled($reminderEnabled ? 1 : 0);
+        // Ohne Enddatum kann keine Erinnerung funktionieren
+        $contract->setReminderEnabled($endDate !== null && $reminderEnabled ? 1 : 0);
         $contract->setReminderDays($reminderDays);
         $contract->setNotes($notes);
         $contract->setIsPrivate($isPrivate);
@@ -307,7 +308,7 @@ class ContractService {
         string $name,
         string $vendor,
         string $startDate,
-        string $endDate,
+        ?string $endDate,
         string $contractType,
         ?string $cancellationPeriod = null,
         ?int $categoryId = null,
@@ -339,7 +340,7 @@ class ContractService {
             $contract->setStatus($status);
         }
         $contract->setStartDate(new DateTime($startDate));
-        $contract->setEndDate(new DateTime($endDate));
+        $contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
@@ -348,7 +349,8 @@ class ContractService {
         $contract->setCostInterval($costInterval);
         $contract->setContractFolder($contractFolder);
         $contract->setMainDocument($mainDocument);
-        $contract->setReminderEnabled($reminderEnabled ? 1 : 0);
+        // Ohne Enddatum kann keine Erinnerung funktionieren
+        $contract->setReminderEnabled($endDate !== null && $reminderEnabled ? 1 : 0);
         $contract->setReminderDays($reminderDays);
         $contract->setNotes($notes);
         if ($isPrivate !== null) {

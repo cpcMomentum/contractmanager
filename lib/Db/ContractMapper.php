@@ -248,25 +248,47 @@ class ContractMapper extends QBMapper {
     }
 
     /**
-     * Search contracts by name or vendor for a user
+     * Search contracts by name or vendor
      *
+     * Respects visibility rules:
+     * - Admin sees all contracts
+     * - Others see non-private contracts + their own private contracts
+     *
+     * @param int|null $limit Maximum number of results
+     * @param int|null $offset Result offset for pagination
      * @return Contract[]
      */
-    public function search(string $query, string $userId): array {
+    public function search(string $query, string $userId, bool $isAdmin = false, ?int $limit = null, ?int $offset = null): array {
         $qb = $this->db->getQueryBuilder();
         $searchPattern = '%' . $this->db->escapeLikeParameter($query) . '%';
 
         $qb->select('*')
             ->from($this->getTableName())
-            ->where($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
-            ->andWhere($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
+            ->andWhere($qb->expr()->isNull('deleted_at'))
             ->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->iLike('name', $qb->createNamedParameter($searchPattern)),
                     $qb->expr()->iLike('vendor', $qb->createNamedParameter($searchPattern))
                 )
-            )
-            ->orderBy('end_date', 'ASC');
+            );
+
+        if (!$isAdmin) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                )
+            );
+        }
+
+        if ($limit !== null) {
+            $qb->setMaxResults($limit);
+        }
+        if ($offset !== null) {
+            $qb->setFirstResult($offset);
+        }
+
+        $qb->orderBy('end_date', 'ASC');
 
         return $this->findEntities($qb);
     }

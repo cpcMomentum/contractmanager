@@ -98,11 +98,12 @@
 								@blur="parseStartDate" />
 						</div>
 						<div class="field-date">
-							<label class="form-label">{{ t('contractmanager', 'Enddatum') + ' *' }}</label>
+							<label class="form-label">{{ t('contractmanager', 'Enddatum') }}</label>
 							<NcTextField :value.sync="form.endDateFormatted"
-								:placeholder="t('contractmanager', 'TT.MM.JJJJ')"
+								:placeholder="t('contractmanager', 'TT.MM.JJJJ oder leer für unbefristet')"
 								:disabled="readOnly"
-								@blur="parseEndDate" />
+								@blur="parseEndDate"
+								@input="onEndDateInput" />
 						</div>
 						<div v-if="showCancellationDeadline" class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
@@ -308,16 +309,21 @@
 						<!-- Erinnerung -->
 						<div class="triple-column">
 							<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
-							<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
-								{{ t('contractmanager', 'Erinnerung aktivieren') }}
-							</NcCheckboxRadioSwitch>
-							<div v-if="form.reminderEnabled" class="reminder-days">
-								<NcTextField :label="t('contractmanager', 'X Tage vorher')"
-									:value.sync="form.reminderDays"
-									type="number"
-									:disabled="readOnly"
-									:placeholder="t('contractmanager', 'Standard')" />
-							</div>
+							<NcNoteCard v-if="!form.endDate" type="warning">
+								{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
+							</NcNoteCard>
+							<template v-else>
+								<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
+									{{ t('contractmanager', 'Erinnerung aktivieren') }}
+								</NcCheckboxRadioSwitch>
+								<div v-if="form.reminderEnabled" class="reminder-days">
+									<NcTextField :label="t('contractmanager', 'X Tage vorher')"
+										:value.sync="form.reminderDays"
+										type="number"
+										:disabled="readOnly"
+										:placeholder="t('contractmanager', 'Standard')" />
+								</div>
+							</template>
 						</div>
 					</div>
 				</div>
@@ -391,7 +397,6 @@ import Close from 'vue-material-design-icons/Close.vue'
 import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
-import Pencil from 'vue-material-design-icons/Pencil.vue'
 import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
@@ -420,7 +425,6 @@ export default {
 		OpenInNewIcon,
 		LockIcon,
 		LockOpenVariantIcon,
-		Pencil,
 		FileSearchIcon,
 	},
 	props: {
@@ -473,7 +477,6 @@ export default {
 				this.form.name.trim() !== ''
 				&& this.form.vendor.trim() !== ''
 				&& this.form.startDate !== null
-				&& this.form.endDate !== null
 				&& !this.dateError
 				&& this.form.contractType !== null
 				&& (this.form.contractType !== 'auto_renewal' || (
@@ -483,6 +486,12 @@ export default {
 			)
 		},
 		dateError() {
+			if (this.form.startDateFormatted && !this.form.startDate) {
+				return t('contractmanager', 'Startdatum: Bitte gültiges Datum im Format TT.MM.JJJJ eingeben')
+			}
+			if (this.form.endDateFormatted && !this.form.endDate) {
+				return t('contractmanager', 'Enddatum: Bitte gültiges Datum im Format TT.MM.JJJJ eingeben')
+			}
 			if (this.form.startDate && this.form.endDate && this.form.startDate >= this.form.endDate) {
 				return t('contractmanager', 'Enddatum muss nach dem Startdatum liegen')
 			}
@@ -501,6 +510,7 @@ export default {
 			return [
 				{ value: 'fixed', label: t('contractmanager', 'Befristet') },
 				{ value: 'auto_renewal', label: t('contractmanager', 'Automatische Verlängerung') },
+				{ value: 'unlimited', label: t('contractmanager', 'Unbefristet') },
 			]
 		},
 		currencyOptions() {
@@ -585,6 +595,13 @@ export default {
 				}
 			},
 		},
+		'form.endDate'(newVal) {
+			if (newVal === null) {
+				this.form.reminderEnabled = false
+			} else {
+				this.form.reminderEnabled = true
+			}
+		},
 	},
 	methods: {
 		getInitialForm() {
@@ -627,6 +644,7 @@ export default {
 			const month = parseInt(parts[1], 10)
 			const year = parseInt(parts[2], 10)
 			if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+			if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) return null
 			return new Date(year, month - 1, day)
 		},
 		parseStartDate() {
@@ -634,6 +652,8 @@ export default {
 			this.form.startDate = date
 			if (date) {
 				this.form.startDateFormatted = this.formatDateDisplay(date)
+			} else {
+				this.form.startDateFormatted = ''
 			}
 		},
 		parseEndDate() {
@@ -641,6 +661,13 @@ export default {
 			this.form.endDate = date
 			if (date) {
 				this.form.endDateFormatted = this.formatDateDisplay(date)
+			} else {
+				this.form.endDateFormatted = ''
+			}
+		},
+		onEndDateInput(value) {
+			if (!value || value.trim() === '') {
+				this.form.endDate = null
 			}
 		},
 		parsePeriodForForm(periodString, defaultValue = '') {
@@ -698,13 +725,16 @@ export default {
 			}
 		},
 		formToPayload() {
+			// Parse dates fresh from formatted fields to avoid stale state
+			const startDate = this.parseDateInput(this.form.startDateFormatted)
+			const endDate = this.parseDateInput(this.form.endDateFormatted)
 			return {
 				name: this.form.name.trim(),
 				vendor: this.form.vendor.trim(),
 				categoryId: this.form.categoryId,
 				status: this.form.contractStatus,
-				startDate: this.form.startDate ? this.formatDateForApi(this.form.startDate) : null,
-				endDate: this.form.endDate ? this.formatDateForApi(this.form.endDate) : null,
+				startDate: startDate ? this.formatDateForApi(startDate) : null,
+				endDate: endDate ? this.formatDateForApi(endDate) : null,
 				cancellationPeriod: this.form.contractType === 'auto_renewal'
 					? this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit)
 					: null,
