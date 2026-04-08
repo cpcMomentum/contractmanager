@@ -147,6 +147,7 @@ import FilterIcon from 'vue-material-design-icons/Filter.vue'
 import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import ContractListItem from '../components/ContractListItem.vue'
+import { calculateCancellationDeadline } from '../utils/periodUtils.js'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService.js'
 
@@ -174,7 +175,7 @@ export default {
 	},
 	props: {
 		categoryFilter: {
-			type: Number,
+			type: [Number, String],
 			default: null,
 		},
 		searchQuery: {
@@ -206,6 +207,7 @@ export default {
 				{ key: 'name', label: t('contractmanager', 'Name'), defaultDirection: 'asc' },
 				{ key: 'updatedAt', label: t('contractmanager', 'Zuletzt geändert'), defaultDirection: 'desc' },
 				{ key: 'cost', label: t('contractmanager', 'Kosten'), defaultDirection: 'desc' },
+				{ key: 'cancellationDeadline', label: t('contractmanager', 'Kündigen bis'), defaultDirection: 'asc' },
 			],
 			showFilters: false,
 			filterVendor: filters.vendor || null,
@@ -257,7 +259,9 @@ export default {
 			}
 
 			// Kategorie-Filter (Sidebar)
-			if (this.categoryFilter !== null) {
+			if (this.categoryFilter === 'uncategorized') {
+				filtered = filtered.filter(c => !c.categoryId)
+			} else if (this.categoryFilter !== null) {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
 
@@ -379,6 +383,14 @@ export default {
 				case 'cost':
 					cmp = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0)
 					break
+				case 'cancellationDeadline': {
+					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod)
+					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod)
+					const timeA = deadlineA ? deadlineA.getTime() : 0
+					const timeB = deadlineB ? deadlineB.getTime() : 0
+					cmp = timeA - timeB
+					break
+				}
 				default:
 					cmp = 0
 				}
