@@ -156,7 +156,7 @@ export default {
 			default: 'default',
 		},
 	},
-	emits: ['edit', 'duplicate', 'archive', 'restore', 'delete', 'delete-permanently'],
+	emits: ['edit', 'view', 'duplicate', 'archive', 'restore', 'delete', 'delete-permanently'],
 	data() {
 		return {
 			showDeleteDialog: false,

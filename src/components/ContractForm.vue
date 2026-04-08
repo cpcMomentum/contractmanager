@@ -397,7 +397,6 @@ import Close from 'vue-material-design-icons/Close.vue'
 import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
-import Pencil from 'vue-material-design-icons/Pencil.vue'
 import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
@@ -426,7 +425,6 @@ export default {
 		OpenInNewIcon,
 		LockIcon,
 		LockOpenVariantIcon,
-		Pencil,
 		FileSearchIcon,
 	},
 	props: {
@@ -488,6 +486,12 @@ export default {
 			)
 		},
 		dateError() {
+			if (this.form.startDateFormatted && !this.form.startDate) {
+				return t('contractmanager', 'Startdatum: Bitte gültiges Datum im Format TT.MM.JJJJ eingeben')
+			}
+			if (this.form.endDateFormatted && !this.form.endDate) {
+				return t('contractmanager', 'Enddatum: Bitte gültiges Datum im Format TT.MM.JJJJ eingeben')
+			}
 			if (this.form.startDate && this.form.endDate && this.form.startDate >= this.form.endDate) {
 				return t('contractmanager', 'Enddatum muss nach dem Startdatum liegen')
 			}
@@ -640,6 +644,7 @@ export default {
 			const month = parseInt(parts[1], 10)
 			const year = parseInt(parts[2], 10)
 			if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+			if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) return null
 			return new Date(year, month - 1, day)
 		},
 		parseStartDate() {
@@ -647,6 +652,8 @@ export default {
 			this.form.startDate = date
 			if (date) {
 				this.form.startDateFormatted = this.formatDateDisplay(date)
+			} else {
+				this.form.startDateFormatted = ''
 			}
 		},
 		parseEndDate() {
@@ -654,6 +661,8 @@ export default {
 			this.form.endDate = date
 			if (date) {
 				this.form.endDateFormatted = this.formatDateDisplay(date)
+			} else {
+				this.form.endDateFormatted = ''
 			}
 		},
 		onEndDateInput(value) {
