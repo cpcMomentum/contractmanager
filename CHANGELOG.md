@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-04-11
+
+### Fixed
+- Automatische Bereinigung von Extra-Dateien aus frueheren Releases via RepairStep
+
 ## [0.4.1] - 2026-04-11
 
 ### Fixed
