@@ -32,13 +32,15 @@ composer.lock
 # Package lock (keep package-lock.json for reproducible builds)
 # package-lock.json
 
-# Test coverage
+# Test coverage & results
 coverage/
+test-results/
 .phpunit.result.cache
 .phpunit.cache/
 
 # Nextcloud
 appinfo/signature.json
+appinfo/*.crt
 
 # Release artifacts
 *.tar.gz
