@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\ContractManager\Migration;
 
+use OCP\App\AppPathNotFoundException;
+use OCP\App\IAppManager;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 
@@ -13,13 +15,19 @@ use OCP\Migration\IRepairStep;
  */
 class CleanupExtraFiles implements IRepairStep {
 
+	public function __construct(
+		private IAppManager $appManager,
+	) {
+	}
+
 	public function getName(): string {
 		return 'Remove extra files from earlier releases';
 	}
 
 	public function run(IOutput $output): void {
-		$appPath = \OC_App::getAppPath('contractmanager');
-		if ($appPath === false) {
+		try {
+			$appPath = $this->appManager->getAppPath('contractmanager');
+		} catch (AppPathNotFoundException) {
 			return;
 		}
 
