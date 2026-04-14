@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-04-14
+
+### Fixed
+- **KRITISCH (#86)**: App-Update und `occ app:enable` crashten auf Nextcloud 33, weil der Repair-Step die seit NC 11 deprecated und in NC 33 entfernte `OC_App::getAppPath()` nutzte. Betroffene User mussten die App disablen und auf v0.4.0 ausweichen. Fix nutzt jetzt die OCP-API `IAppManager::getAppPath()`.
+
 ## [0.4.2] - 2026-04-11
 
 ### Fixed
