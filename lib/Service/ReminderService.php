@@ -173,32 +173,59 @@ class ReminderService {
 		// Normalize unit to singular
 		$unit = rtrim($unit, 's');
 
-		$deadline = clone $endDate;
+		$deadline = $this->subtractPeriodFromDate(clone $endDate, $value, $unit);
 
-		// For months, use conservative calculation to avoid invalid dates
-		if ($unit === 'month') {
-			// Store original day to handle month-end edge cases
-			$originalDay = (int) $deadline->format('d');
-
-			// Subtract months
-			$deadline->modify("-{$value} month");
-
-			// Check if we overflowed into the next month (e.g., March 31 - 1 month = March 3 instead of Feb 28)
-			$newDay = (int) $deadline->format('d');
-			if ($newDay > $originalDay || ($originalDay > 28 && $newDay < $originalDay)) {
-				// We hit a month-end edge case, go back to last day of previous month
-				$deadline->modify('last day of previous month');
+		// For auto_renewal: if cancellation deadline is past, the contract will
+		// renew — advance to the next period where the deadline is in the future.
+		$contractType = $contract->getContractType();
+		$renewalPeriod = $contract->getRenewalPeriod();
+		if ($contractType === 'auto_renewal' && !empty($renewalPeriod)) {
+			$now = new DateTime();
+			while ($deadline < $now) {
+				$endDate = $this->addPeriodToDate($endDate, $renewalPeriod);
+				if ($endDate === null) {
+					break;
+				}
+				$deadline = $this->subtractPeriodFromDate(clone $endDate, $value, $unit);
 			}
-		} elseif ($unit === 'year') {
-			$deadline->modify("-{$value} year");
-		} elseif ($unit === 'week') {
-			$deadline->modify("-{$value} week");
-		} else {
-			// days
-			$deadline->modify("-{$value} day");
 		}
 
 		return $deadline;
+	}
+
+	/**
+	 * Subtract a parsed period (value + unit) from a date with month-end safety.
+	 */
+	private function subtractPeriodFromDate(DateTime $date, int $value, string $unit): DateTime {
+		if ($unit === 'month') {
+			$originalDay = (int) $date->format('d');
+			$date->modify("-{$value} month");
+			$newDay = (int) $date->format('d');
+			if ($newDay > $originalDay || ($originalDay > 28 && $newDay < $originalDay)) {
+				$date->modify('last day of previous month');
+			}
+		} elseif ($unit === 'year') {
+			$date->modify("-{$value} year");
+		} elseif ($unit === 'week') {
+			$date->modify("-{$value} week");
+		} else {
+			$date->modify("-{$value} day");
+		}
+		return $date;
+	}
+
+	/**
+	 * Add a renewal period string (e.g. "12 months") to a date.
+	 */
+	private function addPeriodToDate(DateTime $date, string $periodString): ?DateTime {
+		if (!preg_match('/^(\d+)\s+(day|days|week|weeks|month|months|year|years)$/i', trim($periodString), $matches)) {
+			return null;
+		}
+		$val = (int) $matches[1];
+		$u = rtrim(strtolower($matches[2]), 's');
+		$result = clone $date;
+		$result->modify("+{$val} {$u}");
+		return $result;
 	}
 
 	/**

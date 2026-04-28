@@ -181,8 +181,22 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod) {
 export function calculateCancellationDeadline(endDate, cancellationPeriod, contractType, renewalPeriod) {
 	if (!endDate || !cancellationPeriod) return null
 
-	const effectiveEnd = getEffectiveEndDate(endDate, contractType, renewalPeriod)
+	let effectiveEnd = getEffectiveEndDate(endDate, contractType, renewalPeriod)
 	if (!effectiveEnd || isNaN(effectiveEnd.getTime())) return null
 
-	return subtractPeriod(effectiveEnd, cancellationPeriod)
+	let deadline = subtractPeriod(effectiveEnd, cancellationPeriod)
+
+	// For auto_renewal: if cancellation deadline is past, the contract will
+	// renew — advance to the next period where the deadline is in the future.
+	if (deadline && contractType === 'auto_renewal' && renewalPeriod) {
+		const now = new Date()
+		while (deadline < now) {
+			effectiveEnd = addPeriod(effectiveEnd, renewalPeriod)
+			if (!effectiveEnd) break
+			deadline = subtractPeriod(effectiveEnd, cancellationPeriod)
+			if (!deadline) break
+		}
+	}
+
+	return deadline
 }
