@@ -184,20 +184,144 @@ Diese Skills sind fuer NC-Apps **nicht relevant** und sollten uebersprungen werd
 
 ### /release
 
+#### Regeln
+
 | Regel | Details |
 |-------|---------|
 | Branch-Pflicht | Release nur von `develop`, nicht von `main` oder Feature-Branches |
 | Release-Branch | `release/vX.Y.Z` von `develop` abzweigen |
 | Version synchron | `appinfo/info.xml` UND `package.json` muessen gleiche Version haben |
 | Build vor Tarball | `npm install && npm run build` auf dem Release-Branch |
-| Tarball aus git archive | `git archive HEAD` verwenden, **NICHT** aus Worktree — verhindert Feature-Code-Leaks |
 | Sign-Tree bereinigen | `.htaccess`, `.user.ini` aus Sign-Tree entfernen (NC FilenameValidator) |
 | Signatur | `openssl dgst -sha512 -sign ~/.nextcloud/certificates/contractmanager.key` |
 | Upgrade-Test PFLICHT | Vorversion installieren → neue Version drueberziehen → Integrity pruefen |
-| Whitelist-Check | Tarball darf NUR enthalten: `appinfo`, `lib`, `src`, `js`, `css`, `templates`, `l10n`, `img`, `tests`, `composer.json`, `package.json`, `package-lock.json`, `webpack.config.js`, `CHANGELOG.md`, `README.md`, `LICENSE`, `CLAUDE.md` |
-| App Store Upload | `curl -X POST https://apps.nextcloud.com/api/v1/apps/releases` mit Signatur |
-| Post-Release Sync | Release-Branch → `main` mergen, dann `main` → `develop` zuruecksyncen |
+| Post-Release | Bei korrektem Workflow (Release von develop) ist main=develop → kein Sync noetig |
 | Rollback | Defekte Version im App Store loeschen: `curl -X DELETE .../releases/<version>` |
+
+#### Tarball-Whitelist (HART — alles andere = Abbruch)
+
+**Erlaubte Top-Level-Eintraege:**
+`appinfo/`, `lib/`, `js/`, `css/`, `img/`, `templates/`, `l10n/`, `CHANGELOG.md`, `README.md`, `LICENSE`
+
+**appinfo/ darf nur enthalten:**
+`info.xml`, `routes.php`, `signature.json`
+
+**Verboten im Tarball (haeufige Fehler):**
+`node_modules/`, `src/`, `tests/`, `.git/`, `.github/`, `.claude/`, `docs/`, `vendor/` (dev-deps), `package.json`, `package-lock.json`, `webpack.config.js`, `composer.json`, `composer.lock`, `phpunit.xml`, `*.crt`, `*.csr`, `*.key`, `.htaccess`, `.user.ini`
+
+#### Schritt-fuer-Schritt Release-Workflow
+
+**Phase 1: Vorbereitung (auf develop)**
+
+```bash
+# 1. Sicherstellen: auf develop, aktuell
+git checkout develop && git pull
+
+# 2. CHANGELOG.md pruefen (muss schon geschrieben sein via /changelog)
+head -20 CHANGELOG.md
+
+# 3. Release-Branch erstellen
+git checkout -b release/vX.Y.Z
+```
+
+**Phase 2: Version-Bump**
+
+```bash
+# 4. Version in info.xml aendern
+#    <version>X.Y.Z</version>
+
+# 5. Version in package.json aendern
+#    "version": "X.Y.Z"
+
+# 6. Pruefen: beide Versionen identisch
+grep '<version>' appinfo/info.xml
+grep '"version"' package.json
+```
+
+**Phase 3: Build + Commit**
+
+```bash
+# 7. Frontend bauen
+npm install && npm run build
+
+# 8. Alles committen
+git add appinfo/info.xml package.json CHANGELOG.md js/
+git commit -m "release: vX.Y.Z"
+```
+
+**Phase 4: Tarball erstellen + Whitelist-Check**
+
+```bash
+# 9. Tarball aus git archive (NICHT aus Worktree!)
+#    Nur erlaubte Dateien via path-Filter
+git archive HEAD \
+  --prefix=contractmanager/ \
+  -o ../contractmanager-vX.Y.Z.tar.gz \
+  appinfo/info.xml appinfo/routes.php \
+  lib/ js/ css/ img/ templates/ l10n/ \
+  CHANGELOG.md README.md LICENSE
+
+# 10. Whitelist-Check: Tarball-Inhalt pruefen
+tar tzf ../contractmanager-vX.Y.Z.tar.gz | head -30
+# Darf NUR die oben gelisteten Eintraege enthalten!
+
+# 11. Auf .htaccess/.user.ini pruefen (MUSS leer sein)
+tar tzf ../contractmanager-vX.Y.Z.tar.gz | grep -E '\.htaccess|\.user\.ini'
+# Kein Output = OK. Output = ABBRUCH!
+```
+
+**Phase 5: Signierung**
+
+```bash
+# 12. Tarball signieren
+SIGNATURE=$(openssl dgst -sha512 \
+  -sign ~/.nextcloud/certificates/contractmanager.key \
+  ../contractmanager-vX.Y.Z.tar.gz | openssl base64 -A)
+echo "Signatur: ${SIGNATURE:0:20}..."
+```
+
+**Phase 6: PR + Merge + Tag**
+
+```bash
+# 13. Push + PR nach main
+git push -u origin release/vX.Y.Z
+gh pr create --base main --title "Release vX.Y.Z" --body "..."
+
+# 14. PR mergen
+gh pr merge --merge
+
+# 15. Tag erstellen (auf main, NACH dem Merge)
+git checkout main && git pull
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+**Phase 7: GitHub Release + App Store**
+
+```bash
+# 16. GitHub Release mit Tarball
+gh release create vX.Y.Z ../contractmanager-vX.Y.Z.tar.gz \
+  --title "vX.Y.Z" --notes "Siehe CHANGELOG.md"
+
+# 17. App Store Upload
+DOWNLOAD_URL="https://github.com/cpcMomentum/contractmanager/releases/download/vX.Y.Z/contractmanager-vX.Y.Z.tar.gz"
+curl -X POST https://apps.nextcloud.com/api/v1/apps/releases \
+  -H "Authorization: Token d31fa215d4d16f3aefdab27d971f356727cc995a" \
+  -H "Content-Type: application/json" \
+  -d "{\"download\": \"$DOWNLOAD_URL\", \"signature\": \"$SIGNATURE\"}"
+```
+
+**Phase 8: Aufraemen**
+
+```bash
+# 18. Zurueck auf develop
+git checkout develop && git pull
+
+# 19. Pruefen: develop und main sind identisch (bei korrektem Workflow)
+git log --oneline main..develop  # Sollte leer sein
+git log --oneline develop..main  # Sollte leer sein
+# Falls nicht leer: Workflow wurde nicht eingehalten → main nach develop mergen
+```
 
 ### /prime
 

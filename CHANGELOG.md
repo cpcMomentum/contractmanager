@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-04-29
+
+### Added
+- Aktive Sortierung wird im Sort-Button angezeigt (Feldname + Richtungspfeil), nach Nextcloud Tasks Pattern (#82)
+
+### Fixed
+- Kuendigungsdatum bei auto_renewal-Vertraegen springt jetzt automatisch zur naechsten Periode, wenn die Frist bereits abgelaufen ist (#80)
+- Vertraege ohne Kuendigungsfrist (z.B. befristete Vertraege) werden bei Sortierung "Kuendigen bis" ans Ende sortiert statt an den Anfang (#93)
+
 ## [0.4.3] - 2026-04-14
 
 ### Fixed
