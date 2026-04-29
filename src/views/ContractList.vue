@@ -3,9 +3,10 @@
 		<div class="contract-list__header">
 			<h2>{{ t('contractmanager', 'Verträge') }}</h2>
 			<div class="contract-list__header-actions">
-				<NcActions :force-menu="true" type="secondary">
+				<NcActions :force-menu="true" type="secondary" :menu-name="activeSortLabel">
 					<template #icon>
-						<SortIcon :size="20" />
+						<SortAscendingIcon v-if="sortDirection === 'asc'" :size="20" />
+						<SortDescendingIcon v-else :size="20" />
 					</template>
 					<NcActionButton v-for="option in sortOptions"
 						:key="option.key"
@@ -236,7 +237,11 @@ export default {
 				.filter(v => v && v.trim() !== '')
 			return [...new Set(vendors)].sort((a, b) => a.localeCompare(b))
 		},
-		hasActiveFilters() {
+		activeSortLabel() {
+				const option = this.sortOptions.find(o => o.key === this.sortBy)
+				return option ? option.label : ''
+			},
+			hasActiveFilters() {
 			if (this.filterVendor) return true
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
