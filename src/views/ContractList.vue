@@ -3,9 +3,10 @@
 		<div class="contract-list__header">
 			<h2>{{ t('contractmanager', 'Verträge') }}</h2>
 			<div class="contract-list__header-actions">
-				<NcActions :force-menu="true" type="secondary">
+				<NcActions :force-menu="true" type="secondary" :menu-name="activeSortLabel">
 					<template #icon>
-						<SortIcon :size="20" />
+						<SortAscendingIcon v-if="sortDirection === 'asc'" :size="20" />
+						<SortDescendingIcon v-else :size="20" />
 					</template>
 					<NcActionButton v-for="option in sortOptions"
 						:key="option.key"
@@ -236,7 +237,11 @@ export default {
 				.filter(v => v && v.trim() !== '')
 			return [...new Set(vendors)].sort((a, b) => a.localeCompare(b))
 		},
-		hasActiveFilters() {
+		activeSortLabel() {
+				const option = this.sortOptions.find(o => o.key === this.sortBy)
+				return option ? option.label : ''
+			},
+			hasActiveFilters() {
 			if (this.filterVendor) return true
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
@@ -366,9 +371,10 @@ export default {
 				let cmp = 0
 				switch (this.sortBy) {
 				case 'endDate': {
-					const dateA = a.endDate ? new Date(a.endDate).getTime() : 0
-					const dateB = b.endDate ? new Date(b.endDate).getTime() : 0
-					cmp = dateA - dateB
+					if (!a.endDate && !b.endDate) { cmp = 0; break }
+					if (!a.endDate) { cmp = 1; break }
+					if (!b.endDate) { cmp = -1; break }
+					cmp = new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
 					break
 				}
 				case 'name':
@@ -386,9 +392,10 @@ export default {
 				case 'cancellationDeadline': {
 					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod)
 					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod)
-					const timeA = deadlineA ? deadlineA.getTime() : 0
-					const timeB = deadlineB ? deadlineB.getTime() : 0
-					cmp = timeA - timeB
+					if (!deadlineA && !deadlineB) { cmp = 0; break }
+					if (!deadlineA) { cmp = 1; break }
+					if (!deadlineB) { cmp = -1; break }
+					cmp = deadlineA.getTime() - deadlineB.getTime()
 					break
 				}
 				default:

@@ -286,6 +286,58 @@ class ReminderServiceTest extends TestCase {
 		$this->assertEquals($expected->format('Y-m-d'), $result->format('Y-m-d'));
 	}
 
+	/**
+	 * Regression: Issue #80 — Falsches Kündigungsdatum
+	 * Wenn die Kündigungsfrist bereits abgelaufen ist, muss das Datum
+	 * auf die nächste Verlängerungsperiode vorspringen.
+	 */
+	public function testCancellationDeadlineMustBeInFutureForAutoRenewal(): void {
+		// Contract: endDate weit in der Vergangenheit, renewal 12 months, cancellation 3 months
+		// Effective end date wird in die Zukunft gerollt, aber die Kündigungsfrist
+		// könnte trotzdem in der Vergangenheit liegen.
+		// Wir konstruieren einen Fall wo effectiveEnd < 3 Monate in der Zukunft liegt,
+		// sodass deadline = effectiveEnd - 3 months in der Vergangenheit liegt.
+		$now = new DateTime();
+
+		// End date so setzen, dass effectiveEnd ca. 2 Monate in der Zukunft liegt
+		// -> Kündigungsfrist 3 Monate -> Deadline 1 Monat in der Vergangenheit
+		$effectiveTarget = clone $now;
+		$effectiveTarget->modify('+2 months');
+
+		// endDate = effectiveTarget - 12 months (eine Verlängerungsperiode zurück)
+		$endDate = clone $effectiveTarget;
+		$endDate->modify('-12 months');
+
+		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		// KERN-ASSERTION: Kündigungsdatum MUSS in der Zukunft liegen
+		$this->assertGreaterThan(
+			$now,
+			$result,
+			'Cancellation deadline must be in the future for auto_renewal contracts, '
+			. 'but got ' . $result->format('Y-m-d') . ' (today: ' . $now->format('Y-m-d') . ')'
+		);
+	}
+
+	/**
+	 * Regression: Issue #80 — Fixed contracts dürfen vergangene Deadlines haben
+	 */
+	public function testCancellationDeadlineCanBePastForFixedContract(): void {
+		// Bei fixed contracts ist ein vergangenes Kündigungsdatum korrekt —
+		// der Vertrag erneuert sich nicht, die Frist ist einfach abgelaufen.
+		$endDate = new DateTime('+1 month');
+		$contract = $this->createContract($endDate, '3 months', 'fixed');
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		// Deadline liegt 2 Monate in der Vergangenheit — das ist OK bei fixed
+		$this->assertLessThan(new DateTime(), $result);
+	}
+
 	public function testGetReminderTypeUsesEffectiveEndDate(): void {
 		// Construct a scenario where we're in the reminder window:
 		// effectiveEnd ~10 days from now, cancellationPeriod = 3 days -> deadline ~7 days from now
