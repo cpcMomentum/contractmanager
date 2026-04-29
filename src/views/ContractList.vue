@@ -366,9 +366,10 @@ export default {
 				let cmp = 0
 				switch (this.sortBy) {
 				case 'endDate': {
-					const dateA = a.endDate ? new Date(a.endDate).getTime() : 0
-					const dateB = b.endDate ? new Date(b.endDate).getTime() : 0
-					cmp = dateA - dateB
+					if (!a.endDate && !b.endDate) { cmp = 0; break }
+					if (!a.endDate) { cmp = 1; break }
+					if (!b.endDate) { cmp = -1; break }
+					cmp = new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
 					break
 				}
 				case 'name':
@@ -386,9 +387,10 @@ export default {
 				case 'cancellationDeadline': {
 					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod)
 					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod)
-					const timeA = deadlineA ? deadlineA.getTime() : 0
-					const timeB = deadlineB ? deadlineB.getTime() : 0
-					cmp = timeA - timeB
+					if (!deadlineA && !deadlineB) { cmp = 0; break }
+					if (!deadlineA) { cmp = 1; break }
+					if (!deadlineB) { cmp = -1; break }
+					cmp = deadlineA.getTime() - deadlineB.getTime()
 					break
 				}
 				default:
