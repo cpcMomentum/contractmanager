@@ -44,7 +44,7 @@ class SettingsService {
 	private const DEFAULT_REMINDER_DAYS_1 = 14;
 	private const DEFAULT_REMINDER_DAYS_2 = 3;
 
-	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost'];
+	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost', 'cancellationDeadline'];
 	private const ALLOWED_SORT_DIRECTION = ['asc', 'desc'];
 	private const ALLOWED_FILTER_KEYS = ['vendor', 'statuses', 'contractType'];
 	private const ALLOWED_STATUSES = ['active', 'cancelled', 'ended'];
