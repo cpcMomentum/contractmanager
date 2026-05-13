@@ -173,12 +173,30 @@
 							<h3>{{ t('contractmanager', 'Kosten') }}</h3>
 							<div class="cost-top">
 								<div class="field-cost">
-									<label class="form-label">{{ t('contractmanager', 'Betrag (netto)') }}</label>
+									<label class="form-label">
+										{{ form.amountType === 'brutto' ? t('contractmanager', 'Betrag (brutto)') : t('contractmanager', 'Betrag (netto)') }}
+									</label>
 									<NcTextField :value.sync="form.cost"
 										type="number"
 										step="0.01"
 										:disabled="readOnly"
 										:placeholder="t('contractmanager', '0.00')" />
+									<div class="amount-type-toggle">
+										<NcCheckboxRadioSwitch :checked.sync="form.amountType"
+											value="netto"
+											name="amountType"
+											type="radio"
+											:disabled="readOnly">
+											{{ t('contractmanager', 'Netto') }}
+										</NcCheckboxRadioSwitch>
+										<NcCheckboxRadioSwitch :checked.sync="form.amountType"
+											value="brutto"
+											name="amountType"
+											type="radio"
+											:disabled="readOnly">
+											{{ t('contractmanager', 'Brutto') }}
+										</NcCheckboxRadioSwitch>
+									</div>
 								</div>
 								<div class="field-currency">
 									<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
@@ -401,6 +419,7 @@ import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
+import { loadState } from '@nextcloud/initial-state'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
@@ -447,8 +466,11 @@ export default {
 	},
 	emits: ['close', 'submit'],
 	data() {
+		const prefs = loadState('contractmanager', 'userPreferences', { defaultAmountType: 'netto' })
+		const defaultAmountType = prefs.defaultAmountType || 'netto'
 		return {
-			form: this.getInitialForm(),
+			defaultAmountType,
+			form: this.getInitialForm(defaultAmountType),
 			aiAvailable: false,
 			extracting: false,
 			extractionNotes: null,
@@ -584,7 +606,7 @@ export default {
 	watch: {
 		show(newVal) {
 			if (newVal) {
-				this.form = this.getInitialForm()
+				this.form = this.getInitialForm(this.defaultAmountType)
 			}
 		},
 		contract: {
@@ -604,7 +626,7 @@ export default {
 		},
 	},
 	methods: {
-		getInitialForm() {
+		getInitialForm(defaultAmountType = 'netto') {
 			return {
 				name: '',
 				vendor: '',
@@ -622,6 +644,7 @@ export default {
 				cost: '',
 				currency: 'EUR',
 				costInterval: 'monthly',
+				amountType: defaultAmountType,
 				contractFolder: '',
 				mainDocument: '',
 				reminderEnabled: true,
@@ -718,6 +741,7 @@ export default {
 				reminderEnabled: contract.reminderEnabled !== false,
 				reminderDays: contract.reminderDays ? String(contract.reminderDays) : '',
 				notes: contract.notes || '',
+				amountType: contract.amountType || 'netto',
 				isPrivate: contract.isPrivate === true || contract.isPrivate === 1,
 				customField1: contract.customField1 || '',
 				customField2: contract.customField2 || '',
@@ -750,6 +774,7 @@ export default {
 				reminderEnabled: this.form.reminderEnabled,
 				reminderDays: this.form.reminderDays ? parseInt(this.form.reminderDays, 10) : null,
 				notes: this.form.notes.trim() || null,
+				amountType: this.form.amountType,
 				isPrivate: this.form.isPrivate,
 				customField1: this.form.customField1.trim() || null,
 				customField2: this.form.customField2.trim() || null,

@@ -23,6 +23,7 @@ class SettingsService {
 	private const KEY_SORT_BY = 'sort_by';
 	private const KEY_SORT_DIRECTION = 'sort_direction';
 	private const KEY_FILTERS = 'filters';
+	private const KEY_DEFAULT_AMOUNT_TYPE = 'default_amount_type';
 
 	private const KEY_CUSTOM_FIELD_LABEL_PREFIX = 'custom_field_label_';
 
@@ -45,6 +46,7 @@ class SettingsService {
 	private const DEFAULT_REMINDER_DAYS_2 = 3;
 
 	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost', 'cancellationDeadline'];
+	private const ALLOWED_AMOUNT_TYPES = ['netto', 'brutto'];
 	private const ALLOWED_SORT_DIRECTION = ['asc', 'desc'];
 	private const ALLOWED_FILTER_KEYS = ['vendor', 'statuses', 'contractType'];
 	private const ALLOWED_STATUSES = ['active', 'cancelled', 'ended'];
@@ -311,6 +313,27 @@ class SettingsService {
 			Application::APP_ID,
 			self::KEY_FILTERS,
 			json_encode($validated)
+		);
+	}
+
+	public function getUserDefaultAmountType(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_DEFAULT_AMOUNT_TYPE,
+			'netto'
+		);
+	}
+
+	public function setUserDefaultAmountType(string $userId, string $amountType): void {
+		if (!in_array($amountType, self::ALLOWED_AMOUNT_TYPES, true)) {
+			return;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_DEFAULT_AMOUNT_TYPE,
+			$amountType
 		);
 	}
 
