@@ -351,11 +351,14 @@
 					<h3>{{ t('contractmanager', 'Notizen') }}</h3>
 
 					<div class="form-row">
-						<NcTextArea :value.sync="form.notes"
+						<div v-if="readOnly && form.notes"
+							class="notes-readonly"
+							v-html="notesWithLinks" />
+						<NcTextArea v-else
+							:value.sync="form.notes"
 							:label="t('contractmanager', 'Zusätzliche Notizen')"
 							:placeholder="t('contractmanager', 'Zusätzliche Notizen...')"
 							:maxlength="5000"
-							:disabled="readOnly"
 							resize="vertical"
 							rows="4" />
 					</div>
@@ -485,6 +488,17 @@ export default {
 	},
 	computed: {
 		...mapGetters('categories', ['allCategories']),
+		notesWithLinks() {
+			if (!this.form.notes) return ''
+			const escaped = this.form.notes
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+			return escaped
+				.replace(/https?:\/\/[^\s<>"{}|\\^`[\]]+/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`)
+				.replace(/\n/g, '<br>')
+		},
 		isEdit() {
 			return this.contract !== null && this.contract.id != null
 		},
@@ -1207,6 +1221,29 @@ export default {
 .ai-hint {
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
+}
+
+.notes-readonly {
+	width: 100%;
+	min-height: 80px;
+	padding: 8px 12px;
+	background: var(--color-background-hover);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	font-size: var(--default-font-size);
+	line-height: 1.5;
+	color: var(--color-main-text);
+	white-space: pre-wrap;
+	word-break: break-word;
+
+	a {
+		color: var(--color-primary-element);
+		text-decoration: underline;
+
+		&:hover {
+			text-decoration: none;
+		}
+	}
 }
 
 .extraction-notes {
