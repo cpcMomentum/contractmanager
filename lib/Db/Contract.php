@@ -60,6 +60,8 @@ use OCP\AppFramework\Db\Entity;
  * @method int getArchived()
  * @method int getIsPrivate()
  * @method DateTime|null getDeletedAt()
+ * @method string getAmountType()
+ * @method void setAmountType(string $amountType)
  */
 class Contract extends Entity implements JsonSerializable {
 
@@ -69,6 +71,9 @@ class Contract extends Entity implements JsonSerializable {
 
     public const TYPE_FIXED = 'fixed';
     public const TYPE_AUTO_RENEWAL = 'auto_renewal';
+
+    public const AMOUNT_TYPE_NETTO = 'netto';
+    public const AMOUNT_TYPE_BRUTTO = 'brutto';
 
     public const INTERVAL_MONTHLY = 'monthly';
     public const INTERVAL_QUARTERLY = 'quarterly';
@@ -96,6 +101,7 @@ class Contract extends Entity implements JsonSerializable {
     protected ?string $customField1 = null;
     protected ?string $customField2 = null;
     protected ?string $customField3 = null;
+    protected string $amountType = self::AMOUNT_TYPE_NETTO;
     protected int $archived = 0;
     protected int $isPrivate = 0;
     protected ?DateTime $deletedAt = null;
@@ -163,6 +169,7 @@ class Contract extends Entity implements JsonSerializable {
             'contractType' => $this->contractType,
             'renewalPeriod' => $this->renewalPeriod,
             'cost' => $this->cost,
+            'amountType' => $this->amountType,
             'currency' => $this->currency,
             'costInterval' => $this->costInterval,
             'contractFolder' => $this->contractFolder,

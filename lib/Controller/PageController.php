@@ -50,6 +50,7 @@ class PageController extends Controller {
 				'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 				'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 				'filters' => $this->settingsService->getUserFilters($this->userId),
+				'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			]);
 		}
 

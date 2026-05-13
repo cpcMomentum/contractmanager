@@ -265,6 +265,7 @@ class ContractService {
         ?string $customField1 = null,
         ?string $customField2 = null,
         ?string $customField3 = null,
+        string $amountType = Contract::AMOUNT_TYPE_NETTO,
     ): Contract {
         $contract = new Contract();
         $contract->setName($name);
@@ -289,6 +290,7 @@ class ContractService {
         $contract->setCustomField1($customField1);
         $contract->setCustomField2($customField2);
         $contract->setCustomField3($customField3);
+        $contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
         $contract->setCreatedBy($userId);
         $contract->setCreatedAt(new DateTime());
         $contract->setUpdatedAt(new DateTime());
@@ -326,6 +328,7 @@ class ContractService {
         ?string $customField1 = null,
         ?string $customField2 = null,
         ?string $customField3 = null,
+        string $amountType = Contract::AMOUNT_TYPE_NETTO,
     ): Contract {
         try {
             $contract = $this->mapper->find($id);
@@ -359,6 +362,7 @@ class ContractService {
         $contract->setCustomField1($customField1);
         $contract->setCustomField2($customField2);
         $contract->setCustomField3($customField3);
+        $contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
         $contract->setUpdatedAt(new DateTime());
 
         return $this->mapper->update($contract);

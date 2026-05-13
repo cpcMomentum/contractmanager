@@ -45,6 +45,7 @@ class SettingsController extends Controller {
 			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
+			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
 		]);
 	}
@@ -58,6 +59,7 @@ class SettingsController extends Controller {
 		?string $sortBy = null,
 		?string $sortDirection = null,
 		?array $filters = null,
+		?string $defaultAmountType = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], 401);
@@ -75,12 +77,16 @@ class SettingsController extends Controller {
 		if ($filters !== null) {
 			$this->settingsService->setUserFilters($this->userId, $filters);
 		}
+		if ($defaultAmountType !== null) {
+			$this->settingsService->setUserDefaultAmountType($this->userId, $defaultAmountType);
+		}
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
 			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
+			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 		]);
 	}
 
