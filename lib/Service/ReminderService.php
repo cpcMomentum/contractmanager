@@ -291,8 +291,17 @@ class ReminderService {
 			return false;
 		}
 
-		// Final reminder uses the second setting (default: 3 days)
 		$reminderDays = $this->settingsService->getReminderDays2();
+
+		// If the contract has a custom first-reminder override that fires at the same time
+		// or later than the final reminder window, suppress the final reminder.
+		// Example: contract override = 2 days, global days2 = 3 days → final would fire
+		// before (or at) the first reminder, making it confusing and redundant.
+		$contractOverride = $contract->getReminderDays();
+		if ($contractOverride !== null && $contractOverride <= $reminderDays) {
+			return false;
+		}
+
 		$now = new DateTime();
 		$reminderDate = clone $deadline;
 		$reminderDate->modify("-{$reminderDays} days");
