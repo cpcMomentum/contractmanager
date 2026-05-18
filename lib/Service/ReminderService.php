@@ -45,8 +45,11 @@ class ReminderService {
 		$contracts = $this->contractMapper->findContractsNeedingReminder();
 
 		foreach ($contracts as $contract) {
+			// Pre-compute to avoid double DB query when both windows are active
+			$sendFinal = $this->shouldSendFinalReminder($contract);
+
 			// Check for first reminder — skip if final reminder is also due to avoid two emails on the same day
-			if ($this->shouldSendFirstReminder($contract) && !$this->shouldSendFinalReminder($contract)) {
+			if ($this->shouldSendFirstReminder($contract) && !$sendFinal) {
 				try {
 					$this->sendReminders($contract, 'first');
 					$this->markReminderSent($contract, 'first');
@@ -65,7 +68,7 @@ class ReminderService {
 			}
 
 			// Check for final reminder
-			if ($this->shouldSendFinalReminder($contract)) {
+			if ($sendFinal) {
 				try {
 					$this->sendReminders($contract, 'final');
 					$this->markReminderSent($contract, 'final');
