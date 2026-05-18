@@ -45,8 +45,8 @@ class ReminderService {
 		$contracts = $this->contractMapper->findContractsNeedingReminder();
 
 		foreach ($contracts as $contract) {
-			// Check for first reminder
-			if ($this->shouldSendFirstReminder($contract)) {
+			// Check for first reminder — skip if final reminder is also due to avoid two emails on the same day
+			if ($this->shouldSendFirstReminder($contract) && !$this->shouldSendFinalReminder($contract)) {
 				try {
 					$this->sendReminders($contract, 'first');
 					$this->markReminderSent($contract, 'first');

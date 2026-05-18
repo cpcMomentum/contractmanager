@@ -273,7 +273,8 @@ class ReminderServiceTest extends TestCase {
 
 	public function testCalculateCancellationDeadlineAutoRenewal(): void {
 		// End date in the past, auto_renewal with 12 months, cancellation 3 months
-		$endDate = new DateTime('2022-08-17');
+		// Use dynamic past date so the test stays date-independent
+		$endDate = new DateTime('-2 years');
 		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
 
 		$result = $this->service->calculateCancellationDeadline($contract);
@@ -426,6 +427,47 @@ class ReminderServiceTest extends TestCase {
 			->willReturn(true);
 
 		$this->service->shouldSendFirstReminder($contract);
+	}
+
+	// ========================================
+	// checkAndSendReminders Tests
+	// ========================================
+
+	/**
+	 * Regression: Issue #111 — Doppelte Mail wenn beide Reminder-Fenster gleichzeitig aktiv
+	 *
+	 * Wenn ein User Benachrichtigungen aktiviert und der Vertrag bereits im Final-Fenster
+	 * liegt, darf nur eine Mail rausgehen (final), nicht zwei (first + final).
+	 */
+	public function testCheckAndSendRemindersOnlySendsFinalWhenBothWindowsActive(): void {
+		// Deadline in 2 Tagen → liegt im first-Fenster (14 Tage) UND final-Fenster (3 Tage)
+		$deadline = new DateTime('+2 days');
+		// auto_renewal mit cancellationPeriod = 0 days → deadline = endDate
+		$contract = new \OCA\ContractManager\Db\Contract();
+		$contract->setId(42);
+		$contract->setName('Doppelmail-Test');
+		$contract->setVendor('Test');
+		$contract->setCreatedBy('testuser');
+		$contract->setStatus(\OCA\ContractManager\Db\Contract::STATUS_ACTIVE);
+		$contract->setReminderEnabled(1);
+		$contract->setArchived(0);
+		$contract->setEndDate($deadline);
+		$contract->setCancellationPeriod('');
+		$contract->setContractType('fixed');
+
+		$this->contractMapper->method('findContractsNeedingReminder')->willReturn([$contract]);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->settingsService->method('getUserEmailReminder')->willReturn(true);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+		$this->reminderSentMapper->method('insert')->willReturn(new \OCA\ContractManager\Db\ReminderSent());
+		$this->talkService->method('isTalkAvailable')->willReturn(false);
+
+		// KERN-ASSERTION: emailService darf genau 1x aufgerufen werden, nicht 2x
+		$this->emailService->expects($this->exactly(1))
+			->method('sendReminder');
+
+		$this->service->checkAndSendReminders();
 	}
 
 	// ========================================
