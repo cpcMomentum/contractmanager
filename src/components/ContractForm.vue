@@ -351,7 +351,14 @@
 					<h3>{{ t('contractmanager', 'Notizen') }}</h3>
 
 					<div class="form-row">
-						<NcTextArea :value.sync="form.notes"
+						<!-- eslint-disable vue/no-v-html -- linkifyText escapes HTML before linkifying -->
+						<div v-if="readOnly && form.notes"
+							class="notes-readonly"
+							:aria-label="t('contractmanager', 'Zusätzliche Notizen')"
+							v-html="linkifiedNotes" />
+						<!-- eslint-enable vue/no-v-html -->
+						<NcTextArea v-else
+							:value.sync="form.notes"
 							:label="t('contractmanager', 'Zusätzliche Notizen')"
 							:placeholder="t('contractmanager', 'Zusätzliche Notizen...')"
 							:maxlength="5000"
@@ -423,6 +430,7 @@ import { loadState } from '@nextcloud/initial-state'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
+import { linkifyText } from '../utils/linkify.js'
 import ExtractionService from '../services/ExtractionService.js'
 import SettingsService from '../services/SettingsService.js'
 import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
@@ -490,6 +498,9 @@ export default {
 		},
 		documentDisplayName() {
 			return getDisplayName(this.form.mainDocument)
+		},
+		linkifiedNotes() {
+			return linkifyText(this.form.notes)
 		},
 		isExternalDocument() {
 			return isUrl(this.form.mainDocument) && !isInternalUrl(this.form.mainDocument)
@@ -1216,6 +1227,28 @@ export default {
 	border-radius: 4px;
 	font-size: 13px;
 	color: var(--color-warning-text, #856404);
+}
+
+.notes-readonly {
+	width: 100%;
+	min-height: 80px;
+	padding: 8px 12px;
+	background: var(--color-background-hover);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	font-size: 14px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+
+	a {
+		color: var(--color-primary-element);
+		text-decoration: underline;
+
+		&:hover, &:focus {
+			text-decoration: none;
+		}
+	}
 }
 
 .selected-path {
