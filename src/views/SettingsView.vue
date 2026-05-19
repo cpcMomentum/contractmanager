@@ -442,7 +442,7 @@ export default {
 			return 'https://api.openai.com/v1'
 		},
 		aiDefaultModel() {
-			if (this.adminSettings.aiProvider === 'claude') return 'claude-sonnet-4-5-20250514'
+			if (this.adminSettings.aiProvider === 'claude') return 'claude-sonnet-4-6'
 			return 'gpt-4o'
 		},
 	},
