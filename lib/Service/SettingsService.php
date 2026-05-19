@@ -16,6 +16,13 @@ use OCP\IConfig;
  */
 class SettingsService {
 
+	/**
+	 * Placeholder string returned from getAdmin() when an API key is configured,
+	 * so the secret value never leaves the server. updateAdmin() compares
+	 * incoming values against this constant to detect unchanged-key submissions.
+	 */
+	public const API_KEY_MASK = '••••••••';
+
 	private const KEY_TALK_CHAT_TOKEN = 'talk_chat_token';
 	private const KEY_REMINDER_DAYS_1 = 'reminder_days_1';
 	private const KEY_REMINDER_DAYS_2 = 'reminder_days_2';

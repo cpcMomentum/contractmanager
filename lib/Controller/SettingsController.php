@@ -110,7 +110,7 @@ class SettingsController extends Controller {
 			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
 			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
-			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? '••••••••' : '',
+			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
 			'aiModel' => $this->settingsService->getAiModel(),
 		]);
@@ -160,8 +160,9 @@ class SettingsController extends Controller {
 			$this->settingsService->setAiProvider($aiProvider);
 		}
 
-		// Only update API key if it's not the masked placeholder
-		if ($aiApiKey !== null && $aiApiKey !== '••••••••') {
+		// Only update API key if it's not the masked placeholder echoed back
+		// by the frontend after a getAdmin() call (see SettingsService::API_KEY_MASK).
+		if ($aiApiKey !== null && $aiApiKey !== SettingsService::API_KEY_MASK) {
 			$this->settingsService->setAiApiKey($aiApiKey);
 		}
 
@@ -181,7 +182,7 @@ class SettingsController extends Controller {
 			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
 			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
-			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? '••••••••' : '',
+			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
 			'aiModel' => $this->settingsService->getAiModel(),
 		]);
