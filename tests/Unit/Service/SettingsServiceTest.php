@@ -195,4 +195,85 @@ class SettingsServiceTest extends TestCase {
 
 		$this->service->setUserEmailReminder('testuser', false);
 	}
+
+	// ========================================
+	// AI API URL Validation Tests (Issue #123)
+	// ========================================
+
+	public function testIsValidAiApiUrlAcceptsHttps(): void {
+		$this->assertTrue($this->service->isValidAiApiUrl('https://api.anthropic.com'));
+		$this->assertTrue($this->service->isValidAiApiUrl('https://api.openai.com/v1'));
+		$this->assertTrue($this->service->isValidAiApiUrl('https://example.com:8443/path'));
+	}
+
+	public function testIsValidAiApiUrlAcceptsHttpForLocalHosts(): void {
+		$this->assertTrue($this->service->isValidAiApiUrl('http://localhost:11434'));
+		$this->assertTrue($this->service->isValidAiApiUrl('http://127.0.0.1:11434'));
+		$this->assertTrue($this->service->isValidAiApiUrl('http://[::1]:11434'));
+		$this->assertTrue($this->service->isValidAiApiUrl('http://ollama.local'));
+		$this->assertTrue($this->service->isValidAiApiUrl('http://server.localhost'));
+	}
+
+	public function testIsValidAiApiUrlRejectsHttpForRemoteHosts(): void {
+		$this->assertFalse($this->service->isValidAiApiUrl('http://api.openai.com'));
+		$this->assertFalse($this->service->isValidAiApiUrl('http://example.com'));
+	}
+
+	public function testIsValidAiApiUrlRejectsOtherSchemes(): void {
+		$this->assertFalse($this->service->isValidAiApiUrl('file:///etc/passwd'));
+		$this->assertFalse($this->service->isValidAiApiUrl('ftp://example.com'));
+		$this->assertFalse($this->service->isValidAiApiUrl('javascript:alert(1)'));
+		$this->assertFalse($this->service->isValidAiApiUrl('gopher://example.com'));
+	}
+
+	public function testIsValidAiApiUrlRejectsMalformed(): void {
+		$this->assertFalse($this->service->isValidAiApiUrl('not a url'));
+		$this->assertFalse($this->service->isValidAiApiUrl('http://'));
+		$this->assertFalse($this->service->isValidAiApiUrl(''));
+	}
+
+	public function testSetAiApiUrlSavesValidUrl(): void {
+		$this->config->expects($this->once())
+			->method('setAppValue')
+			->with(Application::APP_ID, 'ai_api_url', 'https://api.anthropic.com');
+
+		$this->service->setAiApiUrl('https://api.anthropic.com');
+	}
+
+	public function testSetAiApiUrlSavesLocalHttp(): void {
+		$this->config->expects($this->once())
+			->method('setAppValue')
+			->with(Application::APP_ID, 'ai_api_url', 'http://localhost:11434');
+
+		$this->service->setAiApiUrl('http://localhost:11434');
+	}
+
+	public function testSetAiApiUrlClearsWithEmpty(): void {
+		$this->config->expects($this->once())
+			->method('setAppValue')
+			->with(Application::APP_ID, 'ai_api_url', '');
+
+		$this->service->setAiApiUrl('');
+	}
+
+	public function testSetAiApiUrlIgnoresInvalidScheme(): void {
+		$this->config->expects($this->never())
+			->method('setAppValue');
+
+		$this->service->setAiApiUrl('file:///etc/passwd');
+	}
+
+	public function testSetAiApiUrlIgnoresHttpForRemote(): void {
+		$this->config->expects($this->never())
+			->method('setAppValue');
+
+		$this->service->setAiApiUrl('http://api.openai.com');
+	}
+
+	public function testSetAiApiUrlIgnoresMalformed(): void {
+		$this->config->expects($this->never())
+			->method('setAppValue');
+
+		$this->service->setAiApiUrl('not a url');
+	}
 }
