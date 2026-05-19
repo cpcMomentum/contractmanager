@@ -407,7 +407,7 @@ class SettingsService {
 		if ($host === '') {
 			return false;
 		}
-		if ($host === 'localhost' || $host === '127.0.0.1' || $host === '[::1]') {
+		if ($host === 'localhost' || $host === '127.0.0.1' || $host === '::1') {
 			return true;
 		}
 		if (str_ends_with($host, '.local') || str_ends_with($host, '.localhost')) {

@@ -128,7 +128,7 @@ PROMPT;
 	private function extractWithClaude(string $text, bool $isScanned, string $rawContent): array {
 		$apiKey = $this->settingsService->getAiApiKey();
 		$model = $this->settingsService->getAiModel();
-		$apiUrl = $this->settingsService->getAiApiUrl();
+		$apiUrl = rtrim($this->settingsService->getAiApiUrl(), '/');
 
 		if ($isScanned && $rawContent !== '') {
 			// Vision mode: send PDF as base64
