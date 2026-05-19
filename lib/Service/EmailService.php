@@ -98,9 +98,9 @@ class EmailService {
 
 			$this->mailer->send($message);
 
-			$this->logger->info('Email reminder sent successfully', [
+			$this->logger->debug('Email reminder sent successfully', [
 				'app' => Application::APP_ID,
-				'toEmail' => $toEmail,
+				'toEmail' => self::maskEmail($toEmail),
 				'contractId' => $contract->getId(),
 				'reminderType' => $reminderType,
 			]);
@@ -110,12 +110,35 @@ class EmailService {
 		} catch (\Exception $e) {
 			$this->logger->error('Failed to send email reminder: ' . $e->getMessage(), [
 				'app' => Application::APP_ID,
-				'toEmail' => $toEmail,
+				'toEmail' => self::maskEmail($toEmail),
 				'contractId' => $contract->getId(),
 				'exception' => $e,
 			]);
 			return false;
 		}
+	}
+
+	/**
+	 * Mask an email address for log output: keep first char of local part,
+	 * the domain TLD, and obfuscate the rest. Examples:
+	 *   axel@example.com → a***@e***.com
+	 *   a@b.de           → a***@b***.de
+	 *   (invalid)        → ***
+	 */
+	public static function maskEmail(string $email): string {
+		$at = strrpos($email, '@');
+		if ($at === false || $at === 0 || $at === strlen($email) - 1) {
+			return '***';
+		}
+		$local = substr($email, 0, $at);
+		$domain = substr($email, $at + 1);
+		$dot = strrpos($domain, '.');
+		if ($dot === false || $dot === 0) {
+			return $local[0] . '***@***';
+		}
+		$domainName = substr($domain, 0, $dot);
+		$tld = substr($domain, $dot);
+		return $local[0] . '***@' . $domainName[0] . '***' . $tld;
 	}
 
 	/**
