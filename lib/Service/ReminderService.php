@@ -127,6 +127,10 @@ class ReminderService {
 		$value = (int) $matches[1];
 		$unit = strtolower(rtrim($matches[2], 's'));
 
+		if ($value <= 0) {
+			return clone $endDate;
+		}
+
 		// Calculate number of periods needed mathematically (O(1) instead of O(n))
 		$diffDays = (int) $now->diff($effective)->format('%a');
 		$periodsNeeded = 0;
@@ -226,6 +230,9 @@ class ReminderService {
 		}
 		$val = (int) $matches[1];
 		$u = rtrim(strtolower($matches[2]), 's');
+		if ($val <= 0) {
+			return null;
+		}
 		$result = clone $date;
 		$result->modify("+{$val} {$u}");
 		return $result;
