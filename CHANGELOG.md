@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-19
+
+### Added
+- Vertragspartner-Feld jetzt als Autocomplete mit Vorschlaegen aus bestehenden Vertraegen (#107)
+- URLs in Notizen werden in der Leseansicht als anklickbare Hyperlinks gerendert (#108)
+
+### Fixed
+- Doppelte Erinnerungs-Mails: wenn beide Reminder-Fenster gleichzeitig aktiv sind, wird nur noch die finale Erinnerung verschickt (#111)
+- Per-Vertrag `reminderDays`-Override wirkt jetzt korrekt auf die finale Erinnerung — kein verfruehter "letzter Hinweis" mehr wenn ein eigener Wert gesetzt ist (#116)
+
+### Changed
+- Screenshots im App Store aktualisiert (saubere Demo-Daten, Autocomplete sichtbar)
+
 ## [0.4.4] - 2026-04-29
 
 ### Added
@@ -233,4 +246,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.1.0...v0.1.1
+[0.5.0]: https://github.com/cpcMomentum/contractmanager/compare/v0.4.4...v0.5.0
 [0.1.0]: https://github.com/cpcMomentum/contractmanager/releases/tag/v0.1.0
