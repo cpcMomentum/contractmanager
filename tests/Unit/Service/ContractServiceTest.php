@@ -12,17 +12,24 @@ use OCA\ContractManager\Service\ForbiddenException;
 use OCA\ContractManager\Service\NotFoundException;
 use OCA\ContractManager\Service\ValidationException;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\IL10N;
+use OCP\L10N\IFactory;
 use PHPUnit\Framework\TestCase;
 
 class ContractServiceTest extends TestCase {
 
 	private ContractMapper $mapper;
+	private IFactory $l10nFactory;
 	private ContractService $service;
 
 	protected function setUp(): void {
 		parent::setUp();
 		$this->mapper = $this->createMock(ContractMapper::class);
-		$this->service = new ContractService($this->mapper);
+		$this->l10nFactory = $this->createMock(IFactory::class);
+		$l = $this->createMock(IL10N::class);
+		$l->method('t')->willReturnArgument(0);
+		$this->l10nFactory->method('get')->willReturn($l);
+		$this->service = new ContractService($this->mapper, $this->l10nFactory);
 	}
 
 	// ========================================
@@ -409,6 +416,44 @@ class ContractServiceTest extends TestCase {
 			->willThrowException(new DoesNotExistException(''));
 
 		$this->service->restore(999);
+	}
+
+	// ========================================
+	// findVisibleVendors Tests (Issue #107)
+	// ========================================
+
+	public function testFindVisibleVendorsForwardsToMapper(): void {
+		$expected = ['Allianz', 'Microsoft', 'Vodafone'];
+
+		$this->mapper->expects($this->once())
+			->method('findVisibleVendors')
+			->with('alice', false)
+			->willReturn($expected);
+
+		$result = $this->service->findVisibleVendors('alice', false);
+
+		$this->assertSame($expected, $result);
+	}
+
+	public function testFindVisibleVendorsPassesAdminFlag(): void {
+		$this->mapper->expects($this->once())
+			->method('findVisibleVendors')
+			->with('admin', true)
+			->willReturn(['SomePartner']);
+
+		$result = $this->service->findVisibleVendors('admin', true);
+
+		$this->assertSame(['SomePartner'], $result);
+	}
+
+	public function testFindVisibleVendorsReturnsEmptyArrayWhenNoneFound(): void {
+		$this->mapper->expects($this->once())
+			->method('findVisibleVendors')
+			->willReturn([]);
+
+		$result = $this->service->findVisibleVendors('bob', false);
+
+		$this->assertSame([], $result);
 	}
 
 	// ========================================
