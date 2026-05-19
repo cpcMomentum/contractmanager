@@ -12,6 +12,7 @@ return [
         ['name' => 'contract#archived', 'url' => '/api/contracts/archived', 'verb' => 'GET'],
         ['name' => 'contract#trash', 'url' => '/api/contracts/trash', 'verb' => 'GET'],
         ['name' => 'contract#permissions', 'url' => '/api/contracts/permissions', 'verb' => 'GET'],
+        ['name' => 'contract#vendors', 'url' => '/api/contracts/vendors', 'verb' => 'GET'],
         ['name' => 'contract#show', 'url' => '/api/contracts/{id}', 'verb' => 'GET'],
         ['name' => 'contract#create', 'url' => '/api/contracts', 'verb' => 'POST'],
         ['name' => 'contract#update', 'url' => '/api/contracts/{id}', 'verb' => 'PUT'],

@@ -73,6 +73,17 @@ class ContractController extends Controller {
 	}
 
 	/**
+	 * Distinct vendor names from contracts visible to the user.
+	 * Powers the autocomplete in the contract form.
+	 *
+	 * @NoAdminRequired
+	 */
+	public function vendors(): JSONResponse {
+		$isAdmin = $this->permissionService->isAdmin($this->userId);
+		return new JSONResponse($this->service->findVisibleVendors($this->userId, $isAdmin));
+	}
+
+	/**
 	 * Get a single contract
 	 *
 	 * @NoAdminRequired

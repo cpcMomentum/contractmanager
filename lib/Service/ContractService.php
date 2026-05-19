@@ -183,6 +183,15 @@ class ContractService {
     }
 
     /**
+     * Distinct vendor names from contracts visible to this user.
+     *
+     * @return string[]
+     */
+    public function findVisibleVendors(string $userId, bool $isAdmin): array {
+        return $this->mapper->findVisibleVendors($userId, $isAdmin);
+    }
+
+    /**
      * Find all visible archived contracts for a user
      *
      * @return Contract[]

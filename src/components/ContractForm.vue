@@ -37,9 +37,18 @@
 						</div>
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
-							<NcTextField :value.sync="form.vendor"
+							<NcSelect v-model="vendorSelection"
+								:options="vendorOptions"
 								:disabled="readOnly"
-								:placeholder="t('contractmanager', 'z.B. Microsoft')" />
+								:taggable="true"
+								:multiple="false"
+								:close-on-select="true"
+								:reduce="option => typeof option === 'string' ? option : option.label"
+								label="label"
+								:placeholder="t('contractmanager', 'z.B. Microsoft')"
+								:create-option="text => text"
+								:no-wrap="true"
+								@search="onVendorSearch" />
 						</div>
 					</div>
 
@@ -431,6 +440,7 @@ import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
+import ContractService from '../services/ContractService.js'
 import ExtractionService from '../services/ExtractionService.js'
 import SettingsService from '../services/SettingsService.js'
 import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
@@ -489,6 +499,7 @@ export default {
 				customFieldLabel2: '',
 				customFieldLabel3: '',
 			},
+			vendorOptions: [],
 		}
 	},
 	computed: {
@@ -501,6 +512,21 @@ export default {
 		},
 		linkifiedNotes() {
 			return linkifyText(this.form.notes)
+		},
+		vendorSelection: {
+			get() {
+				return this.form.vendor || null
+			},
+			set(value) {
+				// NcSelect emits string (for created/tag) or option-object — normalize to plain string
+				if (value == null) {
+					this.form.vendor = ''
+				} else if (typeof value === 'string') {
+					this.form.vendor = value
+				} else if (typeof value === 'object' && value.label) {
+					this.form.vendor = value.label
+				}
+			},
 		},
 		isExternalDocument() {
 			return isUrl(this.form.mainDocument) && !isInternalUrl(this.form.mainDocument)
@@ -636,7 +662,28 @@ export default {
 			}
 		},
 	},
+	mounted() {
+		this.loadVendorOptions()
+	},
 	methods: {
+		async loadVendorOptions() {
+			if (this.readOnly) return
+			try {
+				const vendors = await ContractService.getVendors()
+				this.vendorOptions = Array.isArray(vendors)
+					? vendors.map(v => ({ label: v }))
+					: []
+			} catch (e) {
+				// Autocomplete is a nice-to-have — silently fall back to empty suggestions
+				this.vendorOptions = []
+			}
+		},
+		onVendorSearch(query) {
+			// NcSelect filters the visible list client-side automatically;
+			// hook is here for parity with potential future server-side search.
+			// No-op for now, kept for the @search binding contract.
+			void query
+		},
 		getInitialForm(defaultAmountType = 'netto') {
 			return {
 				name: '',

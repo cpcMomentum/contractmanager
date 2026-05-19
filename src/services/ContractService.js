@@ -49,6 +49,11 @@ export default {
 		return response.data
 	},
 
+	async getVendors() {
+		const response = await axios.get(`${baseUrl}/vendors`)
+		return response.data
+	},
+
 	async getPermissions() {
 		const response = await axios.get(`${baseUrl}/permissions`)
 		return response.data
