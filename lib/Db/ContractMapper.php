@@ -50,6 +50,46 @@ class ContractMapper extends QBMapper {
     }
 
     /**
+     * Return distinct vendor names from contracts the user may see.
+     * Used to power autocomplete suggestions in the contract form.
+     *
+     * @return string[] sorted ascending, case-insensitive duplicates collapsed
+     */
+    public function findVisibleVendors(string $userId, bool $isAdmin): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->selectDistinct('vendor')
+            ->from($this->getTableName())
+            ->where($qb->expr()->isNotNull('vendor'))
+            ->andWhere($qb->expr()->neq('vendor', $qb->createNamedParameter('')))
+            ->andWhere($qb->expr()->isNull('deleted_at'));
+
+        if (!$isAdmin) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                )
+            );
+        }
+
+        $result = $qb->executeQuery();
+        $vendors = [];
+        while ($row = $result->fetch()) {
+            $vendors[] = $row['vendor'];
+        }
+        $result->closeCursor();
+
+        // Case-insensitive sort, deduplicated (DISTINCT alone is case-sensitive in most DBs)
+        $unique = [];
+        foreach ($vendors as $v) {
+            $unique[mb_strtolower($v)] = $v;
+        }
+        $values = array_values($unique);
+        usort($values, fn($a, $b) => strcasecmp($a, $b));
+        return $values;
+    }
+
+    /**
      * Find all visible archived contracts (not deleted)
      *
      * @return Contract[]

@@ -227,6 +227,74 @@ class ReminderServiceTest extends TestCase {
 	}
 
 	// ========================================
+	// shouldSendFinalReminder — contract override Tests
+	// ========================================
+
+	/**
+	 * Regression: Issue #116 — Final reminder ignoriert contract-spezifisches reminderDays-Override
+	 *
+	 * Wenn ein Vertrag ein Override hat das <= days2 ist, würde die finale Erinnerung
+	 * vor (oder gleichzeitig mit) der ersten feuern — das ist redundant und verwirrend.
+	 */
+	public function testShouldSendFinalReminderReturnsFalseWhenOverrideLeqDays2(): void {
+		// Contract override = 2 Tage, global days2 = 3 → final würde vor first feuern → unterdrücken
+		$endDate = new DateTime('+2 days');
+		$contract = $this->createContract($endDate, '', 'fixed');
+		$contract->setId(1);
+		$contract->setReminderDays(2);
+
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+
+		$result = $this->service->shouldSendFinalReminder($contract);
+
+		$this->assertFalse($result);
+	}
+
+	public function testShouldSendFinalReminderReturnsFalseWhenOverrideEqualsDays2(): void {
+		// Override exakt gleich days2 → ebenfalls unterdrücken
+		$endDate = new DateTime('+3 days');
+		$contract = $this->createContract($endDate, '', 'fixed');
+		$contract->setId(1);
+		$contract->setReminderDays(3);
+
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+
+		$result = $this->service->shouldSendFinalReminder($contract);
+
+		$this->assertFalse($result);
+	}
+
+	public function testShouldSendFinalReminderFiresNormallyWhenOverrideGreaterThanDays2(): void {
+		// Override = 30 Tage, global days2 = 3 → final feuert ganz normal 3 Tage vorher
+		$endDate = new DateTime('+2 days');
+		$contract = $this->createContract($endDate, '', 'fixed');
+		$contract->setId(1);
+		$contract->setReminderDays(30);
+
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$result = $this->service->shouldSendFinalReminder($contract);
+
+		$this->assertTrue($result);
+	}
+
+	public function testShouldSendFinalReminderFiresNormallyWithoutOverride(): void {
+		// Kein Override → globaler days2 gilt unverändert
+		$endDate = new DateTime('+2 days');
+		$contract = $this->createContract($endDate, '', 'fixed');
+		$contract->setId(1);
+		// reminderDays bleibt null (kein Override)
+
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$result = $this->service->shouldSendFinalReminder($contract);
+
+		$this->assertTrue($result);
+	}
+
+	// ========================================
 	// getEffectiveEndDate Tests
 	// ========================================
 
@@ -273,7 +341,8 @@ class ReminderServiceTest extends TestCase {
 
 	public function testCalculateCancellationDeadlineAutoRenewal(): void {
 		// End date in the past, auto_renewal with 12 months, cancellation 3 months
-		$endDate = new DateTime('2022-08-17');
+		// Use dynamic past date so the test stays date-independent
+		$endDate = new DateTime('-2 years');
 		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
 
 		$result = $this->service->calculateCancellationDeadline($contract);
@@ -426,6 +495,47 @@ class ReminderServiceTest extends TestCase {
 			->willReturn(true);
 
 		$this->service->shouldSendFirstReminder($contract);
+	}
+
+	// ========================================
+	// checkAndSendReminders Tests
+	// ========================================
+
+	/**
+	 * Regression: Issue #111 — Doppelte Mail wenn beide Reminder-Fenster gleichzeitig aktiv
+	 *
+	 * Wenn ein User Benachrichtigungen aktiviert und der Vertrag bereits im Final-Fenster
+	 * liegt, darf nur eine Mail rausgehen (final), nicht zwei (first + final).
+	 */
+	public function testCheckAndSendRemindersOnlySendsFinalWhenBothWindowsActive(): void {
+		// Deadline in 2 Tagen → liegt im first-Fenster (14 Tage) UND final-Fenster (3 Tage)
+		$deadline = new DateTime('+2 days');
+		// auto_renewal mit cancellationPeriod = 0 days → deadline = endDate
+		$contract = new \OCA\ContractManager\Db\Contract();
+		$contract->setId(42);
+		$contract->setName('Doppelmail-Test');
+		$contract->setVendor('Test');
+		$contract->setCreatedBy('testuser');
+		$contract->setStatus(\OCA\ContractManager\Db\Contract::STATUS_ACTIVE);
+		$contract->setReminderEnabled(1);
+		$contract->setArchived(0);
+		$contract->setEndDate($deadline);
+		$contract->setCancellationPeriod('');
+		$contract->setContractType('fixed');
+
+		$this->contractMapper->method('findContractsNeedingReminder')->willReturn([$contract]);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->settingsService->method('getUserEmailReminder')->willReturn(true);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+		$this->reminderSentMapper->method('insert')->willReturn(new \OCA\ContractManager\Db\ReminderSent());
+		$this->talkService->method('isTalkAvailable')->willReturn(false);
+
+		// KERN-ASSERTION: emailService darf genau 1x aufgerufen werden, nicht 2x
+		$this->emailService->expects($this->exactly(1))
+			->method('sendReminder');
+
+		$this->service->checkAndSendReminders();
 	}
 
 	// ========================================

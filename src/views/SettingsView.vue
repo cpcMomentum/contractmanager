@@ -18,6 +18,29 @@
 			</div>
 		</div>
 
+		<div class="settings-section">
+			<h3>{{ t('contractmanager', 'Betragsangabe') }}</h3>
+			<p class="settings-description">
+				{{ t('contractmanager', 'Standard für neue Verträge. Pro Vertrag kann davon abgewichen werden.') }}
+			</p>
+			<div class="settings-item">
+				<NcCheckboxRadioSwitch :checked.sync="defaultAmountType"
+					value="netto"
+					name="defaultAmountType"
+					type="radio"
+					@update:checked="onDefaultAmountTypeChange">
+					{{ t('contractmanager', 'Netto') }}
+				</NcCheckboxRadioSwitch>
+				<NcCheckboxRadioSwitch :checked.sync="defaultAmountType"
+					value="brutto"
+					name="defaultAmountType"
+					type="radio"
+					@update:checked="onDefaultAmountTypeChange">
+					{{ t('contractmanager', 'Brutto') }}
+				</NcCheckboxRadioSwitch>
+			</div>
+		</div>
+
 		<!-- Admin Settings -->
 		<template v-if="$isAdmin">
 			<!-- Permission Settings -->
@@ -371,6 +394,7 @@ export default {
 			showDeleteCategoryDialog: false,
 			deletingCategory: null,
 			emailReminder: false,
+			defaultAmountType: 'netto',
 			savingAdmin: false,
 			adminSettings: {
 				talkChatToken: '',
@@ -451,8 +475,20 @@ export default {
 			try {
 				const settings = await SettingsService.getUserSettings()
 				this.emailReminder = settings.emailReminder
+				this.defaultAmountType = settings.defaultAmountType || 'netto'
 			} catch (error) {
 				console.error('Failed to load user settings:', error)
+			}
+		},
+
+		async onDefaultAmountTypeChange() {
+			const previous = this.defaultAmountType
+			try {
+				await SettingsService.updateUserSettings({ defaultAmountType: this.defaultAmountType })
+			} catch (error) {
+				console.error('Failed to save default amount type:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.defaultAmountType = previous
 			}
 		},
 

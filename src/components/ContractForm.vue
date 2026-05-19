@@ -37,9 +37,18 @@
 						</div>
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
-							<NcTextField :value.sync="form.vendor"
+							<NcSelect v-model="vendorSelection"
+								:options="vendorOptions"
 								:disabled="readOnly"
-								:placeholder="t('contractmanager', 'z.B. Microsoft')" />
+								:taggable="true"
+								:multiple="false"
+								:close-on-select="true"
+								:reduce="option => typeof option === 'string' ? option : option.label"
+								label="label"
+								:placeholder="t('contractmanager', 'z.B. Microsoft')"
+								:create-option="text => text"
+								:no-wrap="true"
+								@search="onVendorSearch" />
 						</div>
 					</div>
 
@@ -173,12 +182,30 @@
 							<h3>{{ t('contractmanager', 'Kosten') }}</h3>
 							<div class="cost-top">
 								<div class="field-cost">
-									<label class="form-label">{{ t('contractmanager', 'Betrag (netto)') }}</label>
+									<label class="form-label">
+										{{ form.amountType === 'brutto' ? t('contractmanager', 'Betrag (brutto)') : t('contractmanager', 'Betrag (netto)') }}
+									</label>
 									<NcTextField :value.sync="form.cost"
 										type="number"
 										step="0.01"
 										:disabled="readOnly"
 										:placeholder="t('contractmanager', '0.00')" />
+									<div class="amount-type-toggle">
+										<NcCheckboxRadioSwitch :checked.sync="form.amountType"
+											value="netto"
+											name="amountType"
+											type="radio"
+											:disabled="readOnly">
+											{{ t('contractmanager', 'Netto') }}
+										</NcCheckboxRadioSwitch>
+										<NcCheckboxRadioSwitch :checked.sync="form.amountType"
+											value="brutto"
+											name="amountType"
+											type="radio"
+											:disabled="readOnly">
+											{{ t('contractmanager', 'Brutto') }}
+										</NcCheckboxRadioSwitch>
+									</div>
 								</div>
 								<div class="field-currency">
 									<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
@@ -333,7 +360,14 @@
 					<h3>{{ t('contractmanager', 'Notizen') }}</h3>
 
 					<div class="form-row">
-						<NcTextArea :value.sync="form.notes"
+						<!-- eslint-disable vue/no-v-html -- linkifyText escapes HTML before linkifying -->
+						<div v-if="readOnly && form.notes"
+							class="notes-readonly"
+							:aria-label="t('contractmanager', 'Zusätzliche Notizen')"
+							v-html="linkifiedNotes" />
+						<!-- eslint-enable vue/no-v-html -->
+						<NcTextArea v-else
+							:value.sync="form.notes"
 							:label="t('contractmanager', 'Zusätzliche Notizen')"
 							:placeholder="t('contractmanager', 'Zusätzliche Notizen...')"
 							:maxlength="5000"
@@ -401,9 +435,12 @@ import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
+import { loadState } from '@nextcloud/initial-state'
 import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
+import { linkifyText } from '../utils/linkify.js'
+import ContractService from '../services/ContractService.js'
 import ExtractionService from '../services/ExtractionService.js'
 import SettingsService from '../services/SettingsService.js'
 import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
@@ -447,8 +484,11 @@ export default {
 	},
 	emits: ['close', 'submit'],
 	data() {
+		const prefs = loadState('contractmanager', 'userPreferences', { defaultAmountType: 'netto' })
+		const defaultAmountType = prefs.defaultAmountType || 'netto'
 		return {
-			form: this.getInitialForm(),
+			defaultAmountType,
+			form: this.getInitialForm(defaultAmountType),
 			aiAvailable: false,
 			extracting: false,
 			extractionNotes: null,
@@ -459,6 +499,7 @@ export default {
 				customFieldLabel2: '',
 				customFieldLabel3: '',
 			},
+			vendorOptions: [],
 		}
 	},
 	computed: {
@@ -468,6 +509,24 @@ export default {
 		},
 		documentDisplayName() {
 			return getDisplayName(this.form.mainDocument)
+		},
+		linkifiedNotes() {
+			return linkifyText(this.form.notes)
+		},
+		vendorSelection: {
+			get() {
+				return this.form.vendor || null
+			},
+			set(value) {
+				// NcSelect emits string (for created/tag) or option-object — normalize to plain string
+				if (value == null) {
+					this.form.vendor = ''
+				} else if (typeof value === 'string') {
+					this.form.vendor = value
+				} else if (typeof value === 'object' && value.label) {
+					this.form.vendor = value.label
+				}
+			},
 		},
 		isExternalDocument() {
 			return isUrl(this.form.mainDocument) && !isInternalUrl(this.form.mainDocument)
@@ -584,7 +643,7 @@ export default {
 	watch: {
 		show(newVal) {
 			if (newVal) {
-				this.form = this.getInitialForm()
+				this.form = this.getInitialForm(this.defaultAmountType)
 			}
 		},
 		contract: {
@@ -603,8 +662,29 @@ export default {
 			}
 		},
 	},
+	mounted() {
+		this.loadVendorOptions()
+	},
 	methods: {
-		getInitialForm() {
+		async loadVendorOptions() {
+			if (this.readOnly) return
+			try {
+				const vendors = await ContractService.getVendors()
+				this.vendorOptions = Array.isArray(vendors)
+					? vendors.map(v => ({ label: v }))
+					: []
+			} catch (e) {
+				// Autocomplete is a nice-to-have — silently fall back to empty suggestions
+				this.vendorOptions = []
+			}
+		},
+		onVendorSearch(query) {
+			// NcSelect filters the visible list client-side automatically;
+			// hook is here for parity with potential future server-side search.
+			// No-op for now, kept for the @search binding contract.
+			void query
+		},
+		getInitialForm(defaultAmountType = 'netto') {
 			return {
 				name: '',
 				vendor: '',
@@ -622,6 +702,7 @@ export default {
 				cost: '',
 				currency: 'EUR',
 				costInterval: 'monthly',
+				amountType: defaultAmountType,
 				contractFolder: '',
 				mainDocument: '',
 				reminderEnabled: true,
@@ -718,6 +799,7 @@ export default {
 				reminderEnabled: contract.reminderEnabled !== false,
 				reminderDays: contract.reminderDays ? String(contract.reminderDays) : '',
 				notes: contract.notes || '',
+				amountType: contract.amountType || 'netto',
 				isPrivate: contract.isPrivate === true || contract.isPrivate === 1,
 				customField1: contract.customField1 || '',
 				customField2: contract.customField2 || '',
@@ -750,6 +832,7 @@ export default {
 				reminderEnabled: this.form.reminderEnabled,
 				reminderDays: this.form.reminderDays ? parseInt(this.form.reminderDays, 10) : null,
 				notes: this.form.notes.trim() || null,
+				amountType: this.form.amountType,
 				isPrivate: this.form.isPrivate,
 				customField1: this.form.customField1.trim() || null,
 				customField2: this.form.customField2.trim() || null,
@@ -1191,6 +1274,28 @@ export default {
 	border-radius: 4px;
 	font-size: 13px;
 	color: var(--color-warning-text, #856404);
+}
+
+.notes-readonly {
+	width: 100%;
+	min-height: 80px;
+	padding: 8px 12px;
+	background: var(--color-background-hover);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	font-size: 14px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+
+	a {
+		color: var(--color-primary-element);
+		text-decoration: underline;
+
+		&:hover, &:focus {
+			text-decoration: none;
+		}
+	}
 }
 
 .selected-path {

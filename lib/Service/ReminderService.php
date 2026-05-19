@@ -45,8 +45,11 @@ class ReminderService {
 		$contracts = $this->contractMapper->findContractsNeedingReminder();
 
 		foreach ($contracts as $contract) {
-			// Check for first reminder
-			if ($this->shouldSendFirstReminder($contract)) {
+			// Pre-compute to avoid double DB query when both windows are active
+			$sendFinal = $this->shouldSendFinalReminder($contract);
+
+			// Check for first reminder — skip if final reminder is also due to avoid two emails on the same day
+			if ($this->shouldSendFirstReminder($contract) && !$sendFinal) {
 				try {
 					$this->sendReminders($contract, 'first');
 					$this->markReminderSent($contract, 'first');
@@ -65,7 +68,7 @@ class ReminderService {
 			}
 
 			// Check for final reminder
-			if ($this->shouldSendFinalReminder($contract)) {
+			if ($sendFinal) {
 				try {
 					$this->sendReminders($contract, 'final');
 					$this->markReminderSent($contract, 'final');
@@ -291,8 +294,17 @@ class ReminderService {
 			return false;
 		}
 
-		// Final reminder uses the second setting (default: 3 days)
 		$reminderDays = $this->settingsService->getReminderDays2();
+
+		// If the contract has a custom first-reminder override that fires at the same time
+		// or later than the final reminder window, suppress the final reminder.
+		// Example: contract override = 2 days, global days2 = 3 days → final would fire
+		// before (or at) the first reminder, making it confusing and redundant.
+		$contractOverride = $contract->getReminderDays();
+		if ($contractOverride !== null && $contractOverride <= $reminderDays) {
+			return false;
+		}
+
 		$now = new DateTime();
 		$reminderDate = clone $deadline;
 		$reminderDate->modify("-{$reminderDays} days");

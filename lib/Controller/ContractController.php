@@ -73,6 +73,17 @@ class ContractController extends Controller {
 	}
 
 	/**
+	 * Distinct vendor names from contracts visible to the user.
+	 * Powers the autocomplete in the contract form.
+	 *
+	 * @NoAdminRequired
+	 */
+	public function vendors(): JSONResponse {
+		$isAdmin = $this->permissionService->isAdmin($this->userId);
+		return new JSONResponse($this->service->findVisibleVendors($this->userId, $isAdmin));
+	}
+
+	/**
 	 * Get a single contract
 	 *
 	 * @NoAdminRequired
@@ -118,6 +129,7 @@ class ContractController extends Controller {
 		?string $customField1 = null,
 		?string $customField2 = null,
 		?string $customField3 = null,
+		string $amountType = 'netto',
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -160,6 +172,7 @@ class ContractController extends Controller {
 				$customField1,
 				$customField2,
 				$customField3,
+				$amountType,
 			);
 
 			return new JSONResponse($contract, Http::STATUS_CREATED);
@@ -196,6 +209,7 @@ class ContractController extends Controller {
 		?string $customField1 = null,
 		?string $customField2 = null,
 		?string $customField3 = null,
+		string $amountType = 'netto',
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -242,6 +256,7 @@ class ContractController extends Controller {
 				$customField1,
 				$customField2,
 				$customField3,
+				$amountType,
 			);
 
 			return new JSONResponse($updatedContract);
