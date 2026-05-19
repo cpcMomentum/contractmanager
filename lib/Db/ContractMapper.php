@@ -203,32 +203,50 @@ class ContractMapper extends QBMapper {
     }
 
     /**
-     * Find contracts by status
+     * Find contracts by status, scoped to a user (or all for admins)
      *
      * @return Contract[]
      */
-    public function findByStatus(string $status): array {
+    public function findByStatus(string $status, string $userId, bool $isAdmin = false): array {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('status', $qb->createNamedParameter($status)))
             ->orderBy('end_date', 'ASC');
 
+        if (!$isAdmin) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                )
+            );
+        }
+
         return $this->findEntities($qb);
     }
 
     /**
-     * Find contracts by category
+     * Find contracts by category, scoped to a user (or all for admins)
      *
      * @return Contract[]
      */
-    public function findByCategory(int $categoryId): array {
+    public function findByCategory(int $categoryId, string $userId, bool $isAdmin = false): array {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('category_id', $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_INT)))
             ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
             ->orderBy('end_date', 'ASC');
+
+        if (!$isAdmin) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                )
+            );
+        }
 
         return $this->findEntities($qb);
     }
