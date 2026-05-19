@@ -54,15 +54,15 @@ class ReminderService {
 					$this->sendReminders($contract, 'first');
 					$this->markReminderSent($contract, 'first');
 					$remindersSent++;
-					$this->logger->info('Sent first cancellation reminder for contract: ' . $contract->getName(), [
+					$this->logger->debug('Sent first cancellation reminder', [
 						'app' => Application::APP_ID,
 						'contractId' => $contract->getId(),
 					]);
 				} catch (\Exception $e) {
-					$this->logger->error('Failed to send first reminder for contract: ' . $contract->getName(), [
+					$this->logger->error('Failed to send first reminder: ' . $e->getMessage(), [
 						'app' => Application::APP_ID,
 						'contractId' => $contract->getId(),
-						'exception' => $e->getMessage(),
+						'exception' => $e,
 					]);
 				}
 			}
@@ -73,15 +73,15 @@ class ReminderService {
 					$this->sendReminders($contract, 'final');
 					$this->markReminderSent($contract, 'final');
 					$remindersSent++;
-					$this->logger->info('Sent final cancellation reminder for contract: ' . $contract->getName(), [
+					$this->logger->debug('Sent final cancellation reminder', [
 						'app' => Application::APP_ID,
 						'contractId' => $contract->getId(),
 					]);
 				} catch (\Exception $e) {
-					$this->logger->error('Failed to send final reminder for contract: ' . $contract->getName(), [
+					$this->logger->error('Failed to send final reminder: ' . $e->getMessage(), [
 						'app' => Application::APP_ID,
 						'contractId' => $contract->getId(),
-						'exception' => $e->getMessage(),
+						'exception' => $e,
 					]);
 				}
 			}
