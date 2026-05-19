@@ -62,6 +62,7 @@ class ReminderService {
 					$this->logger->error('Failed to send first reminder: ' . $e->getMessage(), [
 						'app' => Application::APP_ID,
 						'contractId' => $contract->getId(),
+						'exception' => $e,
 					]);
 				}
 			}
@@ -80,6 +81,7 @@ class ReminderService {
 					$this->logger->error('Failed to send final reminder: ' . $e->getMessage(), [
 						'app' => Application::APP_ID,
 						'contractId' => $contract->getId(),
+						'exception' => $e,
 					]);
 				}
 			}
