@@ -173,298 +173,298 @@ class ContractService {
 		}
 	}
 
-    /**
-     * Find all visible contracts for a user
-     *
-     * @return Contract[]
-     */
-    public function findAllVisible(string $userId, bool $isAdmin): array {
-        return $this->mapper->findAllVisible($userId, $isAdmin);
-    }
+	/**
+	 * Find all visible contracts for a user
+	 *
+	 * @return Contract[]
+	 */
+	public function findAllVisible(string $userId, bool $isAdmin): array {
+		return $this->mapper->findAllVisible($userId, $isAdmin);
+	}
 
-    /**
-     * Distinct vendor names from contracts visible to this user.
-     *
-     * @return string[]
-     */
-    public function findVisibleVendors(string $userId, bool $isAdmin): array {
-        return $this->mapper->findVisibleVendors($userId, $isAdmin);
-    }
+	/**
+	 * Distinct vendor names from contracts visible to this user.
+	 *
+	 * @return string[]
+	 */
+	public function findVisibleVendors(string $userId, bool $isAdmin): array {
+		return $this->mapper->findVisibleVendors($userId, $isAdmin);
+	}
 
-    /**
-     * Find all visible archived contracts for a user
-     *
-     * @return Contract[]
-     */
-    public function findArchivedVisible(string $userId, bool $isAdmin): array {
-        return $this->mapper->findArchivedVisible($userId, $isAdmin);
-    }
+	/**
+	 * Find all visible archived contracts for a user
+	 *
+	 * @return Contract[]
+	 */
+	public function findArchivedVisible(string $userId, bool $isAdmin): array {
+		return $this->mapper->findArchivedVisible($userId, $isAdmin);
+	}
 
-    /**
-     * Find deleted contracts for a user (their trash)
-     *
-     * @return Contract[]
-     */
-    public function findDeletedByUser(string $userId): array {
-        return $this->mapper->findDeletedByUser($userId);
-    }
+	/**
+	 * Find deleted contracts for a user (their trash)
+	 *
+	 * @return Contract[]
+	 */
+	public function findDeletedByUser(string $userId): array {
+		return $this->mapper->findDeletedByUser($userId);
+	}
 
-    /**
-     * Find all deleted contracts (admin trash)
-     *
-     * @return Contract[]
-     */
-    public function findAllDeleted(): array {
-        return $this->mapper->findAllDeleted();
-    }
+	/**
+	 * Find all deleted contracts (admin trash)
+	 *
+	 * @return Contract[]
+	 */
+	public function findAllDeleted(): array {
+		return $this->mapper->findAllDeleted();
+	}
 
-    /**
-     * @deprecated Use findAllVisible() instead
-     * @return Contract[]
-     */
-    public function findAll(string $userId): array {
-        return $this->mapper->findAll($userId);
-    }
+	/**
+	 * @deprecated Use findAllVisible() instead
+	 * @return Contract[]
+	 */
+	public function findAll(string $userId): array {
+		return $this->mapper->findAll($userId);
+	}
 
-    /**
-     * @deprecated Use findArchivedVisible() instead
-     * @return Contract[]
-     */
-    public function findArchived(string $userId): array {
-        return $this->mapper->findArchived($userId);
-    }
+	/**
+	 * @deprecated Use findArchivedVisible() instead
+	 * @return Contract[]
+	 */
+	public function findArchived(string $userId): array {
+		return $this->mapper->findArchived($userId);
+	}
 
-    /**
-     * @throws NotFoundException
-     */
-    public function find(int $id): Contract {
-        try {
-            return $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
-    }
+	/**
+	 * @throws NotFoundException
+	 */
+	public function find(int $id): Contract {
+		try {
+			return $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
+	}
 
-    /**
-     * @return Contract[]
-     */
-    public function search(string $query, string $userId, bool $isAdmin = false, ?int $limit = null, ?int $offset = null): array {
-        return $this->mapper->search($query, $userId, $isAdmin, $limit, $offset);
-    }
+	/**
+	 * @return Contract[]
+	 */
+	public function search(string $query, string $userId, bool $isAdmin = false, ?int $limit = null, ?int $offset = null): array {
+		return $this->mapper->search($query, $userId, $isAdmin, $limit, $offset);
+	}
 
-    public function create(
-        string $name,
-        string $vendor,
-        string $startDate,
-        ?string $endDate,
-        string $contractType,
-        string $userId,
-        ?string $cancellationPeriod = null,
-        ?int $categoryId = null,
-        ?string $renewalPeriod = null,
-        ?string $cost = null,
-        ?string $currency = null,
-        ?string $costInterval = null,
-        ?string $contractFolder = null,
-        ?string $mainDocument = null,
-        bool $reminderEnabled = true,
-        ?int $reminderDays = null,
-        ?string $notes = null,
-        bool $isPrivate = false,
-        ?string $customField1 = null,
-        ?string $customField2 = null,
-        ?string $customField3 = null,
-        string $amountType = Contract::AMOUNT_TYPE_NETTO,
-    ): Contract {
-        $contract = new Contract();
-        $contract->setName($name);
-        $contract->setVendor($vendor);
-        $contract->setStatus(Contract::STATUS_ACTIVE);
-        $contract->setCategoryId($categoryId);
-        $contract->setStartDate(new DateTime($startDate));
-        $contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
-        $contract->setCancellationPeriod($cancellationPeriod ?? '');
-        $contract->setContractType($contractType);
-        $contract->setRenewalPeriod($renewalPeriod);
-        $contract->setCost($cost);
-        $contract->setCurrency($currency ?? 'EUR');
-        $contract->setCostInterval($costInterval);
-        $contract->setContractFolder($contractFolder);
-        $contract->setMainDocument($mainDocument);
-        // Ohne Enddatum kann keine Erinnerung funktionieren
-        $contract->setReminderEnabled($endDate !== null && $reminderEnabled ? 1 : 0);
-        $contract->setReminderDays($reminderDays);
-        $contract->setNotes($notes);
-        $contract->setIsPrivate($isPrivate);
-        $contract->setCustomField1($customField1);
-        $contract->setCustomField2($customField2);
-        $contract->setCustomField3($customField3);
-        $contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
-        $contract->setCreatedBy($userId);
-        $contract->setCreatedAt(new DateTime());
-        $contract->setUpdatedAt(new DateTime());
+	public function create(
+		string $name,
+		string $vendor,
+		string $startDate,
+		?string $endDate,
+		string $contractType,
+		string $userId,
+		?string $cancellationPeriod = null,
+		?int $categoryId = null,
+		?string $renewalPeriod = null,
+		?string $cost = null,
+		?string $currency = null,
+		?string $costInterval = null,
+		?string $contractFolder = null,
+		?string $mainDocument = null,
+		bool $reminderEnabled = true,
+		?int $reminderDays = null,
+		?string $notes = null,
+		bool $isPrivate = false,
+		?string $customField1 = null,
+		?string $customField2 = null,
+		?string $customField3 = null,
+		string $amountType = Contract::AMOUNT_TYPE_NETTO,
+	): Contract {
+		$contract = new Contract();
+		$contract->setName($name);
+		$contract->setVendor($vendor);
+		$contract->setStatus(Contract::STATUS_ACTIVE);
+		$contract->setCategoryId($categoryId);
+		$contract->setStartDate(new DateTime($startDate));
+		$contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
+		$contract->setCancellationPeriod($cancellationPeriod ?? '');
+		$contract->setContractType($contractType);
+		$contract->setRenewalPeriod($renewalPeriod);
+		$contract->setCost($cost);
+		$contract->setCurrency($currency ?? 'EUR');
+		$contract->setCostInterval($costInterval);
+		$contract->setContractFolder($contractFolder);
+		$contract->setMainDocument($mainDocument);
+		// Ohne Enddatum kann keine Erinnerung funktionieren
+		$contract->setReminderEnabled($endDate !== null && $reminderEnabled ? 1 : 0);
+		$contract->setReminderDays($reminderDays);
+		$contract->setNotes($notes);
+		$contract->setIsPrivate($isPrivate);
+		$contract->setCustomField1($customField1);
+		$contract->setCustomField2($customField2);
+		$contract->setCustomField3($customField3);
+		$contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
+		$contract->setCreatedBy($userId);
+		$contract->setCreatedAt(new DateTime());
+		$contract->setUpdatedAt(new DateTime());
 
-        return $this->mapper->insert($contract);
-    }
+		return $this->mapper->insert($contract);
+	}
 
-    /**
-     * Update a contract
-     *
-     * Note: Access check must be done by caller using checkWriteAccess()
-     *
-     * @throws NotFoundException
-     */
-    public function update(
-        int $id,
-        string $name,
-        string $vendor,
-        string $startDate,
-        ?string $endDate,
-        string $contractType,
-        ?string $cancellationPeriod = null,
-        ?int $categoryId = null,
-        ?string $status = null,
-        ?string $renewalPeriod = null,
-        ?string $cost = null,
-        ?string $currency = null,
-        ?string $costInterval = null,
-        ?string $contractFolder = null,
-        ?string $mainDocument = null,
-        bool $reminderEnabled = true,
-        ?int $reminderDays = null,
-        ?string $notes = null,
-        ?bool $isPrivate = null,
-        ?string $customField1 = null,
-        ?string $customField2 = null,
-        ?string $customField3 = null,
-        string $amountType = Contract::AMOUNT_TYPE_NETTO,
-    ): Contract {
-        try {
-            $contract = $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+	/**
+	 * Update a contract
+	 *
+	 * Note: Access check must be done by caller using checkWriteAccess()
+	 *
+	 * @throws NotFoundException
+	 */
+	public function update(
+		int $id,
+		string $name,
+		string $vendor,
+		string $startDate,
+		?string $endDate,
+		string $contractType,
+		?string $cancellationPeriod = null,
+		?int $categoryId = null,
+		?string $status = null,
+		?string $renewalPeriod = null,
+		?string $cost = null,
+		?string $currency = null,
+		?string $costInterval = null,
+		?string $contractFolder = null,
+		?string $mainDocument = null,
+		bool $reminderEnabled = true,
+		?int $reminderDays = null,
+		?string $notes = null,
+		?bool $isPrivate = null,
+		?string $customField1 = null,
+		?string $customField2 = null,
+		?string $customField3 = null,
+		string $amountType = Contract::AMOUNT_TYPE_NETTO,
+	): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
 
-        $contract->setName($name);
-        $contract->setVendor($vendor);
-        $contract->setCategoryId($categoryId);
-        if ($status !== null) {
-            $contract->setStatus($status);
-        }
-        $contract->setStartDate(new DateTime($startDate));
-        $contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
-        $contract->setCancellationPeriod($cancellationPeriod ?? '');
-        $contract->setContractType($contractType);
-        $contract->setRenewalPeriod($renewalPeriod);
-        $contract->setCost($cost);
-        $contract->setCurrency($currency ?? 'EUR');
-        $contract->setCostInterval($costInterval);
-        $contract->setContractFolder($contractFolder);
-        $contract->setMainDocument($mainDocument);
-        // Ohne Enddatum kann keine Erinnerung funktionieren
-        $contract->setReminderEnabled($endDate !== null && $reminderEnabled ? 1 : 0);
-        $contract->setReminderDays($reminderDays);
-        $contract->setNotes($notes);
-        if ($isPrivate !== null) {
-            $contract->setIsPrivate($isPrivate);
-        }
-        $contract->setCustomField1($customField1);
-        $contract->setCustomField2($customField2);
-        $contract->setCustomField3($customField3);
-        $contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
-        $contract->setUpdatedAt(new DateTime());
+		$contract->setName($name);
+		$contract->setVendor($vendor);
+		$contract->setCategoryId($categoryId);
+		if ($status !== null) {
+			$contract->setStatus($status);
+		}
+		$contract->setStartDate(new DateTime($startDate));
+		$contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
+		$contract->setCancellationPeriod($cancellationPeriod ?? '');
+		$contract->setContractType($contractType);
+		$contract->setRenewalPeriod($renewalPeriod);
+		$contract->setCost($cost);
+		$contract->setCurrency($currency ?? 'EUR');
+		$contract->setCostInterval($costInterval);
+		$contract->setContractFolder($contractFolder);
+		$contract->setMainDocument($mainDocument);
+		// Ohne Enddatum kann keine Erinnerung funktionieren
+		$contract->setReminderEnabled($endDate !== null && $reminderEnabled ? 1 : 0);
+		$contract->setReminderDays($reminderDays);
+		$contract->setNotes($notes);
+		if ($isPrivate !== null) {
+			$contract->setIsPrivate($isPrivate);
+		}
+		$contract->setCustomField1($customField1);
+		$contract->setCustomField2($customField2);
+		$contract->setCustomField3($customField3);
+		$contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
+		$contract->setUpdatedAt(new DateTime());
 
-        return $this->mapper->update($contract);
-    }
+		return $this->mapper->update($contract);
+	}
 
-    /**
-     * Soft-delete a contract (move to trash)
-     *
-     * Note: Access check must be done by caller using checkWriteAccess()
-     *
-     * @throws NotFoundException
-     */
-    public function softDelete(int $id): Contract {
-        try {
-            $contract = $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+	/**
+	 * Soft-delete a contract (move to trash)
+	 *
+	 * Note: Access check must be done by caller using checkWriteAccess()
+	 *
+	 * @throws NotFoundException
+	 */
+	public function softDelete(int $id): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
 
-        $contract->setDeletedAt(new DateTime());
-        $contract->setUpdatedAt(new DateTime());
+		$contract->setDeletedAt(new DateTime());
+		$contract->setUpdatedAt(new DateTime());
 
-        return $this->mapper->update($contract);
-    }
+		return $this->mapper->update($contract);
+	}
 
-    /**
-     * Restore a contract from trash
-     *
-     * Note: Access check must be done by caller using checkRestoreAccess()
-     *
-     * @throws NotFoundException
-     */
-    public function restoreFromTrash(int $id): Contract {
-        try {
-            $contract = $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+	/**
+	 * Restore a contract from trash
+	 *
+	 * Note: Access check must be done by caller using checkRestoreAccess()
+	 *
+	 * @throws NotFoundException
+	 */
+	public function restoreFromTrash(int $id): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
 
-        $contract->setDeletedAt(null);
-        $contract->setUpdatedAt(new DateTime());
+		$contract->setDeletedAt(null);
+		$contract->setUpdatedAt(new DateTime());
 
-        return $this->mapper->update($contract);
-    }
+		return $this->mapper->update($contract);
+	}
 
-    /**
-     * Permanently delete a contract (Admin only)
-     *
-     * @throws NotFoundException
-     */
-    public function deletePermanently(int $id): void {
-        try {
-            $contract = $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+	/**
+	 * Permanently delete a contract (Admin only)
+	 *
+	 * @throws NotFoundException
+	 */
+	public function deletePermanently(int $id): void {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
 
-        $this->mapper->delete($contract);
-    }
+		$this->mapper->delete($contract);
+	}
 
-    /**
-     * Permanently delete all contracts in trash (Admin only)
-     *
-     * @return int Number of deleted contracts
-     */
-    public function emptyTrash(): int {
-        $contracts = $this->mapper->findAllDeleted();
-        $count = 0;
+	/**
+	 * Permanently delete all contracts in trash (Admin only)
+	 *
+	 * @return int Number of deleted contracts
+	 */
+	public function emptyTrash(): int {
+		$contracts = $this->mapper->findAllDeleted();
+		$count = 0;
 
-        foreach ($contracts as $contract) {
-            $this->mapper->delete($contract);
-            $count++;
-        }
+		foreach ($contracts as $contract) {
+			$this->mapper->delete($contract);
+			$count++;
+		}
 
-        return $count;
-    }
+		return $count;
+	}
 
-    /**
-     * @deprecated Use softDelete() instead
-     * @throws NotFoundException
-     * @throws ForbiddenException
-     */
-    public function delete(int $id, string $userId): Contract {
-        try {
-            $contract = $this->mapper->find($id);
-        } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+	/**
+	 * @deprecated Use softDelete() instead
+	 * @throws NotFoundException
+	 * @throws ForbiddenException
+	 */
+	public function delete(int $id, string $userId): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
 
-        $this->checkAccess($contract, $userId);
+		$this->checkAccess($contract, $userId);
 
-        return $this->mapper->delete($contract);
-    }
+		return $this->mapper->delete($contract);
+	}
 
 	/**
 	 * Archive a contract
