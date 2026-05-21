@@ -275,14 +275,19 @@ class ContractService {
         ?string $customField2 = null,
         ?string $customField3 = null,
         string $amountType = Contract::AMOUNT_TYPE_NETTO,
+        ?string $cancelledOn = null,
+        ?string $cancelledTo = null,
     ): Contract {
         $contract = new Contract();
         $contract->setName($name);
         $contract->setVendor($vendor);
-        $contract->setStatus(Contract::STATUS_ACTIVE);
+        // A cancellation date implies the contract is cancelled
+        $contract->setStatus($cancelledOn !== null ? Contract::STATUS_CANCELLED : Contract::STATUS_ACTIVE);
         $contract->setCategoryId($categoryId);
         $contract->setStartDate(new DateTime($startDate));
         $contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
+        $contract->setCancelledOn($cancelledOn !== null ? new DateTime($cancelledOn) : null);
+        $contract->setCancelledTo($cancelledTo !== null ? new DateTime($cancelledTo) : null);
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
@@ -338,6 +343,8 @@ class ContractService {
         ?string $customField2 = null,
         ?string $customField3 = null,
         string $amountType = Contract::AMOUNT_TYPE_NETTO,
+        ?string $cancelledOn = null,
+        ?string $cancelledTo = null,
     ): Contract {
         try {
             $contract = $this->mapper->find($id);
@@ -353,6 +360,12 @@ class ContractService {
         }
         $contract->setStartDate(new DateTime($startDate));
         $contract->setEndDate($endDate !== null ? new DateTime($endDate) : null);
+        $contract->setCancelledOn($cancelledOn !== null ? new DateTime($cancelledOn) : null);
+        $contract->setCancelledTo($cancelledTo !== null ? new DateTime($cancelledTo) : null);
+        // A cancellation date implies the contract is at least cancelled
+        if ($cancelledOn !== null && $contract->getStatus() === Contract::STATUS_ACTIVE) {
+            $contract->setStatus(Contract::STATUS_CANCELLED);
+        }
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);

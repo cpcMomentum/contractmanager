@@ -288,6 +288,40 @@ class ContractMapper extends QBMapper {
     }
 
     /**
+     * Find cancelled contracts whose effective termination date has passed.
+     *
+     * A contract counts as "due" when it has a "cancelled on" date and the
+     * effective end is reached: the "cancelled to" date if set (e.g. special
+     * termination right), otherwise the regular end date.
+     *
+     * @return Contract[]
+     */
+    public function findCancelledDue(\DateTime $now): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->isNotNull('cancelled_on'))
+            ->andWhere($qb->expr()->neq('status', $qb->createNamedParameter(Contract::STATUS_ENDED)))
+            ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->isNull('deleted_at'))
+            ->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->andX(
+                        $qb->expr()->isNotNull('cancelled_to'),
+                        $qb->expr()->lte('cancelled_to', $qb->createNamedParameter($now, IQueryBuilder::PARAM_DATE))
+                    ),
+                    $qb->expr()->andX(
+                        $qb->expr()->isNull('cancelled_to'),
+                        $qb->expr()->isNotNull('end_date'),
+                        $qb->expr()->lte('end_date', $qb->createNamedParameter($now, IQueryBuilder::PARAM_DATE))
+                    )
+                )
+            );
+
+        return $this->findEntities($qb);
+    }
+
+    /**
      * Search contracts by name or vendor
      *
      * Respects visibility rules:
