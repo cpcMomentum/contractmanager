@@ -16,6 +16,13 @@ use OCP\IConfig;
  */
 class SettingsService {
 
+	/**
+	 * Placeholder string returned from getAdmin() when an API key is configured,
+	 * so the secret value never leaves the server. updateAdmin() compares
+	 * incoming values against this constant to detect unchanged-key submissions.
+	 */
+	public const API_KEY_MASK = '••••••••';
+
 	private const KEY_TALK_CHAT_TOKEN = 'talk_chat_token';
 	private const KEY_REMINDER_DAYS_1 = 'reminder_days_1';
 	private const KEY_REMINDER_DAYS_2 = 'reminder_days_2';
@@ -382,7 +389,38 @@ class SettingsService {
 	}
 
 	public function setAiApiUrl(string $url): void {
+		if ($url !== '' && !$this->isValidAiApiUrl($url)) {
+			return;
+		}
 		$this->config->setAppValue(Application::APP_ID, self::KEY_AI_API_URL, $url);
+	}
+
+	/**
+	 * Validate AI API URL: must be https, or http only for local hosts (Ollama).
+	 * Used as defense-in-depth — only admins reach this path in normal flow.
+	 */
+	public function isValidAiApiUrl(string $url): bool {
+		if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+			return false;
+		}
+		$scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+		if ($scheme === 'https') {
+			return true;
+		}
+		if ($scheme !== 'http') {
+			return false;
+		}
+		$host = strtolower((string)parse_url($url, PHP_URL_HOST));
+		if ($host === '') {
+			return false;
+		}
+		if ($host === 'localhost' || $host === '127.0.0.1' || $host === '::1') {
+			return true;
+		}
+		if (str_ends_with($host, '.local') || str_ends_with($host, '.localhost')) {
+			return true;
+		}
+		return false;
 	}
 
 	public function getAiModel(): string {
