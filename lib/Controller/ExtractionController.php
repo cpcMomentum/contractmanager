@@ -93,7 +93,7 @@ class ExtractionController extends Controller {
 				'exception' => $e,
 			]);
 			return new JSONResponse(
-				['error' => $this->l->t('Extraction failed: %s', [$e->getMessage()])],
+				['error' => $this->l->t('Extraction failed. Please check the server logs for details.')],
 				Http::STATUS_INTERNAL_SERVER_ERROR
 			);
 		}
