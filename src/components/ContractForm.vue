@@ -101,18 +101,36 @@
 					<div :class="['form-row', showCancellationDeadline ? 'form-row--dates-extended' : 'form-row--dates']">
 						<div class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Startdatum') + ' *' }}</label>
-							<NcTextField :value.sync="form.startDateFormatted"
-								:placeholder="t('contractmanager', 'TT.MM.JJJJ')"
-								:disabled="readOnly"
-								@blur="parseStartDate" />
+							<NcTextField v-if="readOnly"
+								:value="formatDateDisplay(form.startDate)"
+								:disabled="true" />
+							<NcDateTimePickerNative v-else
+								:value="form.startDate"
+								type="date"
+								:label="t('contractmanager', 'Startdatum')"
+								hide-label
+								@input="form.startDate = $event" />
 						</div>
-						<div class="field-date">
+						<div class="field-date field-date--end">
 							<label class="form-label">{{ t('contractmanager', 'Enddatum') }}</label>
-							<NcTextField :value.sync="form.endDateFormatted"
-								:placeholder="t('contractmanager', 'TT.MM.JJJJ oder leer für unbefristet')"
-								:disabled="readOnly"
-								@blur="parseEndDate"
-								@input="onEndDateInput" />
+							<NcTextField v-if="readOnly"
+								:value="formatDateDisplay(form.endDate) || '—'"
+								:disabled="true" />
+							<div v-else class="date-with-clear">
+								<NcDateTimePickerNative :value="form.endDate"
+									type="date"
+									:label="t('contractmanager', 'Enddatum')"
+									hide-label
+									@input="form.endDate = $event" />
+								<NcButton v-if="form.endDate"
+									type="tertiary"
+									:title="t('contractmanager', 'Enddatum entfernen (unbefristet)')"
+									@click="form.endDate = null">
+									<template #icon>
+										<Close :size="20" />
+									</template>
+								</NcButton>
+							</div>
 						</div>
 						<div v-if="showCancellationDeadline" class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
@@ -423,6 +441,7 @@ import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
+import NcDateTimePickerNative from '@nextcloud/vue/dist/Components/NcDateTimePickerNative.js'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import { mapGetters } from 'vuex'
 import Folder from 'vue-material-design-icons/Folder.vue'
@@ -436,7 +455,7 @@ import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
-import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
+import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
@@ -456,6 +475,7 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 		NcNoteCard,
+		NcDateTimePickerNative,
 		Folder,
 		File,
 		Close,
@@ -545,12 +565,6 @@ export default {
 			)
 		},
 		dateError() {
-			if (this.form.startDateFormatted && !this.form.startDate) {
-				return t('contractmanager', 'Startdatum: Bitte gültiges Datum im Format TT.MM.JJJJ eingeben')
-			}
-			if (this.form.endDateFormatted && !this.form.endDate) {
-				return t('contractmanager', 'Enddatum: Bitte gültiges Datum im Format TT.MM.JJJJ eingeben')
-			}
 			if (this.form.startDate && this.form.endDate && this.form.startDate >= this.form.endDate) {
 				return t('contractmanager', 'Enddatum muss nach dem Startdatum liegen')
 			}
@@ -692,8 +706,6 @@ export default {
 				contractStatus: 'active',
 				startDate: null,
 				endDate: null,
-				startDateFormatted: '',
-				endDateFormatted: '',
 				cancellationPeriodValue: '1',
 				cancellationPeriodUnit: 'months',
 				contractType: 'auto_renewal',
@@ -716,40 +728,6 @@ export default {
 		},
 		formatDateDisplay(date) {
 			return formatDate(date)
-		},
-		parseDateInput(value) {
-			if (!value) return null
-			const parts = value.split('.')
-			if (parts.length !== 3) return null
-			const day = parseInt(parts[0], 10)
-			const month = parseInt(parts[1], 10)
-			const year = parseInt(parts[2], 10)
-			if (isNaN(day) || isNaN(month) || isNaN(year)) return null
-			if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) return null
-			return new Date(year, month - 1, day)
-		},
-		parseStartDate() {
-			const date = this.parseDateInput(this.form.startDateFormatted)
-			this.form.startDate = date
-			if (date) {
-				this.form.startDateFormatted = this.formatDateDisplay(date)
-			} else {
-				this.form.startDateFormatted = ''
-			}
-		},
-		parseEndDate() {
-			const date = this.parseDateInput(this.form.endDateFormatted)
-			this.form.endDate = date
-			if (date) {
-				this.form.endDateFormatted = this.formatDateDisplay(date)
-			} else {
-				this.form.endDateFormatted = ''
-			}
-		},
-		onEndDateInput(value) {
-			if (!value || value.trim() === '') {
-				this.form.endDate = null
-			}
 		},
 		parsePeriodForForm(periodString, defaultValue = '') {
 			// Parse format like "3 months" into value and unit for form fields
@@ -775,8 +753,8 @@ export default {
 		contractToForm(contract) {
 			const cancellation = this.parsePeriodForForm(contract.cancellationPeriod, '1')
 			const renewal = this.parsePeriodForForm(contract.renewalPeriod, '1')
-			const startDate = contract.startDate ? new Date(contract.startDate) : null
-			const endDate = contract.endDate ? new Date(contract.endDate) : null
+			const startDate = parseLocalDate(contract.startDate)
+			const endDate = parseLocalDate(contract.endDate)
 			return {
 				name: contract.name || '',
 				vendor: contract.vendor || '',
@@ -784,8 +762,6 @@ export default {
 				contractStatus: contract.status || 'active',
 				startDate,
 				endDate,
-				startDateFormatted: this.formatDateDisplay(startDate),
-				endDateFormatted: this.formatDateDisplay(endDate),
 				cancellationPeriodValue: cancellation.value,
 				cancellationPeriodUnit: cancellation.unit,
 				contractType: contract.contractType || 'fixed',
@@ -807,9 +783,8 @@ export default {
 			}
 		},
 		formToPayload() {
-			// Parse dates fresh from formatted fields to avoid stale state
-			const startDate = this.parseDateInput(this.form.startDateFormatted)
-			const endDate = this.parseDateInput(this.form.endDateFormatted)
+			const startDate = this.form.startDate
+			const endDate = this.form.endDate
 			return {
 				name: this.form.name.trim(),
 				vendor: this.form.vendor.trim(),
@@ -931,17 +906,15 @@ export default {
 			if (data.currency) this.form.currency = data.currency
 			if (data.cost) this.form.cost = data.cost
 			if (data.startDate) {
-				const start = new Date(data.startDate)
-				if (!isNaN(start.getTime())) {
+				const start = parseLocalDate(data.startDate)
+				if (start && !isNaN(start.getTime())) {
 					this.form.startDate = start
-					this.form.startDateFormatted = this.formatDateDisplay(start)
 				}
 			}
 			if (data.endDate) {
-				const end = new Date(data.endDate)
-				if (!isNaN(end.getTime())) {
+				const end = parseLocalDate(data.endDate)
+				if (end && !isNaN(end.getTime())) {
 					this.form.endDate = end
-					this.form.endDateFormatted = this.formatDateDisplay(end)
 				}
 			}
 			if (data.cancellationPeriod) {
@@ -1046,7 +1019,7 @@ export default {
 
 	&--dates {
 		display: grid;
-		grid-template-columns: 120px 120px 1fr;
+		grid-template-columns: 160px 210px 1fr;
 		gap: 12px;
 		align-items: start;
 
@@ -1070,7 +1043,7 @@ export default {
 
 	&--dates-extended {
 		display: grid;
-		grid-template-columns: 120px 120px 120px 1fr;
+		grid-template-columns: 160px 210px 160px 1fr;
 		gap: 12px;
 		align-items: start;
 
@@ -1089,10 +1062,29 @@ export default {
 }
 
 .field-date {
-	max-width: 120px;
+	min-width: 0;
 
-	:deep(.input-field) {
-		max-width: 120px;
+	:deep(.native-datetime-picker) {
+		width: 100%;
+	}
+
+	:deep(input) {
+		width: 100%;
+	}
+
+	&--end {
+		max-width: 210px;
+	}
+}
+
+.date-with-clear {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+
+	:deep(.native-datetime-picker) {
+		flex: 1 1 auto;
+		min-width: 0;
 	}
 }
 
