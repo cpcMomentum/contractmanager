@@ -23,6 +23,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setStartDate(DateTime $startDate)
  * @method DateTime getEndDate()
  * @method void setEndDate(DateTime $endDate)
+ * @method DateTime|null getCancelledOn()
+ * @method DateTime|null getCancelledTo()
  * @method string|null getCancellationPeriod()
  * @method void setCancellationPeriod(?string $cancellationPeriod)
  * @method string getContractType()
@@ -87,6 +89,8 @@ class Contract extends Entity implements JsonSerializable {
     protected ?int $categoryId = null;
     protected ?DateTime $startDate = null;
     protected ?DateTime $endDate = null;
+    protected ?DateTime $cancelledOn = null;
+    protected ?DateTime $cancelledTo = null;
     protected ?string $cancellationPeriod = null;
     protected string $contractType = self::TYPE_FIXED;
     protected ?string $renewalPeriod = null;
@@ -114,6 +118,8 @@ class Contract extends Entity implements JsonSerializable {
         $this->addType('categoryId', 'integer');
         $this->addType('startDate', 'datetime');
         $this->addType('endDate', 'datetime');
+        $this->addType('cancelledOn', 'datetime');
+        $this->addType('cancelledTo', 'datetime');
         $this->addType('reminderEnabled', 'integer');
         $this->addType('reminderDays', 'integer');
         $this->addType('createdAt', 'datetime');
@@ -142,6 +148,22 @@ class Contract extends Entity implements JsonSerializable {
     }
 
     /**
+     * Custom setter for cancelledOn (nullable)
+     */
+    public function setCancelledOn(?DateTime $cancelledOn): void {
+        $this->cancelledOn = $cancelledOn;
+        $this->markFieldUpdated('cancelledOn');
+    }
+
+    /**
+     * Custom setter for cancelledTo (nullable)
+     */
+    public function setCancelledTo(?DateTime $cancelledTo): void {
+        $this->cancelledTo = $cancelledTo;
+        $this->markFieldUpdated('cancelledTo');
+    }
+
+    /**
      * Custom setter for deletedAt
      */
     public function setDeletedAt(?DateTime $deletedAt): void {
@@ -165,6 +187,8 @@ class Contract extends Entity implements JsonSerializable {
             'categoryId' => $this->categoryId,
             'startDate' => $this->startDate?->format('Y-m-d'),
             'endDate' => $this->endDate?->format('Y-m-d'),
+            'cancelledOn' => $this->cancelledOn?->format('Y-m-d'),
+            'cancelledTo' => $this->cancelledTo?->format('Y-m-d'),
             'cancellationPeriod' => $this->cancellationPeriod,
             'contractType' => $this->contractType,
             'renewalPeriod' => $this->renewalPeriod,
