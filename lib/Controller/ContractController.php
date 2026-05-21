@@ -130,6 +130,8 @@ class ContractController extends Controller {
 		?string $customField2 = null,
 		?string $customField3 = null,
 		string $amountType = 'netto',
+		?string $cancelledOn = null,
+		?string $cancelledTo = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -145,6 +147,8 @@ class ContractController extends Controller {
 				'vendor' => $vendor,
 				'startDate' => $startDate,
 				'endDate' => $endDate,
+				'cancelledOn' => $cancelledOn,
+				'cancelledTo' => $cancelledTo,
 				'customField1' => $customField1,
 				'customField2' => $customField2,
 				'customField3' => $customField3,
@@ -173,6 +177,8 @@ class ContractController extends Controller {
 				$customField2,
 				$customField3,
 				$amountType,
+				$cancelledOn,
+				$cancelledTo,
 			);
 
 			return new JSONResponse($contract, Http::STATUS_CREATED);
@@ -210,6 +216,8 @@ class ContractController extends Controller {
 		?string $customField2 = null,
 		?string $customField3 = null,
 		string $amountType = 'netto',
+		?string $cancelledOn = null,
+		?string $cancelledTo = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -228,6 +236,8 @@ class ContractController extends Controller {
 				'endDate' => $endDate,
 				'status' => $status,
 				'notes' => $notes,
+				'cancelledOn' => $cancelledOn,
+				'cancelledTo' => $cancelledTo,
 				'customField1' => $customField1,
 				'customField2' => $customField2,
 				'customField3' => $customField3,
@@ -257,6 +267,8 @@ class ContractController extends Controller {
 				$customField2,
 				$customField3,
 				$amountType,
+				$cancelledOn,
+				$cancelledTo,
 			);
 
 			return new JSONResponse($updatedContract);

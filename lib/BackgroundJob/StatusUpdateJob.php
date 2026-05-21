@@ -12,8 +12,10 @@ use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
 
 /**
- * Background job that automatically sets expired fixed contracts to "ended"
- * Runs once per day
+ * Background job that runs once per day and:
+ * - sets expired fixed contracts to "ended"
+ * - ends and archives cancelled contracts once their effective termination
+ *   date is reached (issue #136)
  */
 class StatusUpdateJob extends TimedJob {
 
@@ -53,6 +55,30 @@ class StatusUpdateJob extends TimedJob {
 			$this->logger->info('Expired contract status check completed', [
 				'app' => Application::APP_ID,
 				'updatedCount' => $updatedCount,
+			]);
+
+			$dueCancelled = $this->contractMapper->findCancelledDue(new DateTime());
+			$archivedCount = 0;
+
+			foreach ($dueCancelled as $contract) {
+				$contract->setStatus('ended');
+				$contract->setArchived(true);
+				$contract->setUpdatedAt(new DateTime());
+				$this->contractMapper->update($contract);
+				$archivedCount++;
+
+				$this->logger->info('Cancelled contract ended and archived: ' . $contract->getName(), [
+					'app' => Application::APP_ID,
+					'contractId' => $contract->getId(),
+					'cancelledOn' => $contract->getCancelledOn()?->format('Y-m-d'),
+					'cancelledTo' => $contract->getCancelledTo()?->format('Y-m-d'),
+					'endDate' => $contract->getEndDate()?->format('Y-m-d'),
+				]);
+			}
+
+			$this->logger->info('Cancelled contract archival check completed', [
+				'app' => Application::APP_ID,
+				'archivedCount' => $archivedCount,
 			]);
 		} catch (\Exception $e) {
 			$this->logger->error('Expired contract status check failed', [

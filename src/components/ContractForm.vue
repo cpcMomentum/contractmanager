@@ -192,6 +192,60 @@
 					</div>
 				</div>
 
+				<!-- Cancellation (#136) -->
+				<div class="form-section">
+					<h3>{{ t('contractmanager', 'Kündigung') }}</h3>
+
+					<div class="form-row form-row--dates">
+						<div class="field-date field-date--end">
+							<label class="form-label">{{ t('contractmanager', 'Gekündigt am') }}</label>
+							<NcTextField v-if="readOnly"
+								:value="formatDateDisplay(form.cancelledOn) || '—'"
+								:disabled="true" />
+							<div v-else class="date-with-clear">
+								<NcDateTimePickerNative :value="form.cancelledOn"
+									type="date"
+									:label="t('contractmanager', 'Gekündigt am')"
+									hide-label
+									@input="onCancelledOnInput" />
+								<NcButton v-if="form.cancelledOn"
+									type="tertiary"
+									:title="t('contractmanager', 'Kündigung entfernen')"
+									@click="onCancelledOnInput(null)">
+									<template #icon>
+										<Close :size="20" />
+									</template>
+								</NcButton>
+							</div>
+						</div>
+						<div v-if="form.cancelledOn" class="field-date field-date--end">
+							<label class="form-label">{{ t('contractmanager', 'Gekündigt zum') }}</label>
+							<NcTextField v-if="readOnly"
+								:value="formatDateDisplay(form.cancelledTo) || '—'"
+								:disabled="true" />
+							<div v-else class="date-with-clear">
+								<NcDateTimePickerNative :value="form.cancelledTo"
+									type="date"
+									:label="t('contractmanager', 'Gekündigt zum')"
+									hide-label
+									@input="form.cancelledTo = $event" />
+								<NcButton v-if="form.cancelledTo"
+									type="tertiary"
+									:title="t('contractmanager', 'Datum entfernen')"
+									@click="form.cancelledTo = null">
+									<template #icon>
+										<Close :size="20" />
+									</template>
+								</NcButton>
+							</div>
+						</div>
+					</div>
+
+					<p v-if="!readOnly" class="field-hint">
+						{{ t('contractmanager', 'Mit „Gekündigt am" wird der Vertrag am Laufzeitende automatisch beendet und archiviert. „Gekündigt zum" beendet ihn stattdessen zu diesem Datum (z. B. bei Sonderkündigung).') }}
+					</p>
+				</div>
+
 				<!-- Costs / Documents / Reminder -->
 				<div class="form-section">
 					<div class="form-row form-row--triple">
@@ -706,6 +760,8 @@ export default {
 				contractStatus: 'active',
 				startDate: null,
 				endDate: null,
+				cancelledOn: null,
+				cancelledTo: null,
 				cancellationPeriodValue: '1',
 				cancellationPeriodUnit: 'months',
 				contractType: 'auto_renewal',
@@ -762,6 +818,8 @@ export default {
 				contractStatus: contract.status || 'active',
 				startDate,
 				endDate,
+				cancelledOn: parseLocalDate(contract.cancelledOn),
+				cancelledTo: parseLocalDate(contract.cancelledTo),
 				cancellationPeriodValue: cancellation.value,
 				cancellationPeriodUnit: cancellation.unit,
 				contractType: contract.contractType || 'fixed',
@@ -792,6 +850,8 @@ export default {
 				status: this.form.contractStatus,
 				startDate: startDate ? this.formatDateForApi(startDate) : null,
 				endDate: endDate ? this.formatDateForApi(endDate) : null,
+				cancelledOn: this.form.cancelledOn ? this.formatDateForApi(this.form.cancelledOn) : null,
+				cancelledTo: this.form.cancelledOn && this.form.cancelledTo ? this.formatDateForApi(this.form.cancelledTo) : null,
 				cancellationPeriod: this.form.contractType === 'auto_renewal'
 					? this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit)
 					: null,
@@ -816,6 +876,16 @@ export default {
 		},
 		formatDateForApi(date) {
 			return formatDateForInput(date)
+		},
+		onCancelledOnInput(value) {
+			this.form.cancelledOn = value
+			if (!value) {
+				this.form.cancelledTo = null
+				// Cancellation removed — revert auto-set status back to active
+				if (this.form.contractStatus === 'cancelled') {
+					this.form.contractStatus = 'active'
+				}
+			}
 		},
 		async openFolderPicker() {
 			try {
@@ -1086,6 +1156,12 @@ export default {
 		flex: 1 1 auto;
 		min-width: 0;
 	}
+}
+
+.field-hint {
+	margin-top: 8px;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 }
 
 .field-type {

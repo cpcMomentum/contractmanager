@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Datumsfelder (Start, Ende) nutzen jetzt einen Kalender-Datepicker statt manueller TT.MM.JJJJ-Eingabe — einheitlich mit der Kontakte-App (#137)
+- Kündigungs-Automatik: Neue Felder „Gekündigt am" und „Gekündigt zum" (z. B. bei Sonderkündigung). Gekündigte Verträge werden am Laufzeitende bzw. zum „Gekündigt zum"-Datum automatisch beendet und archiviert (#136)
+
 ## [0.5.2] - 2026-05-21
 
 ### Fixed
