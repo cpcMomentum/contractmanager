@@ -73,6 +73,29 @@ class ContractService {
 			}
 		}
 
+		// Cancellation date format validation
+		if (!empty($data['cancelledOn'])) {
+			try {
+				new DateTime($data['cancelledOn']);
+			} catch (\Exception $e) {
+				$errors['cancelledOn'] = $this->l()->t('Invalid date format');
+			}
+		}
+		if (!empty($data['cancelledTo'])) {
+			try {
+				new DateTime($data['cancelledTo']);
+			} catch (\Exception $e) {
+				$errors['cancelledTo'] = $this->l()->t('Invalid date format');
+			}
+		}
+		if (!empty($data['cancelledOn']) && !empty($data['cancelledTo']) && empty($errors['cancelledOn']) && empty($errors['cancelledTo'])) {
+			$cancelledOn = new DateTime($data['cancelledOn']);
+			$cancelledTo = new DateTime($data['cancelledTo']);
+			if ($cancelledTo < $cancelledOn) {
+				$errors['cancelledTo'] = $this->l()->t('"Gekündigt zum" must not be before "Gekündigt am"');
+			}
+		}
+
 		// Status validation
 		if (!empty($data['status']) && !in_array($data['status'], self::VALID_STATUSES, true)) {
 			$errors['status'] = $this->l()->t('Invalid status');
