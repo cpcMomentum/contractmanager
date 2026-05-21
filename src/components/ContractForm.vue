@@ -1011,8 +1011,8 @@ export default {
 
 <style scoped lang="scss">
 .contract-form {
-	padding: 20px;
-	max-height: 70vh;
+	padding: 20px 20px 0;
+	max-height: min(90vh, calc(100vh - 120px));
 	overflow-y: auto;
 }
 
@@ -1108,12 +1108,15 @@ export default {
 }
 
 .form-actions {
+	position: sticky;
+	bottom: 0;
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
-	margin-top: 24px;
-	padding-top: 16px;
+	margin: 24px -20px 0;
+	padding: 16px 20px;
 	border-top: 1px solid var(--color-border);
+	background: var(--color-main-background);
 }
 
 // Period fields (Kündigungsfrist, Verlängerungsintervall)
