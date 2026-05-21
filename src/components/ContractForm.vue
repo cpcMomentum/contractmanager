@@ -1119,29 +1119,6 @@ export default {
 	background: var(--color-main-background);
 }
 
-// Period fields (Kündigungsfrist, Verlängerungsintervall)
-.period-fields {
-	display: flex;
-	gap: 8px;
-	align-items: center;
-	max-width: 280px;
-	height: 44px;
-}
-
-.period-number {
-	width: 70px;
-	flex-shrink: 0;
-
-	:deep(.input-field) {
-		width: 70px;
-	}
-}
-
-.period-unit {
-	flex: 1;
-	min-width: 120px;
-}
-
 .form-row--periods {
 	display: grid;
 	grid-template-columns: 55px 160px 55px 160px;
