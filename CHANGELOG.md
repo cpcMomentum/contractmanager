@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-21
+
+### Security
+- AI-API-URL wird beim Speichern gegen Schema und Host validiert: nur `https` oder `http` auf localhost/127.0.0.1/[::1]/*.local/*.localhost (#123)
+- Schutz gegen Prompt-Injection in der KI-Extraktion: PDF-Text wird in `<document>`-Tags gekapselt, eingebettete schliessende Tags werden neutralisiert (#124)
+- Weniger personenbezogene Daten in Logs: E-Mail-Adressen werden maskiert, Vertragsnamen aus Reminder-Logs entfernt, Erfolgs-Logs auf Debug-Level (#125)
+- API-Key-Maske als einheitliche Konstante (Single Source of Truth) statt hartkodierter Werte an mehreren Stellen (#126)
+
 ## [0.5.0] - 2026-05-19
 
 ### Added
@@ -235,7 +243,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.0...v0.5.1
 [0.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.1...v0.2.2
