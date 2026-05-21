@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-05-21
+
+### Fixed
+- Vertragsdialog: Die Buttons „Abbrechen" und „Speichern" bleiben auf kleinen Fensterhöhen als fixierte Fußleiste sichtbar; der Dialog nutzt die verfügbare Höhe adaptiv statt eines festen Limits (#134)
+
 ## [0.5.1] - 2026-05-21
 
 ### Security
@@ -243,7 +248,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.0...v0.5.1
 [0.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.2...v0.2.3
