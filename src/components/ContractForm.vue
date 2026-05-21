@@ -879,9 +879,12 @@ export default {
 		},
 		onCancelledOnInput(value) {
 			this.form.cancelledOn = value
-			// "Gekündigt zum" only makes sense together with "Gekündigt am"
 			if (!value) {
 				this.form.cancelledTo = null
+				// Cancellation removed — revert auto-set status back to active
+				if (this.form.contractStatus === 'cancelled') {
+					this.form.contractStatus = 'active'
+				}
 			}
 		},
 		async openFolderPicker() {
