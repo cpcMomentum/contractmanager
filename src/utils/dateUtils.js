@@ -22,6 +22,24 @@ export function formatDate(dateInput) {
 }
 
 /**
+ * Parses a YYYY-MM-DD string as a local-midnight Date to avoid UTC offset shifts.
+ * `new Date('YYYY-MM-DD')` produces UTC midnight, which becomes the previous day
+ * in UTC- timezones when local date parts are read back.
+ * @param {string|null} dateString - ISO date string (YYYY-MM-DD)
+ * @returns {Date|null}
+ */
+export function parseLocalDate(dateString) {
+	if (!dateString) return null
+	const parts = dateString.split('-')
+	if (parts.length !== 3) return null
+	const year = parseInt(parts[0], 10)
+	const month = parseInt(parts[1], 10) - 1
+	const day = parseInt(parts[2], 10)
+	if (isNaN(year) || isNaN(month) || isNaN(day)) return null
+	return new Date(year, month, day)
+}
+
+/**
  * Formats a date for input fields (YYYY-MM-DD)
  * @param {string|Date|null} dateInput - Date to format
  * @returns {string} ISO date string (YYYY-MM-DD) or empty string

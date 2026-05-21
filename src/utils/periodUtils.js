@@ -118,7 +118,7 @@ export function formatPeriod(periodString) {
 export function getEffectiveEndDate(endDate, contractType, renewalPeriod) {
 	if (!endDate) return null
 
-	const end = endDate instanceof Date ? new Date(endDate) : new Date(endDate)
+	const end = new Date(endDate)
 	if (isNaN(end.getTime())) return null
 
 	if (contractType !== 'auto_renewal' || !renewalPeriod) {

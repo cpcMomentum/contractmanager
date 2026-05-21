@@ -455,7 +455,7 @@ import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
-import { formatDate, formatDateForInput } from '../utils/dateUtils.js'
+import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
@@ -753,8 +753,8 @@ export default {
 		contractToForm(contract) {
 			const cancellation = this.parsePeriodForForm(contract.cancellationPeriod, '1')
 			const renewal = this.parsePeriodForForm(contract.renewalPeriod, '1')
-			const startDate = contract.startDate ? new Date(contract.startDate) : null
-			const endDate = contract.endDate ? new Date(contract.endDate) : null
+			const startDate = parseLocalDate(contract.startDate)
+			const endDate = parseLocalDate(contract.endDate)
 			return {
 				name: contract.name || '',
 				vendor: contract.vendor || '',
@@ -906,14 +906,14 @@ export default {
 			if (data.currency) this.form.currency = data.currency
 			if (data.cost) this.form.cost = data.cost
 			if (data.startDate) {
-				const start = new Date(data.startDate)
-				if (!isNaN(start.getTime())) {
+				const start = parseLocalDate(data.startDate)
+				if (start && !isNaN(start.getTime())) {
 					this.form.startDate = start
 				}
 			}
 			if (data.endDate) {
-				const end = new Date(data.endDate)
-				if (!isNaN(end.getTime())) {
+				const end = parseLocalDate(data.endDate)
+				if (end && !isNaN(end.getTime())) {
 					this.form.endDate = end
 				}
 			}
