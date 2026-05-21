@@ -885,6 +885,11 @@ export default {
 				if (this.form.contractStatus === 'cancelled') {
 					this.form.contractStatus = 'active'
 				}
+			} else {
+				// Cancellation date set — auto-set status to cancelled
+				if (this.form.contractStatus === 'active') {
+					this.form.contractStatus = 'cancelled'
+				}
 			}
 		},
 		async openFolderPicker() {
