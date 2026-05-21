@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-05-21
+
 ### Added
 - Datumsfelder (Start, Ende) nutzen jetzt einen Kalender-Datepicker statt manueller TT.MM.JJJJ-Eingabe — einheitlich mit der Kontakte-App (#137)
 - Kündigungs-Automatik: Neue Felder „Gekündigt am" und „Gekündigt zum" (z. B. bei Sonderkündigung). Gekündigte Verträge werden am Laufzeitende bzw. zum „Gekündigt zum"-Datum automatisch beendet und archiviert (#136)
@@ -252,7 +254,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.0...v0.5.1
 [0.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.2.3...v0.2.4
