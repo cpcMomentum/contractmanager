@@ -171,7 +171,10 @@ export default {
 			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod, this.contract.contractType, this.contract.renewalPeriod)
 		},
 		effectiveEndDate() {
-			return getEffectiveEndDate(this.contract.endDate, this.contract.contractType, this.contract.renewalPeriod)
+			return getEffectiveEndDate(this.contract.endDate, this.contract.contractType, this.contract.renewalPeriod, {
+				status: this.contract.status,
+				cancelledTo: this.contract.cancelledTo,
+			})
 		},
 		deleteDialogButtons() {
 			return [

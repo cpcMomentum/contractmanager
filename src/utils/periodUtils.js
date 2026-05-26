@@ -106,20 +106,41 @@ export function formatPeriod(periodString) {
 }
 
 /**
+ * Whether a contract status means the contract no longer renews.
+ * @param {string} [status] - Contract status
+ * @returns {boolean}
+ */
+function isCancelled(status) {
+	return status === 'cancelled' || status === 'ended'
+}
+
+/**
  * Get the effective end date for a contract, accounting for auto-renewal.
  * For auto_renewal contracts with an end date in the past, repeatedly adds
  * the renewal period until the date is in the future.
  *
+ * Cancelled contracts no longer renew: their effective end is the cancellation
+ * target date (cancelledTo) if set, otherwise the regular end date.
+ *
  * @param {string|Date} endDate - Contract end date
  * @param {string} contractType - 'fixed' or 'auto_renewal'
  * @param {string} renewalPeriod - e.g. "12 months"
+ * @param {{ status?: string, cancelledTo?: string|Date|null }} [options] - Cancellation info
  * @returns {Date|null} Effective end date or null
  */
-export function getEffectiveEndDate(endDate, contractType, renewalPeriod) {
+export function getEffectiveEndDate(endDate, contractType, renewalPeriod, options = {}) {
 	if (!endDate) return null
 
 	const end = new Date(endDate)
 	if (isNaN(end.getTime())) return null
+
+	if (isCancelled(options.status)) {
+		if (options.cancelledTo) {
+			const cancelledTo = new Date(options.cancelledTo)
+			if (!isNaN(cancelledTo.getTime())) return cancelledTo
+		}
+		return end
+	}
 
 	if (contractType !== 'auto_renewal' || !renewalPeriod) {
 		return end
@@ -176,12 +197,16 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod) {
  * @param {string} cancellationPeriod - e.g. "3 months"
  * @param {string} [contractType] - 'fixed' or 'auto_renewal'
  * @param {string} [renewalPeriod] - e.g. "12 months"
+ * @param {{ status?: string, cancelledTo?: string|Date|null }} [options] - Cancellation info
  * @returns {Date|null} Cancellation deadline or null
  */
-export function calculateCancellationDeadline(endDate, cancellationPeriod, contractType, renewalPeriod) {
+export function calculateCancellationDeadline(endDate, cancellationPeriod, contractType, renewalPeriod, options = {}) {
 	if (!endDate || !cancellationPeriod) return null
 
-	let effectiveEnd = getEffectiveEndDate(endDate, contractType, renewalPeriod)
+	// Cancelled contracts have no upcoming cancellation deadline.
+	if (isCancelled(options.status)) return null
+
+	let effectiveEnd = getEffectiveEndDate(endDate, contractType, renewalPeriod, options)
 	if (!effectiveEnd || isNaN(effectiveEnd.getTime())) return null
 
 	let deadline = subtractPeriod(effectiveEnd, cancellationPeriod)
