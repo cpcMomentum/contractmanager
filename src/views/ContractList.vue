@@ -390,8 +390,8 @@ export default {
 					cmp = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0)
 					break
 				case 'cancellationDeadline': {
-					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod)
-					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod)
+					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod, { status: a.status, cancelledTo: a.cancelledTo })
+					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod, { status: b.status, cancelledTo: b.cancelledTo })
 					if (!deadlineA && !deadlineB) { cmp = 0; break }
 					if (!deadlineA) { cmp = 1; break }
 					if (!deadlineB) { cmp = -1; break }

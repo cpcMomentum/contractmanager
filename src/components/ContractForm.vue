@@ -196,7 +196,7 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Kündigung') }}</h3>
 
-					<div class="form-row form-row--dates">
+					<div class="form-row form-row--cancellation">
 						<div class="field-date field-date--end">
 							<label class="form-label">{{ t('contractmanager', 'Gekündigt am') }}</label>
 							<NcTextField v-if="readOnly"
@@ -1114,6 +1114,18 @@ export default {
 	&--dates-extended {
 		display: grid;
 		grid-template-columns: 160px 210px 160px 1fr;
+		gap: 12px;
+		align-items: start;
+
+		> div {
+			display: flex;
+			flex-direction: column;
+		}
+	}
+
+	&--cancellation {
+		display: grid;
+		grid-template-columns: 210px 210px 1fr;
 		gap: 12px;
 		align-items: start;
 
