@@ -45,7 +45,7 @@ class SettingsService {
 		'openai_compatible' => 'https://api.openai.com/v1',
 	];
 	private const DEFAULT_AI_MODELS = [
-		'claude' => 'claude-sonnet-4-5-20250514',
+		'claude' => 'claude-sonnet-4-6',
 		'openai_compatible' => 'gpt-4o',
 	];
 

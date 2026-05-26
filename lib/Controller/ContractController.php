@@ -12,6 +12,7 @@ use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\ValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -30,9 +31,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Get all visible contracts
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function index(): JSONResponse {
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse($this->service->findAllVisible($this->userId, $isAdmin));
@@ -40,9 +40,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Get all visible archived contracts
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function archived(): JSONResponse {
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse($this->service->findArchivedVisible($this->userId, $isAdmin));
@@ -50,9 +49,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Get contracts in trash (user sees own, admin sees all)
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function trash(): JSONResponse {
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 
@@ -65,9 +63,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Get user permissions info for frontend
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function permissions(): JSONResponse {
 		return new JSONResponse($this->permissionService->getPermissionInfo($this->userId));
 	}
@@ -75,9 +72,8 @@ class ContractController extends Controller {
 	/**
 	 * Distinct vendor names from contracts visible to the user.
 	 * Powers the autocomplete in the contract form.
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function vendors(): JSONResponse {
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse($this->service->findVisibleVendors($this->userId, $isAdmin));
@@ -85,9 +81,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Get a single contract
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function show(int $id): JSONResponse {
 		try {
 			$contract = $this->service->find($id);
@@ -105,9 +100,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Create a new contract (Editor or Admin)
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function create(
 		string $name,
 		string $vendor,
@@ -189,9 +183,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Update a contract (Editor or Admin, with visibility rules)
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function update(
 		int $id,
 		string $name,
@@ -283,9 +276,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Soft-delete a contract (move to trash)
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function destroy(int $id): JSONResponse {
 		try {
 			$contract = $this->service->find($id);
@@ -305,9 +297,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Restore a contract from trash (user can restore own, admin can restore all)
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function restoreFromTrash(int $id): JSONResponse {
 		try {
 			$contract = $this->service->find($id);
@@ -348,9 +339,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Archive a contract
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function archive(int $id): JSONResponse {
 		try {
 			$contract = $this->service->find($id);
@@ -370,9 +360,8 @@ class ContractController extends Controller {
 
 	/**
 	 * Restore a contract from archive
-	 *
-	 * @NoAdminRequired
 	 */
+	#[NoAdminRequired]
 	public function restore(int $id): JSONResponse {
 		try {
 			$contract = $this->service->find($id);

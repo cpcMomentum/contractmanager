@@ -8,6 +8,8 @@ use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Service\SettingsService;
 use OCA\Viewer\Event\LoadViewer;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -28,10 +30,8 @@ class PageController extends Controller {
 		parent::__construct(Application::APP_ID, $request);
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	public function index(): TemplateResponse {
 		Util::addScript(Application::APP_ID, 'contractmanager-main');
 		Util::addStyle(Application::APP_ID, 'main');
