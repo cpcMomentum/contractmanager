@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-05-26
+
+### Fixed
+- Gekündigte Verträge mit automatischer Verlängerung wurden in der Liste falsch einsortiert und mit einem in die Zukunft gerollten Enddatum angezeigt. Gekündigte Verträge verlängern sich nicht mehr; ihr effektives Ende ist das „Gekündigt zum"- bzw. reguläre Enddatum (#145)
+- Die beiden Kündigungs-Datumsfelder „Gekündigt am" und „Gekündigt zum" werden jetzt gleich breit dargestellt (#144)
+
 ## [0.5.3] - 2026-05-21
 
 ### Added
@@ -254,7 +260,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.4...HEAD
+[0.5.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.0...v0.5.1
