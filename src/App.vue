@@ -160,15 +160,12 @@ export default {
 		},
 	},
 	created() {
-		this.fetchCategories()
-		this.fetchContracts()
 		this.fetchArchivedContracts()
 		this.fetchPermissions()
 		this.fetchTrashedContracts()
 	},
 	methods: {
-		...mapActions(useCategoriesStore, ['fetchCategories']),
-		...mapActions(useContractsStore, ['fetchContracts', 'fetchArchivedContracts', 'fetchPermissions', 'fetchTrashedContracts']),
+		...mapActions(useContractsStore, ['fetchArchivedContracts', 'fetchPermissions', 'fetchTrashedContracts']),
 		showAllContracts() {
 			this.currentView = 'contracts'
 			this.selectedCategoryId = null

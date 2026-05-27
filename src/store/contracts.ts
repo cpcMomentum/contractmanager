@@ -192,7 +192,7 @@ export const useContractsStore = defineStore('contracts', () => {
 			} else {
 				contracts.value.push(contract)
 			}
-			fetchTrashedContracts()
+			void fetchTrashedContracts()
 			return contract
 		} catch (e) {
 			error.value = (e as Error).message
