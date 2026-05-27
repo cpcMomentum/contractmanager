@@ -1,6 +1,6 @@
 <template>
 	<NcModal :show="show"
-		:title="readOnly ? t('contractmanager', 'Vertragsdetails') : (isEdit ? t('contractmanager', 'Vertrag bearbeiten') : t('contractmanager', 'Neuer Vertrag'))"
+		:name="readOnly ? t('contractmanager', 'Vertragsdetails') : (isEdit ? t('contractmanager', 'Vertrag bearbeiten') : t('contractmanager', 'Neuer Vertrag'))"
 		size="large"
 		@close="$emit('close')">
 		<div class="contract-form">
@@ -8,7 +8,7 @@
 				<!-- AI Extraction -->
 				<div v-if="aiAvailable && !isEdit && !readOnly" class="form-section ai-section">
 					<div class="ai-extract-row">
-						<NcButton type="secondary"
+						<NcButton variant="secondary"
 							:disabled="extracting"
 							@click="analyzeDocument">
 							<template #icon>
@@ -31,7 +31,7 @@
 					<div class="form-row form-row--half">
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</label>
-							<NcTextField :value.sync="form.name"
+							<NcTextField v-model="form.name"
 								:disabled="readOnly"
 								:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')" />
 						</div>
@@ -78,17 +78,17 @@
 					<div v-if="hasCustomFields" class="form-row form-row--custom">
 						<div v-if="customFieldLabels.customFieldLabel1">
 							<label class="form-label">{{ customFieldLabels.customFieldLabel1 }}</label>
-							<NcTextField :value.sync="form.customField1"
+							<NcTextField v-model="form.customField1"
 								:disabled="readOnly" />
 						</div>
 						<div v-if="customFieldLabels.customFieldLabel2">
 							<label class="form-label">{{ customFieldLabels.customFieldLabel2 }}</label>
-							<NcTextField :value.sync="form.customField2"
+							<NcTextField v-model="form.customField2"
 								:disabled="readOnly" />
 						</div>
 						<div v-if="customFieldLabels.customFieldLabel3">
 							<label class="form-label">{{ customFieldLabels.customFieldLabel3 }}</label>
-							<NcTextField :value.sync="form.customField3"
+							<NcTextField v-model="form.customField3"
 								:disabled="readOnly" />
 						</div>
 					</div>
@@ -102,28 +102,28 @@
 						<div class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Startdatum') + ' *' }}</label>
 							<NcTextField v-if="readOnly"
-								:value="formatDateDisplay(form.startDate)"
+								:model-value="formatDateDisplay(form.startDate)"
 								:disabled="true" />
 							<NcDateTimePickerNative v-else
-								:value="form.startDate"
+								:model-value="form.startDate"
 								type="date"
 								:label="t('contractmanager', 'Startdatum')"
 								hide-label
-								@input="form.startDate = $event" />
+								@update:model-value="form.startDate = $event" />
 						</div>
 						<div class="field-date field-date--end">
 							<label class="form-label">{{ t('contractmanager', 'Enddatum') }}</label>
 							<NcTextField v-if="readOnly"
-								:value="formatDateDisplay(form.endDate) || '—'"
+								:model-value="formatDateDisplay(form.endDate) || '—'"
 								:disabled="true" />
 							<div v-else class="date-with-clear">
-								<NcDateTimePickerNative :value="form.endDate"
+								<NcDateTimePickerNative :model-value="form.endDate"
 									type="date"
 									:label="t('contractmanager', 'Enddatum')"
 									hide-label
-									@input="form.endDate = $event" />
+									@update:model-value="form.endDate = $event" />
 								<NcButton v-if="form.endDate"
-									type="tertiary"
+									variant="tertiary"
 									:title="t('contractmanager', 'Enddatum entfernen (unbefristet)')"
 									@click="form.endDate = null">
 									<template #icon>
@@ -134,7 +134,7 @@
 						</div>
 						<div v-if="showCancellationDeadline" class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
-							<NcTextField :value="calculatedCancellationDeadline"
+							<NcTextField :model-value="calculatedCancellationDeadline"
 								:disabled="true"
 								class="deadline-field" />
 						</div>
@@ -157,7 +157,7 @@
 					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--periods">
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') }}</label>
-							<NcTextField :value.sync="form.cancellationPeriodValue"
+							<NcTextField v-model="form.cancellationPeriodValue"
 								type="number"
 								min="1"
 								:disabled="readOnly" />
@@ -174,7 +174,7 @@
 						</div>
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Verlängerung') }}</label>
-							<NcTextField :value.sync="form.renewalPeriodValue"
+							<NcTextField v-model="form.renewalPeriodValue"
 								type="number"
 								min="1"
 								:disabled="readOnly" />
@@ -200,16 +200,16 @@
 						<div class="field-date field-date--end">
 							<label class="form-label">{{ t('contractmanager', 'Gekündigt am') }}</label>
 							<NcTextField v-if="readOnly"
-								:value="formatDateDisplay(form.cancelledOn) || '—'"
+								:model-value="formatDateDisplay(form.cancelledOn) || '—'"
 								:disabled="true" />
 							<div v-else class="date-with-clear">
-								<NcDateTimePickerNative :value="form.cancelledOn"
+								<NcDateTimePickerNative :model-value="form.cancelledOn"
 									type="date"
 									:label="t('contractmanager', 'Gekündigt am')"
 									hide-label
-									@input="onCancelledOnInput" />
+									@update:model-value="onCancelledOnInput" />
 								<NcButton v-if="form.cancelledOn"
-									type="tertiary"
+									variant="tertiary"
 									:title="t('contractmanager', 'Kündigung entfernen')"
 									@click="onCancelledOnInput(null)">
 									<template #icon>
@@ -221,16 +221,16 @@
 						<div v-if="form.cancelledOn" class="field-date field-date--end">
 							<label class="form-label">{{ t('contractmanager', 'Gekündigt zum') }}</label>
 							<NcTextField v-if="readOnly"
-								:value="formatDateDisplay(form.cancelledTo) || '—'"
+								:model-value="formatDateDisplay(form.cancelledTo) || '—'"
 								:disabled="true" />
 							<div v-else class="date-with-clear">
-								<NcDateTimePickerNative :value="form.cancelledTo"
+								<NcDateTimePickerNative :model-value="form.cancelledTo"
 									type="date"
 									:label="t('contractmanager', 'Gekündigt zum')"
 									hide-label
-									@input="form.cancelledTo = $event" />
+									@update:model-value="form.cancelledTo = $event" />
 								<NcButton v-if="form.cancelledTo"
-									type="tertiary"
+									variant="tertiary"
 									:title="t('contractmanager', 'Datum entfernen')"
 									@click="form.cancelledTo = null">
 									<template #icon>
@@ -257,20 +257,20 @@
 									<label class="form-label">
 										{{ form.amountType === 'brutto' ? t('contractmanager', 'Betrag (brutto)') : t('contractmanager', 'Betrag (netto)') }}
 									</label>
-									<NcTextField :value.sync="form.cost"
+									<NcTextField v-model="form.cost"
 										type="number"
 										step="0.01"
 										:disabled="readOnly"
 										:placeholder="t('contractmanager', '0.00')" />
 									<div class="amount-type-toggle">
-										<NcCheckboxRadioSwitch :checked.sync="form.amountType"
+										<NcCheckboxRadioSwitch v-model="form.amountType"
 											value="netto"
 											name="amountType"
 											type="radio"
 											:disabled="readOnly">
 											{{ t('contractmanager', 'Netto') }}
 										</NcCheckboxRadioSwitch>
-										<NcCheckboxRadioSwitch :checked.sync="form.amountType"
+										<NcCheckboxRadioSwitch v-model="form.amountType"
 											value="brutto"
 											name="amountType"
 											type="radio"
@@ -315,7 +315,7 @@
 										{{ t('contractmanager', 'Kein Ordner') }}
 									</span>
 									<NcButton v-else-if="form.contractFolder"
-										type="primary"
+										variant="primary"
 										@click="openInNextcloud(form.contractFolder)">
 										<template #icon>
 											<Folder :size="20" />
@@ -323,7 +323,7 @@
 										{{ t('contractmanager', 'Öffnen') }}
 									</NcButton>
 									<NcButton v-else
-										type="secondary"
+										variant="secondary"
 										@click="openFolderPicker">
 										<template #icon>
 											<Folder :size="20" />
@@ -331,12 +331,12 @@
 										{{ t('contractmanager', 'Wählen') }}
 									</NcButton>
 									<NcButton v-if="form.contractFolder && !readOnly"
-										type="secondary"
+										variant="secondary"
 										@click="openFolderPicker">
 										{{ t('contractmanager', 'Ändern') }}
 									</NcButton>
 									<NcButton v-if="form.contractFolder && !readOnly"
-										type="tertiary"
+										variant="tertiary"
 										:title="t('contractmanager', 'Entfernen')"
 										@click="form.contractFolder = ''">
 										<template #icon>
@@ -356,7 +356,7 @@
 										{{ t('contractmanager', 'Kein Dokument') }}
 									</span>
 									<NcButton v-else-if="form.mainDocument"
-										type="primary"
+										variant="primary"
 										@click="openDocument(form.mainDocument)">
 										<template #icon>
 											<OpenInNewIcon v-if="isExternalDocument" :size="20" />
@@ -365,14 +365,14 @@
 										{{ t('contractmanager', 'Öffnen') }}
 									</NcButton>
 									<template v-if="!form.mainDocument && !readOnly">
-										<NcButton type="secondary"
+										<NcButton variant="secondary"
 											@click="openFilePicker">
 											<template #icon>
 												<File :size="20" />
 											</template>
 											{{ t('contractmanager', 'Datei wählen') }}
 										</NcButton>
-										<NcButton type="tertiary"
+										<NcButton variant="tertiary"
 											@click="showUrlInput = !showUrlInput">
 											<template #icon>
 												<OpenInNewIcon :size="20" />
@@ -381,12 +381,12 @@
 										</NcButton>
 									</template>
 									<NcButton v-if="form.mainDocument && !readOnly"
-										type="secondary"
+										variant="secondary"
 										@click="openFilePicker">
 										{{ t('contractmanager', 'Ändern') }}
 									</NcButton>
 									<NcButton v-if="form.mainDocument && !readOnly"
-										type="tertiary"
+										variant="tertiary"
 										:title="t('contractmanager', 'Entfernen')"
 										@click="form.mainDocument = ''">
 										<template #icon>
@@ -395,10 +395,10 @@
 									</NcButton>
 								</div>
 								<div v-if="showUrlInput && !readOnly && !form.mainDocument" class="url-input-row">
-									<NcTextField :value.sync="urlInput"
+									<NcTextField v-model="urlInput"
 										:placeholder="t('contractmanager', 'https://...')"
-										@keydown.enter.native.prevent="addExternalUrl" />
-									<NcButton type="primary" @click="addExternalUrl">
+										@keydown.enter.prevent="addExternalUrl" />
+									<NcButton variant="primary" @click="addExternalUrl">
 										{{ t('contractmanager', 'Hinzufügen') }}
 									</NcButton>
 								</div>
@@ -412,12 +412,12 @@
 								{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
 							</NcNoteCard>
 							<template v-else>
-								<NcCheckboxRadioSwitch :checked.sync="form.reminderEnabled" :disabled="readOnly">
+								<NcCheckboxRadioSwitch v-model="form.reminderEnabled" :disabled="readOnly">
 									{{ t('contractmanager', 'Erinnerung aktivieren') }}
 								</NcCheckboxRadioSwitch>
 								<div v-if="form.reminderEnabled" class="reminder-days">
 									<NcTextField :label="t('contractmanager', 'X Tage vorher')"
-										:value.sync="form.reminderDays"
+										v-model="form.reminderDays"
 										type="number"
 										:disabled="readOnly"
 										:placeholder="t('contractmanager', 'Standard')" />
@@ -439,7 +439,7 @@
 							v-html="linkifiedNotes" />
 						<!-- eslint-enable vue/no-v-html -->
 						<NcTextArea v-else
-							:value.sync="form.notes"
+							v-model="form.notes"
 							:label="t('contractmanager', 'Zusätzliche Notizen')"
 							:placeholder="t('contractmanager', 'Zusätzliche Notizen...')"
 							:maxlength="5000"
@@ -452,7 +452,7 @@
 				<!-- Privacy -->
 				<div class="form-section">
 					<div class="form-row">
-						<NcCheckboxRadioSwitch :checked.sync="form.isPrivate" :disabled="readOnly">
+						<NcCheckboxRadioSwitch v-model="form.isPrivate" :disabled="readOnly">
 							<template #icon>
 								<LockIcon v-if="form.isPrivate" :size="20" />
 								<LockOpenVariantIcon v-else :size="20" />
@@ -466,14 +466,14 @@
 
 				<!-- Actions -->
 				<div class="form-actions">
-					<NcButton v-if="readOnly" type="primary" @click="$emit('close')">
+					<NcButton v-if="readOnly" variant="primary" @click="$emit('close')">
 						{{ t('contractmanager', 'Schließen') }}
 					</NcButton>
 					<template v-else>
-						<NcButton type="tertiary" @click="$emit('close')">
+						<NcButton variant="tertiary" @click="$emit('close')">
 							{{ t('contractmanager', 'Abbrechen') }}
 						</NcButton>
-						<NcButton type="primary" native-type="submit" :disabled="!isValid || loading">
+						<NcButton variant="primary" type="submit" :disabled="!isValid || loading">
 							<template #icon>
 								<NcLoadingIcon v-if="loading" :size="20" />
 							</template>
@@ -487,17 +487,18 @@
 </template>
 
 <script>
-import NcModal from '@nextcloud/vue/dist/Components/NcModal.js'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
-import NcTextArea from '@nextcloud/vue/dist/Components/NcTextArea.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
-import NcDateTimePickerNative from '@nextcloud/vue/dist/Components/NcDateTimePickerNative.js'
+import NcModal from '@nextcloud/vue/components/NcModal'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
+import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
-import { mapGetters } from 'vuex'
+import { mapState } from 'pinia'
+import { useCategoriesStore } from '../store/categories'
 import Folder from 'vue-material-design-icons/Folder.vue'
 import File from 'vue-material-design-icons/File.vue'
 import Close from 'vue-material-design-icons/Close.vue'
@@ -577,7 +578,7 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters('categories', ['allCategories']),
+		...mapState(useCategoriesStore, ['allCategories']),
 		isEdit() {
 			return this.contract !== null && this.contract.id != null
 		},

@@ -3,7 +3,7 @@
 		<div class="contract-list__header">
 			<h2>{{ t('contractmanager', 'Verträge') }}</h2>
 			<div class="contract-list__header-actions">
-				<NcActions :force-menu="true" type="secondary" :menu-name="activeSortLabel">
+				<NcActions :force-menu="true" variant="secondary" :menu-name="activeSortLabel">
 					<template #icon>
 						<SortAscendingIcon v-if="sortDirection === 'asc'" :size="20" />
 						<SortDescendingIcon v-else :size="20" />
@@ -18,7 +18,7 @@
 						{{ option.label }}
 					</NcActionButton>
 				</NcActions>
-				<NcButton :type="hasActiveFilters ? 'warning' : 'secondary'"
+				<NcButton :variant="hasActiveFilters ? 'warning' : 'secondary'"
 					@click="toggleFilters">
 					<template #icon>
 						<FilterOffIcon v-if="showFilters" :size="20" />
@@ -26,7 +26,7 @@
 					</template>
 					{{ t('contractmanager', 'Filter') }}
 				</NcButton>
-				<NcButton v-if="canEdit" type="primary" @click="showCreateForm = true">
+				<NcButton v-if="canEdit" variant="primary" @click="showCreateForm = true">
 					<template #icon>
 						<PlusIcon :size="20" />
 					</template>
@@ -41,7 +41,7 @@
 				:placeholder="t('contractmanager', 'Vertragspartner')"
 				:clearable="true"
 				input-id="filter-vendor"
-				@input="persistFilters" />
+				@update:model-value="persistFilters" />
 			<NcSelect v-model="filterStatuses"
 				:multiple="true"
 				:options="statusOptions"
@@ -51,7 +51,7 @@
 				track-by="id"
 				:reduce="option => option.id"
 				input-id="filter-status"
-				@input="persistFilters" />
+				@update:model-value="persistFilters" />
 			<NcSelect v-model="filterContractType"
 				:options="contractTypeOptions"
 				:placeholder="t('contractmanager', 'Vertragstyp')"
@@ -60,9 +60,9 @@
 				track-by="id"
 				:reduce="option => option.id"
 				input-id="filter-type"
-				@input="persistFilters" />
+				@update:model-value="persistFilters" />
 			<NcButton v-if="hasActiveFilters"
-				type="tertiary"
+				variant="tertiary"
 				@click="resetFilters">
 				<template #icon>
 					<CloseIcon :size="20" />
@@ -82,7 +82,7 @@
 				<FileDocumentIcon :size="64" />
 			</template>
 			<template v-if="canEdit" #action>
-				<NcButton type="primary" @click="showCreateForm = true">
+				<NcButton variant="primary" @click="showCreateForm = true">
 					<template #icon>
 						<PlusIcon :size="20" />
 					</template>
@@ -120,7 +120,7 @@
 				<NcButton @click="showArchiveDialog = false">
 					{{ t('contractmanager', 'Abbrechen') }}
 				</NcButton>
-				<NcButton type="warning" @click="confirmArchive">
+				<NcButton variant="warning" @click="confirmArchive">
 					{{ t('contractmanager', 'Archivieren') }}
 				</NcButton>
 			</template>
@@ -129,15 +129,17 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
+import { mapState, mapActions } from 'pinia'
+import { useContractsStore } from '../store/contracts'
+import { useCategoriesStore } from '../store/categories'
 import { loadState } from '@nextcloud/initial-state'
-import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
-import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import SortIcon from 'vue-material-design-icons/Sort.vue'
@@ -226,7 +228,7 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters('contracts', {
+		...mapState(useContractsStore, {
 			allContracts: 'allContracts',
 			loading: 'isLoading',
 			canEdit: 'canEdit',
@@ -296,8 +298,8 @@ export default {
 		}
 	},
 	methods: {
-		...mapActions('contracts', ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
-		...mapActions('categories', ['fetchCategories']),
+		...mapActions(useContractsStore, ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
+		...mapActions(useCategoriesStore, ['fetchCategories']),
 
 		handleEdit(contract) {
 			this.editingContract = contract

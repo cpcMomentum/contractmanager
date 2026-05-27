@@ -9,7 +9,7 @@
 			<h3>{{ t('contractmanager', 'Benachrichtigungen') }}</h3>
 
 			<div class="settings-item">
-				<NcCheckboxRadioSwitch :checked.sync="emailReminder" @update:checked="onEmailReminderChange">
+				<NcCheckboxRadioSwitch v-model="emailReminder" @update:model-value="onEmailReminderChange">
 					{{ t('contractmanager', 'E-Mail-Benachrichtigungen aktivieren') }}
 				</NcCheckboxRadioSwitch>
 				<p class="settings-description">
@@ -24,18 +24,18 @@
 				{{ t('contractmanager', 'Standard für neue Verträge. Pro Vertrag kann davon abgewichen werden.') }}
 			</p>
 			<div class="settings-item">
-				<NcCheckboxRadioSwitch :checked.sync="defaultAmountType"
+				<NcCheckboxRadioSwitch v-model="defaultAmountType"
 					value="netto"
 					name="defaultAmountType"
 					type="radio"
-					@update:checked="onDefaultAmountTypeChange">
+					@update:model-value="onDefaultAmountTypeChange">
 					{{ t('contractmanager', 'Netto') }}
 				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch :checked.sync="defaultAmountType"
+				<NcCheckboxRadioSwitch v-model="defaultAmountType"
 					value="brutto"
 					name="defaultAmountType"
 					type="radio"
-					@update:checked="onDefaultAmountTypeChange">
+					@update:model-value="onDefaultAmountTypeChange">
 					{{ t('contractmanager', 'Brutto') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -59,15 +59,12 @@
 					<NcSelect v-model="permissionSettings.editors"
 						:options="searchResults"
 						:loading="searching"
-						:filterable="false"
 						:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
 						:multiple="true"
 						label="displayName"
 						track-by="id"
 						class="permission-select"
-						@open="onDropdownOpen"
-						@search="onSearch"
-						@input="onEditorsChange">
+						@update:model-value="onEditorsChange">
 						<template #option="option">
 							<div class="permission-option">
 								<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
@@ -97,15 +94,12 @@
 					<NcSelect v-model="permissionSettings.viewers"
 						:options="searchResults"
 						:loading="searching"
-						:filterable="false"
 						:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
 						:multiple="true"
 						label="displayName"
 						track-by="id"
 						class="permission-select"
-						@open="onDropdownOpen"
-						@search="onSearch"
-						@input="onViewersChange">
+						@update:model-value="onViewersChange">
 						<template #option="option">
 							<div class="permission-option">
 								<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
@@ -139,7 +133,7 @@
 					<p class="settings-description">
 						{{ t('contractmanager', 'Token des Chats für Erinnerungen (aus der Chat-URL).') }}
 					</p>
-					<NcTextField :value.sync="adminSettings.talkChatToken"
+					<NcTextField v-model="adminSettings.talkChatToken"
 						:placeholder="t('contractmanager', 'z.B. abc123xyz')"
 						class="settings-input" />
 				</div>
@@ -151,7 +145,7 @@
 					<div class="reminder-inputs">
 						<div class="reminder-input-group">
 							<label>{{ t('contractmanager', 'Erste Erinnerung') }}</label>
-							<NcTextField :value.sync="adminSettings.reminderDays1"
+							<NcTextField v-model="adminSettings.reminderDays1"
 								type="number"
 								:min="1"
 								class="number-input" />
@@ -160,7 +154,7 @@
 
 						<div class="reminder-input-group">
 							<label>{{ t('contractmanager', 'Letzte Erinnerung') }}</label>
-							<NcTextField :value.sync="adminSettings.reminderDays2"
+							<NcTextField v-model="adminSettings.reminderDays2"
 								type="number"
 								:min="1"
 								class="number-input" />
@@ -181,12 +175,12 @@
 				</p>
 
 				<div v-for="n in 3" :key="'cf' + n" class="settings-item custom-field-item">
-					<NcCheckboxRadioSwitch :checked="customFieldEnabled(n)"
-						@update:checked="toggleCustomField(n, $event)">
+					<NcCheckboxRadioSwitch :model-value="customFieldEnabled(n)"
+						@update:model-value="toggleCustomField(n, $event)">
 						{{ t('contractmanager', 'Zusatzfeld {n}', { n }) }}
 					</NcCheckboxRadioSwitch>
 					<NcTextField v-if="customFieldEnabled(n)"
-						:value.sync="adminSettings['customFieldLabel' + n]"
+						v-model="adminSettings['customFieldLabel' + n]"
 						:placeholder="customFieldPlaceholders[n - 1]"
 						class="settings-input custom-field-label" />
 				</div>
@@ -217,7 +211,7 @@
 				<template v-if="adminSettings.aiProvider">
 					<div class="settings-item">
 						<label class="settings-label">{{ t('contractmanager', 'API Key') }}</label>
-						<NcTextField :value.sync="adminSettings.aiApiKey"
+						<NcTextField v-model="adminSettings.aiApiKey"
 							type="password"
 							:placeholder="t('contractmanager', 'API Key eingeben')"
 							class="settings-input" />
@@ -228,14 +222,14 @@
 						<p class="settings-description">
 							{{ t('contractmanager', 'Standard-URL wird automatisch gesetzt. Für Ollama z.B. http://localhost:11434/v1') }}
 						</p>
-						<NcTextField :value.sync="adminSettings.aiApiUrl"
+						<NcTextField v-model="adminSettings.aiApiUrl"
 							:placeholder="aiDefaultUrl"
 							class="settings-input" />
 					</div>
 
 					<div class="settings-item">
 						<label class="settings-label">{{ t('contractmanager', 'Modell') }}</label>
-						<NcTextField :value.sync="adminSettings.aiModel"
+						<NcTextField v-model="adminSettings.aiModel"
 							:placeholder="aiDefaultModel"
 							class="settings-input" />
 					</div>
@@ -243,7 +237,7 @@
 			</div>
 
 			<div class="settings-actions">
-				<NcButton type="primary" :disabled="savingAdmin" @click="saveAdminSettings">
+				<NcButton variant="primary" :disabled="savingAdmin" @click="saveAdminSettings">
 					<template #icon>
 						<NcLoadingIcon v-if="savingAdmin" :size="20" />
 					</template>
@@ -261,11 +255,11 @@
 				<div class="category-management">
 					<!-- Add new category -->
 					<div class="category-add">
-						<NcTextField :value.sync="newCategoryName"
+						<NcTextField v-model="newCategoryName"
 							:placeholder="t('contractmanager', 'Neue Kategorie...')"
 							class="category-input"
 							@keyup.enter="addCategory" />
-						<NcButton type="primary"
+						<NcButton variant="primary"
 							:disabled="!newCategoryName.trim() || addingCategory"
 							@click="addCategory">
 							<template #icon>
@@ -281,16 +275,16 @@
 							:key="category.id"
 							class="category-edit-item">
 							<template v-if="editingCategoryId === category.id">
-								<NcTextField :value.sync="editingCategoryName"
+								<NcTextField v-model="editingCategoryName"
 									class="category-input"
 									@keyup.enter="saveCategory(category)"
 									@keyup.esc="cancelEdit" />
-								<NcButton type="primary" @click="saveCategory(category)">
+								<NcButton variant="primary" @click="saveCategory(category)">
 									<template #icon>
 										<CheckIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" @click="cancelEdit">
+								<NcButton variant="tertiary" @click="cancelEdit">
 									<template #icon>
 										<CloseIcon :size="20" />
 									</template>
@@ -299,12 +293,12 @@
 							<template v-else>
 								<span class="category-name">{{ category.name }}</span>
 								<div class="category-actions">
-									<NcButton type="tertiary" @click="startEdit(category)">
+									<NcButton variant="tertiary" @click="startEdit(category)">
 										<template #icon>
 											<PencilIcon :size="20" />
 										</template>
 									</NcButton>
-									<NcButton type="tertiary"
+									<NcButton variant="tertiary"
 										@click="confirmDeleteCategory(category)">
 										<template #icon>
 											<DeleteIcon :size="20" />
@@ -342,7 +336,7 @@
 				<NcButton @click="showDeleteCategoryDialog = false">
 					{{ t('contractmanager', 'Abbrechen') }}
 				</NcButton>
-				<NcButton type="error" @click="executeDeleteCategory">
+				<NcButton variant="error" @click="executeDeleteCategory">
 					{{ t('contractmanager', 'Löschen') }}
 				</NcButton>
 			</template>
@@ -351,13 +345,14 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
+import { mapState, mapActions } from 'pinia'
+import { useCategoriesStore } from '../store/categories'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import ShieldIcon from 'vue-material-design-icons/Shield.vue'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
@@ -369,7 +364,6 @@ import AccountGroupIcon from 'vue-material-design-icons/AccountGroup.vue'
 import SettingsService from '../services/SettingsService.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
-import debounce from 'debounce'
 
 export default {
 	name: 'SettingsView',
@@ -421,7 +415,7 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters('categories', {
+		...mapState(useCategoriesStore, {
 			categories: 'allCategories',
 		}),
 		customFieldPlaceholders() {
@@ -452,12 +446,11 @@ export default {
 		if (this.$isAdmin) {
 			await this.loadAdminSettings()
 			await this.loadPermissionSettings()
+			await this.performSearch('')
 		}
-		// Initialize debounced search
-		this.debouncedSearch = debounce(this.performSearch, 300)
 	},
 	methods: {
-		...mapActions('categories', ['fetchCategories', 'createCategory', 'updateCategory', 'deleteCategory']),
+		...mapActions(useCategoriesStore, ['fetchCategories', 'createCategory', 'updateCategory', 'deleteCategory']),
 
 		customFieldEnabled(n) {
 			return this.adminSettings['customFieldLabel' + n] !== ''
@@ -538,29 +531,15 @@ export default {
 			return objects
 		},
 
-		onSearch(query, loading) {
-			loading(true)
-			this.debouncedSearch(query, loading)
-		},
-
-		async onDropdownOpen() {
-			// Load all users/groups when dropdown opens
-			if (this.searchResults.length === 0) {
-				await this.performSearch('', null)
-			}
-		},
-
-		async performSearch(query, loading) {
+		async performSearch(query) {
 			try {
 				this.searching = true
-				const results = await SettingsService.searchUsersAndGroups(query)
-				this.searchResults = results
+				this.searchResults = await SettingsService.searchUsersAndGroups(query)
 			} catch (error) {
 				console.error('Failed to search users/groups:', error)
 				this.searchResults = []
 			} finally {
 				this.searching = false
-				if (loading) loading(false)
 			}
 		},
 

@@ -4,27 +4,24 @@
 	</span>
 </template>
 
-<script>
-export default {
-	name: 'StatusBadge',
-	props: {
-		status: {
-			type: String,
-			required: true,
-			validator: (value) => ['active', 'cancelled', 'ended'].includes(value),
-		},
-	},
-	computed: {
-		statusLabel() {
-			const labels = {
-				active: t('contractmanager', 'Laufend'),
-				cancelled: t('contractmanager', 'Gekündigt'),
-				ended: t('contractmanager', 'Beendet'),
-			}
-			return labels[this.status] || this.status
-		},
-	},
-}
+<script setup lang="ts">
+import { computed } from 'vue'
+import { translate as t } from '@nextcloud/l10n'
+
+type ContractStatus = 'active' | 'cancelled' | 'ended'
+
+const props = defineProps<{
+	status: ContractStatus
+}>()
+
+const statusLabel = computed(() => {
+	const labels: Record<ContractStatus, string> = {
+		active: t('contractmanager', 'Laufend'),
+		cancelled: t('contractmanager', 'Gekündigt'),
+		ended: t('contractmanager', 'Beendet'),
+	}
+	return labels[props.status] || props.status
+})
 </script>
 
 <style scoped lang="scss">
