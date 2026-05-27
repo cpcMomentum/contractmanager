@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-27
+
+### Changed
+- Frontend komplett auf den aktuellen Nextcloud-Stack migriert: Vue 2 → Vue 3, webpack → Vite, Vuex → Pinia, @nextcloud/vue 8 → 9, Stores in TypeScript. Keine funktionalen Änderungen für Nutzer; die App ist damit technologisch auf aktuellem Stand und das Vue-2-EOL-Risiko entfällt (#150)
+
+### Fixed
+- Benutzer-/Gruppen-Suche in den Berechtigungs-Einstellungen lädt die Auswahl wieder (an @nextcloud/vue 9 angepasst)
+
 ## [0.5.4] - 2026-05-26
 
 ### Fixed
@@ -260,7 +268,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.4...v1.0.0
 [0.5.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.1...v0.5.2

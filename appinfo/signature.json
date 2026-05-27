@@ -1,18 +1,14 @@
 {
     "hashes": {
-        "CHANGELOG.md": "72edb989c7f517201d078b59c17bf0149afdfd7db089183ccf9dcad5bfade511fef33064696203b2ae55109b02552311bf1fc7cf18dc3e032c307e58c7e88195",
+        "CHANGELOG.md": "d53c98cbf8b08c688fe90d3911b1b13f7019d012fb74860f2b5a3d1396e19bdf26f6eecfb5b37078b1a29c995a7f5dd68a4b393827cfc45ebefd214b9697e802",
         "LICENSE": "3568a76677f3d55dbbc7fc33c4073b4714cc6f68d92cd842a9ca2b230e8bd2140e59c3fc3cce34be34ffed78d75ab6e9d991ba59bf7c4addde7fb96648d3375d",
         "README.md": "c63556c8007c335969e9ffd6836089907b332588f578a435cb67504ccdd2e0ddef71b5c60e733f1e8db2ded32c1caed39fff50deb497d4affc1ce6ad0d50b432",
-        "appinfo\/info.xml": "21ccdfb5e917ba699525a741b8da381c8daa7e855d80dd7dbb2240b7581ef56e46fb34403b02d213d86f19897f567f72b5abd0bf7fb38b2ebe403e7d740a2c38",
+        "appinfo\/info.xml": "ad5eede4e1e487d9f8415a55728bddf43c35b48a79b59b2235010c082d6d28514ee5f23c479ded1811243f230d3ef8a05a79f226353e8fa1822335fa394ad947",
         "appinfo\/routes.php": "105b2674f685ffb66f4ec2c5f0e321f69f77c8f09a55acfffc30451630b6d7a346aa7f051f37809418118449965a249e1c1f47a66f0ce132f7e971ef739ae01d",
+        "css\/contractmanager-main.css": "0faa5da7a9ad23df7a9b35eb757e8ae32e640763e114ca0bb508658e238e0c2fbd09e4a86b1afac036869c973b3aa44e72e24972d8f70352d3286e3b5771a88c",
         "css\/main.scss": "d663b32588adeec116bf4da24ac4cefee1e18bd72d0c18c51ae85ada04669e6d63e94b1c24a889960e5ed294d68952130db92ef3a6e9d4743fcf458519df8d0e",
         "img\/app.svg": "e86145b1095cd5bcb1007795f98c7c83bed8c72df63f29a1440a23913d2b5f018a62a74f207a8eef2435eca4e793631cde0917a6d37c5485bbebc6bf03a7c2a8",
-        "js\/contractmanager-08907226b4ae3b0a29a5.js": "b3dead44b2e3e616c90942966b97da2e7a28aca6b25b0dff6ae245c819cf25eb62f4f42d2724505b14c585521cdf53580492cab8de2001f582080d1a9d1dc6fa",
-        "js\/contractmanager-2622376057210e7b28f1.js": "71b12d403e616c12539c1e28684e4d732ae00a185f38e0bf9dc497775c70af34ad6e7444c2f9bbf3eca34d41e0949d69e204b088fe8b3d1475121a40d8643f4e",
-        "js\/contractmanager-364451d6f66a4ac77677.js": "ee4731cc56f36b3405cef140b4fa731c2093437c47c7f4e1531fadc5420789db7af1c9abee8a28bc1274e0335284dd6fc49a973dab60037b687c076e73d7ca86",
-        "js\/contractmanager-a0a859601bc3555e597d.js": "21d8de580ad9caf3f904ed9df082e6c9599e42eb45600ba31fb7f1ca5fb169424b9d5071446a7c69d0e12be496a91b7afd67637108e25958dc888bc424a9f72f",
-        "js\/contractmanager-f7d269ff4aa1373c2f3e.js": "632f0a2f382229ed4247461337b17ff5ebe085beaea22f4be0948f12b511bdcacf4f90d2a61194b2af5bfe33f238b83ff4230de4e9ef25626b1ac74992e8253d",
-        "js\/contractmanager-main.js": "fce330f3c911375f24535a7c6e0097d9f4511d0ce15d4bbda8b705cbfa46bcfb370fa64aa5f74085242f4024593c5f9b5b59ed1236374ca11c40ee1442cb4e8f",
+        "js\/contractmanager-main.js": "a70b080579c45d212745d32d04eafdf960e3920ba31605810b0c3e3d79d3b0f01b756878596b03c58629816ffd3c33e7b272d1251b1dbf69beb1fb0f589d63d3",
         "l10n\/de.js": "ced8ee2f2355c72fabc3711a6ff25a4f4b7290d57ef96fc821ff2ca7ec6af986edb90076eaddb231670fc22cb6faab58e8fa6afd27196beb89c4fc89e2e987b0",
         "l10n\/de.json": "518e81134a98b2834b33ea808c8c604d8d663ab147bd1f89063eb1e5f031bf238ab2c6be5ddda3e24a0225c09632f76db386941c12eaa3a2fca5c917926bde97",
         "l10n\/en.js": "8c1d98c014f1f1e96674cd361498e0e09b55956e58dabccaf4a6817d46d13a45357245a0b840579029ae6329cdc94e685ba15c625fb0524078f44d737edd9807",
@@ -24,7 +20,7 @@
         "lib\/Controller\/CategoryController.php": "8b4218bb8d6486a56fd2ae94ad5751dd6090b390eb8348441b419d0272b52a3066c98fd9a034cc2b5305152d48e528646741b59e9e1cbf0fa16dfbedcf84c0d1",
         "lib\/Controller\/ContractController.php": "2bda8d8b0c5e712bce0321f01ef4c4dd4525a66c56a979a1df64c525c9f441584a6bd666222bbbcb17f86d7780ca67605b9f7853130303e3af3dd59a311901ae",
         "lib\/Controller\/ExtractionController.php": "17e8fb578a8aaa80b428f4fb54682f78362679d432ac6b56e14b0ac12b8676999a87f8aa26b608acb5e9ed94efb8d70324947701d1dd006940aaec7269f588c6",
-        "lib\/Controller\/PageController.php": "56f096fd1286d159289682489bc20a050a1f81a4a0d6b3bd55d2fed98e62f022c40201cf989dc8dabb8ce34562f4723f8650db6caae68bae0e644ff3695a9be1",
+        "lib\/Controller\/PageController.php": "986492a494183904d63ada4d083e1110f10825384852798a3447fa0fbd5c8de90ddd18aa979dc3e4de36e9a4c5dc641ed30f97155c2690906688877799f48958",
         "lib\/Controller\/SettingsController.php": "f9542228048c76739224ffe8df0e6c326d56bf16f8b0944aa4dedb3ff682344bac8c04dda89213efec49ffbd252b09c5bec2080eac00ab5d2a83e100295272a9",
         "lib\/Db\/Category.php": "71632a23ac01f2f5a086cc0c3730a7da650c99be9e7ca5beb50da05b5b5011c18988ab184fdd9006caa58f0c3e64be19322aaeda53b128356d8c2d962569667d",
         "lib\/Db\/CategoryMapper.php": "464f43e132f8f578ac7e0b9633b916576c9b6e47f6397765c99706d0f65448421561334597b291f517ccc94cb8c1781a025dea45e60e292ef1febf01ce241fff",
@@ -130,6 +126,6 @@
         "vendor\/symfony\/polyfill-mbstring\/bootstrap80.php": "5d6bb8fd004a7ff49e959792ed35c99d4fea9ac46d0c0fa52dfba5196bbd9b042ce4e3ef98d81a28b19b515195e1831f487eac03bcd4bbe3ac136cfa0c62ba3a",
         "vendor\/symfony\/polyfill-mbstring\/composer.json": "21cf92a202ff00b2b3a35a40a7265e2c7a9b53b94d8cbbf8afd533fb392e8edfe5b87a1f60041ff88c618f5a905ea34098f2f7435685e51dae78878b12d33431"
     },
-    "signature": "R8ztq38s0i3UmcoswJFjq0GrjEXKNIqTx6IdW+XeAwOmqbTIFjKxoMQXkSgGhOFdy3zs3k3GeU9lvPAk+TG9I5pbtGPKmYTjav4mRA7XqYocg1raGe2ekc8n6X6gNV+rETCFDObPrvqG4MTIZ8eR1W7\/yhamrrbNtcB7vl5+8ixDTl09wQnAo5eKLisPO0vZ2KOiR7xnZBWaYWJQ3ec3A8Hah\/8PyUwkoAmt\/WDA9gNNHKd\/kNbh0k\/RtO0vlYwOdpw2mHd7AbxWaKAK7XO7gUAn85Pl6FOtfswPuxm5EPGR4S8X96vw1WU+z\/ORxP8bJLltO7KqzOnNFYb1jU83eg==",
+    "signature": "MBVzrWDoL4zDcA5iW4tnlZrOjad8JZNDiSJW2WxNq95bbtyQmSQIkEAYTQdYxk+eHd\/q9hwRhdUoHuJ1KILfXXMkmZ1\/6ziOSw1nbvg45c4+3417VGOq17vo+nzh9NF3NHnP0MSzL6vsheC7f6TTEudqzFmcX4QbPeh3H\/XcyykdSlo4QqV\/DjRciG97sBy99bHwmV2\/We1gjFjeLuN368vm27T5rXk8abgK8Eu\/7sDBakwtmQ5+6pW2OtzylmHGqSOGXuaiQLuY9HQvv34+LttwrKfWcwaHsKjT84qJWVoE6wEUYrUNTGC\/lAMDQOCLDqgy\/Mryn5KTDnLyFqYMuw==",
     "certificate": "-----BEGIN CERTIFICATE-----\r\nMIIDCjCCAfICAhLsMA0GCSqGSIb3DQEBCwUAMHsxCzAJBgNVBAYTAkRFMRswGQYD\r\nVQQIDBJCYWRlbi1XdWVydHRlbWJlcmcxFzAVBgNVBAoMDk5leHRjbG91ZCBHbWJI\r\nMTYwNAYDVQQDDC1OZXh0Y2xvdWQgQ29kZSBTaWduaW5nIEludGVybWVkaWF0ZSBB\r\ndXRob3JpdHkwHhcNMjYwMjAyMTU0MTQ4WhcNMzYwNTEwMTU0MTQ4WjAaMRgwFgYD\r\nVQQDDA9jb250cmFjdG1hbmFnZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\r\nAoIBAQC5R5Qp4Wm5Q2dDNSyN33MAIianNamIQCzLP9TqKbvrHUvhIb5XojZizo6H\r\n\/3jZTpRau83rYewLsJiEDgyuKdLiFYiuas5bdU6lie\/X2V21BeowwqlOGoVaiXwE\r\nvDmarjfhHAMIbW\/H8IyT1PEAvSLZLl8vofGDibsovGacRfBlj\/WhTQSVoFyc1N32\r\nivUM\/rta10BLN1JurgXjN6s33uqW19bTms+y9zO3C1Wpq\/KhwgVNIcoRdio4uA0e\r\nSAnQQHE1HUieBDydwP52fFnlqf4l1OjP\/WLeNrwFNWdCBqZIEZsynASFHae\/cyOs\r\nqebHseLaDRkySMmHLv2hsH\/\/dm6rAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAD08\r\nvS9I3TjEfSfcF45IdanGUsrSMm7rCdQpdVaY7xyB8w6BymWgv9q0I4rATyCYgNIU\r\nN8TNGNNXHutvlOJ8ACdTxDs0bitSM0VY0lNqCVInRIT3W8UfoOmvpVG6Xc5eEi1Z\r\nO1JLVd\/lH6n86cHnkcMeSH265JwdGfKFF86g94YfDJ+uU4OLwaAnmeJaWTCHn3Nm\r\nFXWrSzvpPU7y47yCAJok+1Na0pXx5Y6BxId95ZBSBKPXmFpANvU58v52Ed+6npl5\r\nc6wfDUcb1088N4NBP8j76ci5BB358vTSwjAV5moyFUZO63vPRRcfP1Rq03LUfWyi\r\ndg1AcSTaDHL7vhQm19M=\r\n-----END CERTIFICATE-----"
 }
