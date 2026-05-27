@@ -25,7 +25,7 @@
 		</div>
 		<div class="contract-list-item__actions">
 			<NcButton v-if="contract.contractFolder"
-				type="tertiary"
+				variant="tertiary"
 				:title="t('contractmanager', 'Vertragsordner öffnen')"
 				@click.stop="openFolder">
 				<template #icon>
@@ -33,7 +33,7 @@
 				</template>
 			</NcButton>
 			<NcButton v-if="contract.mainDocument"
-				type="tertiary"
+				variant="tertiary"
 				:title="t('contractmanager', 'Vertragsdokument öffnen')"
 				@click.stop="openDocument">
 				<template #icon>
@@ -103,11 +103,12 @@
 <script>
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
-import { mapGetters, mapActions } from 'vuex'
-import NcActions from '@nextcloud/vue/dist/Components/NcActions.js'
-import NcActionButton from '@nextcloud/vue/dist/Components/NcActionButton.js'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
+import { mapState, mapActions } from 'pinia'
+import { useContractsStore } from '../store/contracts'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
 import RestoreIcon from 'vue-material-design-icons/Restore.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
@@ -163,7 +164,7 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters('contracts', ['isAdmin', 'canEdit']),
+		...mapState(useContractsStore, ['isAdmin', 'canEdit']),
 		cancellationDeadline() {
 			if (this.contract.status !== 'active') {
 				return null
@@ -184,14 +185,14 @@ export default {
 				},
 				{
 					label: t('contractmanager', 'In Papierkorb'),
-					type: 'warning',
+					variant: 'warning',
 					callback: () => { this.handleDelete() },
 				},
 			]
 		},
 	},
 	methods: {
-		...mapActions('contracts', ['deleteContract']),
+		...mapActions(useContractsStore, ['deleteContract']),
 		formatDate,
 		formatPeriod,
 		onEdit() {

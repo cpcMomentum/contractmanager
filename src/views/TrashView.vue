@@ -3,7 +3,7 @@
 		<div class="trash-view__header">
 			<h2>{{ t('contractmanager', 'Papierkorb') }}</h2>
 			<NcButton v-if="isAdmin && trashedContracts.length > 0"
-				type="error"
+				variant="error"
 				@click="confirmEmptyTrash">
 				<template #icon>
 					<DeleteIcon :size="20" />
@@ -50,7 +50,7 @@
 				<NcButton @click="showDeleteDialog = false">
 					{{ t('contractmanager', 'Abbrechen') }}
 				</NcButton>
-				<NcButton type="error" @click="handlePermanentDelete">
+				<NcButton variant="error" @click="handlePermanentDelete">
 					{{ t('contractmanager', 'Endgültig löschen') }}
 				</NcButton>
 			</template>
@@ -64,7 +64,7 @@
 				<NcButton @click="showEmptyTrashDialog = false">
 					{{ t('contractmanager', 'Abbrechen') }}
 				</NcButton>
-				<NcButton type="error" @click="handleEmptyTrash">
+				<NcButton variant="error" @click="handleEmptyTrash">
 					{{ t('contractmanager', 'Papierkorb leeren') }}
 				</NcButton>
 			</template>
@@ -73,12 +73,13 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
-import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
+import { mapState, mapActions } from 'pinia'
+import { useContractsStore } from '../store/contracts'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { showSuccess, showError } from '@nextcloud/dialogs'
@@ -102,7 +103,7 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters('contracts', {
+		...mapState(useContractsStore, {
 			trashedContracts: 'trashedContracts',
 			loading: 'isLoading',
 			isAdmin: 'isAdmin',
@@ -113,7 +114,7 @@ export default {
 		this.fetchPermissions()
 	},
 	methods: {
-		...mapActions('contracts', [
+		...mapActions(useContractsStore, [
 			'fetchTrashedContracts',
 			'fetchPermissions',
 			'restoreFromTrash',

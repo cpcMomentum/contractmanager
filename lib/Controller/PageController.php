@@ -34,7 +34,7 @@ class PageController extends Controller {
 	 */
 	public function index(): TemplateResponse {
 		Util::addScript(Application::APP_ID, 'contractmanager-main');
-		Util::addStyle(Application::APP_ID, 'main');
+		Util::addStyle(Application::APP_ID, 'contractmanager-main');
 
 		if (class_exists(LoadViewer::class)) {
 			$this->eventDispatcher->dispatchTyped(new LoadViewer());

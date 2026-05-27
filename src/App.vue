@@ -2,7 +2,7 @@
 	<NcContent app-name="contractmanager">
 		<NcAppNavigation>
 			<div class="nav-search">
-				<NcTextField :value.sync="searchQuery"
+				<NcTextField v-model="searchQuery"
 					:label="t('contractmanager', 'Verträge durchsuchen …')"
 					:show-trailing-button="searchQuery !== ''"
 					trailing-button-icon="close"
@@ -20,9 +20,7 @@
 					<FileDocumentIcon :size="20" />
 				</template>
 				<template #counter>
-					<NcCounterBubble v-if="contractCount > 0">
-						{{ contractCount }}
-					</NcCounterBubble>
+					<NcCounterBubble v-if="contractCount > 0" :count="contractCount" />
 				</template>
 			</NcAppNavigationItem>
 
@@ -37,9 +35,7 @@
 					<TagIcon :size="20" />
 				</template>
 				<template #counter>
-					<NcCounterBubble v-if="getCategoryContractCount(category.id) > 0">
-						{{ getCategoryContractCount(category.id) }}
-					</NcCounterBubble>
+					<NcCounterBubble v-if="getCategoryContractCount(category.id) > 0" :count="getCategoryContractCount(category.id)" />
 				</template>
 			</NcAppNavigationItem>
 
@@ -52,9 +48,7 @@
 					<TagIcon :size="20" />
 				</template>
 				<template #counter>
-					<NcCounterBubble>
-						{{ uncategorizedCount }}
-					</NcCounterBubble>
+					<NcCounterBubble :count="uncategorizedCount" />
 				</template>
 			</NcAppNavigationItem>
 
@@ -65,9 +59,7 @@
 					<ArchiveIcon :size="20" />
 				</template>
 				<template #counter>
-					<NcCounterBubble v-if="archivedCount > 0">
-						{{ archivedCount }}
-					</NcCounterBubble>
+					<NcCounterBubble v-if="archivedCount > 0" :count="archivedCount" />
 				</template>
 			</NcAppNavigationItem>
 
@@ -79,9 +71,7 @@
 					<DeleteIcon :size="20" />
 				</template>
 				<template #counter>
-					<NcCounterBubble v-if="trashedCount > 0">
-						{{ trashedCount }}
-					</NcCounterBubble>
+					<NcCounterBubble v-if="trashedCount > 0" :count="trashedCount" />
 				</template>
 			</NcAppNavigationItem>
 
@@ -106,12 +96,12 @@
 </template>
 
 <script>
-import NcContent from '@nextcloud/vue/dist/Components/NcContent.js'
-import NcAppNavigation from '@nextcloud/vue/dist/Components/NcAppNavigation.js'
-import NcAppNavigationItem from '@nextcloud/vue/dist/Components/NcAppNavigationItem.js'
-import NcAppContent from '@nextcloud/vue/dist/Components/NcAppContent.js'
-import NcCounterBubble from '@nextcloud/vue/dist/Components/NcCounterBubble.js'
-import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
+import NcContent from '@nextcloud/vue/components/NcContent'
+import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
+import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
+import NcAppContent from '@nextcloud/vue/components/NcAppContent'
+import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import MagnifyIcon from 'vue-material-design-icons/Magnify.vue'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
@@ -122,7 +112,9 @@ import ContractList from './views/ContractList.vue'
 import ArchiveView from './views/ArchiveView.vue'
 import TrashView from './views/TrashView.vue'
 import SettingsView from './views/SettingsView.vue'
-import { mapGetters, mapActions } from 'vuex'
+import { mapState, mapActions } from 'pinia'
+import { useContractsStore } from './store/contracts'
+import { useCategoriesStore } from './store/categories'
 
 export default {
 	name: 'App',
@@ -152,8 +144,8 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters('categories', ['allCategories']),
-		...mapGetters('contracts', ['allContracts', 'archivedContracts', 'trashedContracts', 'canEdit']),
+		...mapState(useCategoriesStore, ['allCategories']),
+		...mapState(useContractsStore, ['allContracts', 'archivedContracts', 'trashedContracts', 'canEdit']),
 		contractCount() {
 			return this.allContracts.filter(c => c.status !== 'archived').length
 		},
@@ -168,15 +160,12 @@ export default {
 		},
 	},
 	created() {
-		this.fetchCategories()
-		this.fetchContracts()
 		this.fetchArchivedContracts()
 		this.fetchPermissions()
 		this.fetchTrashedContracts()
 	},
 	methods: {
-		...mapActions('categories', ['fetchCategories']),
-		...mapActions('contracts', ['fetchContracts', 'fetchArchivedContracts', 'fetchPermissions', 'fetchTrashedContracts']),
+		...mapActions(useContractsStore, ['fetchArchivedContracts', 'fetchPermissions', 'fetchTrashedContracts']),
 		showAllContracts() {
 			this.currentView = 'contracts'
 			this.selectedCategoryId = null

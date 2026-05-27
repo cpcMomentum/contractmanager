@@ -38,7 +38,7 @@
 				<NcButton @click="showRestoreDialog = false">
 					{{ t('contractmanager', 'Abbrechen') }}
 				</NcButton>
-				<NcButton type="primary" @click="confirmRestore">
+				<NcButton variant="primary" @click="confirmRestore">
 					{{ t('contractmanager', 'Wiederherstellen') }}
 				</NcButton>
 			</template>
@@ -47,11 +47,13 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
+import { mapState, mapActions } from 'pinia'
+import { useContractsStore } from '../store/contracts'
+import { useCategoriesStore } from '../store/categories'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import ContractForm from '../components/ContractForm.vue'
@@ -77,7 +79,7 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters('contracts', {
+		...mapState(useContractsStore, {
 			archivedContracts: 'archivedContracts',
 			loading: 'isLoading',
 		}),
@@ -87,8 +89,8 @@ export default {
 		this.fetchCategories()
 	},
 	methods: {
-		...mapActions('contracts', ['fetchArchivedContracts', 'restoreContract', 'updateContract']),
-		...mapActions('categories', ['fetchCategories']),
+		...mapActions(useContractsStore, ['fetchArchivedContracts', 'restoreContract', 'updateContract']),
+		...mapActions(useCategoriesStore, ['fetchCategories']),
 
 		handleContractClick(contract) {
 			this.editingContract = contract

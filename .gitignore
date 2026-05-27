@@ -6,6 +6,7 @@ vendor/
 # js/
 css/*.css
 css/*.css.map
+dist/
 
 # IDE
 .idea/
