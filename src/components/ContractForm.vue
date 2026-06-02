@@ -514,9 +514,9 @@ import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUti
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
-import ContractService from '../services/ContractService.js'
-import ExtractionService from '../services/ExtractionService.js'
-import SettingsService from '../services/SettingsService.js'
+import ContractService from '../services/ContractService'
+import ExtractionService from '../services/ExtractionService'
+import SettingsService from '../services/SettingsService'
 
 export default {
 	name: 'ContractForm',

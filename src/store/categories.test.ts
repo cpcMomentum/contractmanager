@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import CategoryService from '../services/CategoryService.js'
+import CategoryService from '../services/CategoryService'
 import { useCategoriesStore } from './categories'
 
-vi.mock('../services/CategoryService.js', () => ({
+vi.mock('../services/CategoryService', () => ({
 	default: {
 		getAll: vi.fn(),
 		create: vi.fn(),

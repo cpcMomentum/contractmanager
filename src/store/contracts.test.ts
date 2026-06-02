@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import ContractService from '../services/ContractService.js'
+import ContractService from '../services/ContractService'
 import { useContractsStore, type Contract } from './contracts'
 
-vi.mock('../services/ContractService.js', () => ({
+vi.mock('../services/ContractService', () => ({
 	default: {
 		getAll: vi.fn(),
 		getArchived: vi.fn(),

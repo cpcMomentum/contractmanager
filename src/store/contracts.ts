@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import ContractService from '../services/ContractService.js'
+import ContractService from '../services/ContractService'
 
 export type ContractStatus = 'active' | 'cancelled' | 'ended'
 export type ContractType = 'fixed' | 'auto_renewal'
