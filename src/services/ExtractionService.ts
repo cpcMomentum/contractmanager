@@ -3,10 +3,21 @@ import { generateUrl } from '@nextcloud/router'
 
 export interface ExtractionStatus {
 	configured: boolean
+	provider?: string
+}
+
+export interface ExtractionData {
+	[key: string]: unknown
+	confidence?: number
+	extractionNotes?: string
 }
 
 export interface ExtractionResult {
-	[key: string]: unknown
+	success?: boolean
+	data?: ExtractionData
+	error?: string
+	isScanned?: boolean
+	pageCount?: number
 }
 
 export default {
