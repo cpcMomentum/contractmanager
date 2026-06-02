@@ -14,4 +14,13 @@ module.exports = {
 		// explicitly unused parameters kept for binding/contract parity.
 		'no-void': 'off',
 	},
+	overrides: [
+		{
+			// Test files and the shared test setup are allowed to import devDependencies.
+			files: ['src/**/*.{test,spec}.{ts,js}', 'src/test/**/*.{ts,js}'],
+			rules: {
+				'n/no-unpublished-import': 'off',
+			},
+		},
+	],
 }
