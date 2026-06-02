@@ -79,10 +79,11 @@ export const useContractsStore = defineStore('contracts', () => {
 	}
 
 	async function fetchPermissions(): Promise<void> {
+		error.value = null
 		try {
 			permissions.value = await ContractService.getPermissions()
 		} catch (e) {
-			console.error('Failed to fetch permissions:', e)
+			error.value = (e as Error).message
 		}
 	}
 
