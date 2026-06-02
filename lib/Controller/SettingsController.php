@@ -28,7 +28,7 @@ class SettingsController extends Controller {
 	}
 
 	// ========================================
-	// User Settings (mit @NoAdminRequired)
+	// User Settings (mit #[NoAdminRequired])
 	// ========================================
 
 	/**
@@ -91,12 +91,12 @@ class SettingsController extends Controller {
 	}
 
 	// ========================================
-	// Admin Settings (ohne @NoAdminRequired = nur Admins)
+	// Admin Settings (ohne #[NoAdminRequired] = nur Admins)
 	// ========================================
 
 	/**
 	 * Get admin settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 *
 	 * Note: User access control is now handled via Nextcloud's native
 	 * group-based app access (Admin → Apps → "Enable only for specific groups")
@@ -118,7 +118,7 @@ class SettingsController extends Controller {
 
 	/**
 	 * Update admin settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 */
 	public function updateAdmin(
 		?string $talkChatToken = null,
@@ -194,7 +194,7 @@ class SettingsController extends Controller {
 
 	/**
 	 * Get permission settings (editors and viewers)
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 */
 	public function getPermissions(): JSONResponse {
 		return new JSONResponse([
@@ -205,7 +205,7 @@ class SettingsController extends Controller {
 
 	/**
 	 * Update permission settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 *
 	 * @param string[] $editors Array of "group:groupId" or "user:userId" entries
 	 * @param string[] $viewers Array of "group:groupId" or "user:userId" entries
@@ -231,7 +231,7 @@ class SettingsController extends Controller {
 	/**
 	 * Search for users and groups
 	 * Used by the permission picker in settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 */
 	public function searchPrincipals(string $query = ''): JSONResponse {
 		$results = [];
