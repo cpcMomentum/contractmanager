@@ -2,12 +2,49 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import ContractService from '../services/ContractService.js'
 
+export type ContractStatus = 'active' | 'cancelled' | 'ended'
+export type ContractType = 'fixed' | 'auto_renewal'
+export type AmountType = 'netto' | 'brutto'
+
+/**
+ * Shape mirrors what the backend serializes in `Contract::jsonSerialize()`
+ * (lib/Db/Contract.php). Dates come back as YYYY-MM-DD strings;
+ * timestamps (`deletedAt`, `createdAt`, `updatedAt`) as ISO 8601.
+ *
+ * All fields except `id` are optional because partial payloads occur in
+ * update flows and the create form.
+ */
 export interface Contract {
 	id: number
-	status?: string
+	name?: string
+	vendor?: string
+	status?: ContractStatus
 	categoryId?: number | null
+	startDate?: string | null
+	endDate?: string | null
+	cancelledOn?: string | null
+	cancelledTo?: string | null
+	cancellationPeriod?: string | null
+	contractType?: ContractType
+	renewalPeriod?: string | null
+	cost?: string | null
+	amountType?: AmountType
+	currency?: string | null
+	costInterval?: string | null
+	contractFolder?: string | null
+	mainDocument?: string | null
+	reminderEnabled?: boolean
+	reminderDays?: number | null
+	notes?: string | null
+	customField1?: string | null
+	customField2?: string | null
+	customField3?: string | null
 	archived?: boolean
-	[key: string]: unknown
+	isPrivate?: boolean
+	deletedAt?: string | null
+	createdBy?: string
+	createdAt?: string
+	updatedAt?: string
 }
 
 export interface Permissions {
