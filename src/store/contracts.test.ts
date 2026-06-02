@@ -95,4 +95,14 @@ describe('contracts store', () => {
 		expect(store.canEdit).toBe(true)
 		expect(store.canDeletePermanently).toBe(true)
 	})
+
+	it('fetchPermissions records the error message on failure', async () => {
+		mockedService.getPermissions.mockRejectedValue(new Error('permissions backend down'))
+		const store = useContractsStore()
+
+		await store.fetchPermissions()
+
+		expect(store.error).toBe('permissions backend down')
+		expect(store.isAdmin).toBe(false)
+	})
 })
