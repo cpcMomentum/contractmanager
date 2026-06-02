@@ -151,6 +151,7 @@ import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 
@@ -218,6 +219,7 @@ export default {
 			filterContractType: filters.contractType || null,
 			statusOptions: [
 				{ id: 'active', label: t('contractmanager', 'Aktiv') },
+				{ id: 'ending_soon', label: t('contractmanager', 'Kündigung naht') },
 				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
 				{ id: 'ended', label: t('contractmanager', 'Abgelaufen') },
 			],
@@ -272,9 +274,17 @@ export default {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
 
-			// Status-Filter (leer = kein Filter = alle anzeigen)
+			// Status-Filter (leer = kein Filter = alle anzeigen).
+			// "ending_soon" is a virtual option: it matches active contracts whose
+			// cancellation deadline is inside the first-reminder window — see
+			// utils/contractStatus.isEndingSoon.
 			if (this.filterStatuses.length > 0) {
-				filtered = filtered.filter(c => this.filterStatuses.includes(c.status))
+				const wantsEndingSoon = this.filterStatuses.includes('ending_soon')
+				const realStatuses = this.filterStatuses.filter(id => id !== 'ending_soon')
+				filtered = filtered.filter(c => {
+					if (wantsEndingSoon && isEndingSoon(c)) return true
+					return realStatuses.includes(c.status)
+				})
 			}
 
 			// Vertragspartner-Filter
