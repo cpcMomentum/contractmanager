@@ -1359,8 +1359,7 @@ export default {
 	}
 }
 
-// Cap the resizable notes textarea so the resize handle stays
-// inside the dialog viewport and never slips behind the modal footer.
+// max-height keeps the resize handle inside the dialog viewport and above the modal footer.
 .notes-field :deep(textarea) {
 	min-height: 6em;
 	max-height: 50vh;
