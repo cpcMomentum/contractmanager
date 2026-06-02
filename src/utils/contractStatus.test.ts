@@ -81,6 +81,11 @@ describe('isEndingSoon', () => {
 		expect(isEndingSoon(contract)).toBe(false)
 	})
 
+	it('is false when the contract has no end date', () => {
+		const contract = autoRenewal({ endDate: null })
+		expect(isEndingSoon(contract)).toBe(false)
+	})
+
 	it('uses the supplied default reminder days when no override is set', () => {
 		// Deadline 25 days out — outside default 14d but inside an explicit 30d default.
 		const contract = autoRenewal({ endDate: daysFromNow(55), cancellationPeriod: '30 days' })

@@ -95,6 +95,7 @@
 			<ContractListItem v-for="contract in contracts"
 				:key="contract.id"
 				:contract="contract"
+				:default-reminder-days="defaultReminderDays"
 				@edit="handleEdit"
 				@duplicate="handleDuplicate"
 				@view="handleView"
@@ -151,7 +152,7 @@ import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { calculateCancellationDeadline } from '../utils/periodUtils.js'
-import { isEndingSoon } from '../utils/contractStatus'
+import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 
@@ -217,6 +218,10 @@ export default {
 			filterVendor: filters.vendor || null,
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
+			// Window the badge / filter uses for "Kündigung naht". Defaults to the
+			// constant in utils/contractStatus; gets overridden once the admin
+			// setting comes back from the user-settings endpoint.
+			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
 			statusOptions: [
 				{ id: 'active', label: t('contractmanager', 'Aktiv') },
 				{ id: 'ending_soon', label: t('contractmanager', 'Kündigung naht') },
@@ -281,8 +286,9 @@ export default {
 			if (this.filterStatuses.length > 0) {
 				const wantsEndingSoon = this.filterStatuses.includes('ending_soon')
 				const realStatuses = this.filterStatuses.filter(id => id !== 'ending_soon')
+				const reminderDays = this.defaultReminderDays
 				filtered = filtered.filter(c => {
-					if (wantsEndingSoon && isEndingSoon(c)) return true
+					if (wantsEndingSoon && isEndingSoon(c, reminderDays)) return true
 					return realStatuses.includes(c.status)
 				})
 			}
@@ -302,6 +308,7 @@ export default {
 	},
 	created() {
 		this.fetchContracts()
+		this.loadReminderWindow()
 		this.fetchCategories()
 		if (this.hasActiveFilters) {
 			this.showFilters = true
@@ -310,6 +317,20 @@ export default {
 	methods: {
 		...mapActions(useContractsStore, ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
 		...mapActions(useCategoriesStore, ['fetchCategories']),
+
+		async loadReminderWindow() {
+			try {
+				const settings = await SettingsService.getUserSettings()
+				const days = Number(settings.reminderDays1)
+				if (Number.isFinite(days) && days > 0) {
+					this.defaultReminderDays = days
+				}
+			} catch (e) {
+				// Falls die Settings nicht erreichbar sind, bleibt der Default
+				// (DEFAULT_REMINDER_DAYS_1) bestehen — kein Blocker für die Liste.
+				console.debug('Failed to load reminder window setting:', e)
+			}
+		},
 
 		handleEdit(contract) {
 			this.editingContract = contract

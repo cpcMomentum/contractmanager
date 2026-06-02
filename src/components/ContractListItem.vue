@@ -167,6 +167,12 @@ export default {
 			type: String,
 			default: 'default',
 		},
+		// First-reminder window in days (admin setting). When omitted the
+		// helper falls back to its built-in default.
+		defaultReminderDays: {
+			type: Number,
+			default: undefined,
+		},
 	},
 	emits: ['edit', 'view', 'duplicate', 'archive', 'restore', 'delete', 'deletePermanently'],
 	data() {
@@ -189,7 +195,7 @@ export default {
 			})
 		},
 		endingSoon() {
-			return isEndingSoon(this.contract)
+			return isEndingSoon(this.contract, this.defaultReminderDays)
 		},
 		expiredFixed() {
 			return isExpiredFixed(this.contract)

@@ -47,6 +47,10 @@ class SettingsController extends Controller {
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
+			// App-globale Werte, die das Frontend zur Berechnung von "Kündigung naht"
+			// braucht. Read-only für Nicht-Admins.
+			'reminderDays1' => $this->settingsService->getReminderDays1(),
+			'reminderDays2' => $this->settingsService->getReminderDays2(),
 		]);
 	}
 
