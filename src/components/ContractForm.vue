@@ -431,7 +431,7 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Notizen') }}</h3>
 
-					<div class="form-row">
+					<div class="form-row notes-field">
 						<!-- eslint-disable vue/no-v-html -- linkifyText escapes HTML before linkifying -->
 						<div v-if="readOnly && form.notes"
 							class="notes-readonly"
@@ -1357,6 +1357,13 @@ export default {
 			text-decoration: none;
 		}
 	}
+}
+
+// Cap the resizable notes textarea so the resize handle stays
+// inside the dialog viewport and never slips behind the modal footer.
+.notes-field :deep(textarea) {
+	min-height: 6em;
+	max-height: 50vh;
 }
 
 .selected-path {
