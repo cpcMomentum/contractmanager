@@ -5,7 +5,7 @@
 				<a class="contract-name" href="#" @click.prevent="onEdit">
 					{{ contract.name }}
 				</a>
-				<StatusBadge :status="contract.status" />
+				<StatusBadge v-if="contract.status" :status="contract.status" />
 				<span v-if="contract.isPrivate" class="private-badge" :title="t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')">
 					<LockIcon :size="16" />
 					{{ t('contractmanager', 'Privat') }}
