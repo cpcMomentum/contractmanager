@@ -240,10 +240,10 @@ export default {
 			return [...new Set(vendors)].sort((a, b) => a.localeCompare(b))
 		},
 		activeSortLabel() {
-				const option = this.sortOptions.find(o => o.key === this.sortBy)
-				return option ? option.label : ''
-			},
-			hasActiveFilters() {
+			const option = this.sortOptions.find(o => o.key === this.sortBy)
+			return option ? option.label : ''
+		},
+		hasActiveFilters() {
 			if (this.filterVendor) return true
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true

@@ -14,6 +14,11 @@ export default {
 		return response.data
 	},
 
+	/**
+	 * @param {number} id
+	 * @param {string} name
+	 * @param {number | null | undefined} [sortOrder]
+	 */
 	async update(id, name, sortOrder = null) {
 		const response = await axios.put(`${baseUrl}/${id}`, { name, sortOrder })
 		return response.data

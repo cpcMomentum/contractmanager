@@ -82,7 +82,7 @@
 				<NcActionButton v-if="mode === 'trash' && isAdmin"
 					class="delete-action"
 					:close-after-click="true"
-					@click="$emit('delete-permanently', contract)">
+					@click="$emit('deletePermanently', contract)">
 					<template #icon>
 						<DeleteForeverIcon :size="20" />
 					</template>
@@ -157,7 +157,7 @@ export default {
 			default: 'default',
 		},
 	},
-	emits: ['edit', 'view', 'duplicate', 'archive', 'restore', 'delete', 'delete-permanently'],
+	emits: ['edit', 'view', 'duplicate', 'archive', 'restore', 'delete', 'deletePermanently'],
 	data() {
 		return {
 			showDeleteDialog: false,
