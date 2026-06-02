@@ -176,7 +176,7 @@ export default {
 		},
 		getCategoryContractCount(categoryId) {
 			return this.allContracts.filter(
-				c => c.status !== 'archived' && c.categoryId === categoryId
+				c => c.status !== 'archived' && c.categoryId === categoryId,
 			).length
 		},
 	},
