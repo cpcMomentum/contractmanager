@@ -834,7 +834,7 @@ export default {
 				reminderDays: contract.reminderDays ? String(contract.reminderDays) : '',
 				notes: contract.notes || '',
 				amountType: contract.amountType || 'netto',
-				isPrivate: contract.isPrivate === true || contract.isPrivate === 1,
+				isPrivate: contract.isPrivate === true,
 				customField1: contract.customField1 || '',
 				customField2: contract.customField2 || '',
 				customField3: contract.customField3 || '',
