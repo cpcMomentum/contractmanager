@@ -152,7 +152,7 @@ import CloseIcon from 'vue-material-design-icons/Close.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { calculateCancellationDeadline } from '../utils/periodUtils.js'
 import ContractForm from '../components/ContractForm.vue'
-import SettingsService from '../services/SettingsService.js'
+import SettingsService from '../services/SettingsService'
 
 export default {
 	name: 'ContractList',

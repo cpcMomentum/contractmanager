@@ -361,7 +361,7 @@ import CheckIcon from 'vue-material-design-icons/Check.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import AccountIcon from 'vue-material-design-icons/Account.vue'
 import AccountGroupIcon from 'vue-material-design-icons/AccountGroup.vue'
-import SettingsService from '../services/SettingsService.js'
+import SettingsService from '../services/SettingsService'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
 

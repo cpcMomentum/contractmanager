@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import ContractService from '../services/ContractService.js'
+import ContractService, { type Permissions } from '../services/ContractService'
 
 export type ContractStatus = 'active' | 'cancelled' | 'ended'
 export type ContractType = 'fixed' | 'auto_renewal'
@@ -47,13 +47,7 @@ export interface Contract {
 	updatedAt?: string
 }
 
-export interface Permissions {
-	isAdmin: boolean
-	isEditor: boolean
-	isViewer: boolean
-	canEdit: boolean
-	canDeletePermanently: boolean
-}
+export type { Permissions }
 
 export const useContractsStore = defineStore('contracts', () => {
 	const contracts = ref<Contract[]>([])

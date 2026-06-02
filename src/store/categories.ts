@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import CategoryService from '../services/CategoryService.js'
+import CategoryService from '../services/CategoryService'
 
 export interface Category {
 	id: number
