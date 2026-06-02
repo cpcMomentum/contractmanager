@@ -43,9 +43,6 @@ export default defineConfig({
           }
           return 'css/[name][extname]'
         },
-        globals: {
-          vue: 'Vue',
-        },
       },
     },
   },
