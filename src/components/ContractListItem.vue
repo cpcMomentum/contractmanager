@@ -372,13 +372,13 @@ export default {
 	cursor: help;
 
 	&.status-ending-soon {
-		background-color: #fff4e0;
-		color: #92400e;
+		background-color: var(--color-warning-hover, #fff4e0);
+		color: var(--color-warning-text, #92400e);
 	}
 
 	&.status-expired {
-		background-color: #fee2e2;
-		color: #991b1b;
+		background-color: var(--color-error-hover, #fee2e2);
+		color: var(--color-error-text, #991b1b);
 	}
 }
 
