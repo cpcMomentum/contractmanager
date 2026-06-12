@@ -284,7 +284,13 @@ class ReminderService {
 				$date->modify('last day of previous month');
 			}
 		} elseif ($unit === 'year') {
+			// Same leap-year safety as months: 2024-02-29 - 1 year → 2023-02-28 not 2023-03-01
+			$originalDay = (int) $date->format('d');
 			$date->modify("-{$value} year");
+			$newDay = (int) $date->format('d');
+			if ($originalDay > 28 && $newDay < $originalDay) {
+				$date->modify('last day of previous month');
+			}
 		} elseif ($unit === 'week') {
 			$date->modify("-{$value} week");
 		} else {
