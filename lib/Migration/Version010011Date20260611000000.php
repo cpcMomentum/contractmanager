@@ -58,7 +58,8 @@ class Version010011Date20260611000000 extends SimpleMigrationStep {
 		if ($schema->hasTable('contractmgr_reminders')) {
 			$table = $schema->getTable('contractmgr_reminders');
 			if (!$table->hasIndex('cm_reminder_cts_idx')) {
-				$table->addIndex(['contract_id', 'reminder_type', 'sent_to'], 'cm_reminder_cts_idx');
+				// Unique: prevents duplicate reminders if background jobs ever overlap
+				$table->addUniqueIndex(['contract_id', 'reminder_type', 'sent_to'], 'cm_reminder_cts_idx');
 			}
 		}
 
