@@ -16,34 +16,34 @@ use Psr\Log\LoggerInterface;
  */
 class ReminderJob extends TimedJob {
 
-    public function __construct(
-        ITimeFactory $time,
-        private ReminderService $reminderService,
-        private LoggerInterface $logger,
-    ) {
-        parent::__construct($time);
+	public function __construct(
+		ITimeFactory $time,
+		private ReminderService $reminderService,
+		private LoggerInterface $logger,
+	) {
+		parent::__construct($time);
 
-        // Run every 6 hours (6 * 60 * 60 = 21600 seconds)
-        $this->setInterval(21600);
-    }
+		// Run every 6 hours (6 * 60 * 60 = 21600 seconds)
+		$this->setInterval(21600);
+	}
 
-    protected function run($argument): void {
-        $this->logger->info('Starting contract reminder check', [
-            'app' => Application::APP_ID,
-        ]);
+	protected function run($argument): void {
+		$this->logger->info('Starting contract reminder check', [
+			'app' => Application::APP_ID,
+		]);
 
-        try {
-            $remindersSent = $this->reminderService->checkAndSendReminders();
+		try {
+			$remindersSent = $this->reminderService->checkAndSendReminders();
 
-            $this->logger->info('Contract reminder check completed', [
-                'app' => Application::APP_ID,
-                'remindersSent' => $remindersSent,
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('Contract reminder check failed', [
-                'app' => Application::APP_ID,
-                'exception' => $e->getMessage(),
-            ]);
-        }
-    }
+			$this->logger->info('Contract reminder check completed', [
+				'app' => Application::APP_ID,
+				'remindersSent' => $remindersSent,
+			]);
+		} catch (\Exception $e) {
+			$this->logger->error('Contract reminder check failed', [
+				'app' => Application::APP_ID,
+				'exception' => $e->getMessage(),
+			]);
+		}
+	}
 }
