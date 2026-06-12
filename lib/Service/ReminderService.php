@@ -8,6 +8,7 @@ use DateTime;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
+use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Db\ReminderSent;
 use OCA\ContractManager\Db\ReminderSentMapper;
 use Psr\Log\LoggerInterface;
@@ -19,9 +20,10 @@ use Psr\Log\LoggerInterface;
  * - First reminder: X days before cancellation deadline (default: 14 days)
  * - Final reminder: Y days before cancellation deadline (default: 3 days)
  *
- * Notifications are sent via:
- * - Nextcloud Talk (if configured by admin)
- * - E-Mail (if enabled by user)
+ * Reminders are delivered per recipient: every user who may see the contract
+ * (subject to their personal mode and per-contract opt-out) is reminded via
+ * their own channels (e-mail and/or their personal Talk chat), using their own
+ * lead time. See docs/design-reminder-recipients.md (#157 + #172).
  */
 class ReminderService {
 
@@ -32,6 +34,8 @@ class ReminderService {
 		private TalkService $talkService,
 		private EmailService $emailService,
 		private LoggerInterface $logger,
+		private PermissionService $permissionService,
+		private ReminderOptOutMapper $optOutMapper,
 	) {
 	}
 
@@ -43,51 +47,123 @@ class ReminderService {
 	public function checkAndSendReminders(): int {
 		$remindersSent = 0;
 		$contracts = $this->contractMapper->findContractsNeedingReminder();
+		$accessUsers = $this->permissionService->getAllUsersWithAccess();
 
 		foreach ($contracts as $contract) {
-			// Pre-compute to avoid double DB query when both windows are active
-			$sendFinal = $this->shouldSendFinalReminder($contract);
-
-			// Check for first reminder — skip if final reminder is also due to avoid two emails on the same day
-			if ($this->shouldSendFirstReminder($contract) && !$sendFinal) {
-				try {
-					$this->sendReminders($contract, 'first');
-					$this->markReminderSent($contract, 'first');
-					$remindersSent++;
-					$this->logger->debug('Sent first cancellation reminder', [
-						'app' => Application::APP_ID,
-						'contractId' => $contract->getId(),
-					]);
-				} catch (\Exception $e) {
-					$this->logger->error('Failed to send first reminder: ' . $e->getMessage(), [
-						'app' => Application::APP_ID,
-						'contractId' => $contract->getId(),
-						'exception' => $e,
-					]);
-				}
+			if (!$this->isContractEligibleForReminder($contract)) {
+				continue;
+			}
+			if ($this->getReminderDeadline($contract) === null) {
+				continue;
 			}
 
-			// Check for final reminder
-			if ($sendFinal) {
-				try {
-					$this->sendReminders($contract, 'final');
-					$this->markReminderSent($contract, 'final');
+			foreach ($this->getRecipients($contract, $accessUsers) as $userId) {
+				// Pre-compute to avoid double DB query when both windows are active
+				$sendFinal = $this->shouldSendFinalReminder($contract, $userId);
+
+				// Check for first reminder — skip if final reminder is also due to avoid two emails on the same day
+				if ($this->shouldSendFirstReminder($contract, $userId) && !$sendFinal) {
+					if ($this->deliverReminder($contract, $userId, 'first')) {
+						$remindersSent++;
+					}
+				}
+
+				// Check for final reminder
+				if ($sendFinal && $this->deliverReminder($contract, $userId, 'final')) {
 					$remindersSent++;
-					$this->logger->debug('Sent final cancellation reminder', [
-						'app' => Application::APP_ID,
-						'contractId' => $contract->getId(),
-					]);
-				} catch (\Exception $e) {
-					$this->logger->error('Failed to send final reminder: ' . $e->getMessage(), [
-						'app' => Application::APP_ID,
-						'contractId' => $contract->getId(),
-						'exception' => $e,
-					]);
 				}
 			}
 		}
 
 		return $remindersSent;
+	}
+
+	/**
+	 * Deliver a reminder to a single recipient and mark it sent.
+	 *
+	 * @return bool True if at least one channel delivered the reminder
+	 */
+	private function deliverReminder(Contract $contract, string $userId, string $type): bool {
+		try {
+			$delivered = $this->sendReminders($contract, $userId, $type);
+			if ($delivered) {
+				$this->markReminderSent($contract, $userId, $type);
+				$this->logger->debug('Sent cancellation reminder', [
+					'app' => Application::APP_ID,
+					'contractId' => $contract->getId(),
+					'type' => $type,
+				]);
+			}
+			return $delivered;
+		} catch (\Exception $e) {
+			$this->logger->error('Failed to send reminder: ' . $e->getMessage(), [
+				'app' => Application::APP_ID,
+				'contractId' => $contract->getId(),
+				'type' => $type,
+				'exception' => $e,
+			]);
+			return false;
+		}
+	}
+
+	/**
+	 * Determine which users should receive reminders for a contract.
+	 *
+	 * Single rule: a user is a recipient if they may see the contract,
+	 * their mode includes it, and they have not opted out.
+	 *
+	 * @param string[] $accessUsers Users with app access (admins + editors + viewers)
+	 * @return string[] Recipient user IDs
+	 */
+	private function getRecipients(Contract $contract, array $accessUsers): array {
+		// The creator is always a candidate, even if they currently lack a role.
+		$candidates = array_unique([...$accessUsers, $contract->getCreatedBy()]);
+		$optedOut = array_flip($this->optOutMapper->findOptedOutUsers($contract->getId()));
+
+		$recipients = [];
+		foreach ($candidates as $userId) {
+			if ($userId === '' || isset($optedOut[$userId])) {
+				continue;
+			}
+			if (!$this->permissionService->canUserSeeContract($contract, $userId)) {
+				continue;
+			}
+			$mode = $this->settingsService->getUserReminderMode($userId);
+			if ($mode === SettingsService::REMINDER_MODE_NONE) {
+				continue;
+			}
+			if ($mode === SettingsService::REMINDER_MODE_OWN && $contract->getCreatedBy() !== $userId) {
+				continue;
+			}
+			$recipients[] = $userId;
+		}
+
+		return $recipients;
+	}
+
+	/**
+	 * Effective first-reminder lead time for a user:
+	 * personal setting > per-contract override > admin default.
+	 */
+	private function getEffectiveDays1(Contract $contract, string $userId): int {
+		$personal = $this->settingsService->getUserReminderDays1($userId);
+		if ($personal !== null) {
+			return $personal;
+		}
+		$override = $contract->getReminderDays();
+		if ($override !== null) {
+			return $override;
+		}
+		return $this->settingsService->getReminderDays1();
+	}
+
+	/**
+	 * Effective final-reminder lead time for a user:
+	 * personal setting > admin default. (No per-contract override for the final reminder.)
+	 */
+	private function getEffectiveDays2(string $userId): int {
+		$personal = $this->settingsService->getUserReminderDays2($userId);
+		return $personal ?? $this->settingsService->getReminderDays2();
 	}
 
 	/**
@@ -246,9 +322,9 @@ class ReminderService {
 	}
 
 	/**
-	 * Check if the first reminder should be sent for this contract
+	 * Check if the first reminder should be sent to a recipient for this contract
 	 */
-	public function shouldSendFirstReminder(Contract $contract): bool {
+	public function shouldSendFirstReminder(Contract $contract, string $userId): bool {
 		if (!$this->isContractEligibleForReminder($contract)) {
 			return false;
 		}
@@ -258,8 +334,8 @@ class ReminderService {
 			return false;
 		}
 
-		// Get reminder days - contract override or global setting
-		$reminderDays = $contract->getReminderDays() ?? $this->settingsService->getReminderDays1();
+		// Effective lead time: personal > contract override > admin default
+		$reminderDays = $this->getEffectiveDays1($contract, $userId);
 		$now = new DateTime();
 		$reminderDate = clone $deadline;
 		$reminderDate->modify("-{$reminderDays} days");
@@ -272,9 +348,9 @@ class ReminderService {
 			return false; // Too late, deadline passed
 		}
 
-		// Check if first reminder was already sent
+		// Check if first reminder was already sent to this recipient
 		$reminderType = $this->getReminderType($contract, 'first');
-		if ($this->reminderSentMapper->hasBeenSent($contract->getId(), $reminderType)) {
+		if ($this->reminderSentMapper->hasBeenSent($contract->getId(), $reminderType, $userId)) {
 			return false;
 		}
 
@@ -282,9 +358,9 @@ class ReminderService {
 	}
 
 	/**
-	 * Check if the final reminder should be sent for this contract
+	 * Check if the final reminder should be sent to a recipient for this contract
 	 */
-	public function shouldSendFinalReminder(Contract $contract): bool {
+	public function shouldSendFinalReminder(Contract $contract, string $userId): bool {
 		if (!$this->isContractEligibleForReminder($contract)) {
 			return false;
 		}
@@ -294,14 +370,13 @@ class ReminderService {
 			return false;
 		}
 
-		$reminderDays = $this->settingsService->getReminderDays2();
+		$days1 = $this->getEffectiveDays1($contract, $userId);
+		$reminderDays = $this->getEffectiveDays2($userId);
 
-		// If the contract has a custom first-reminder override that fires at the same time
-		// or later than the final reminder window, suppress the final reminder.
-		// Example: contract override = 2 days, global days2 = 3 days → final would fire
-		// before (or at) the first reminder, making it confusing and redundant.
-		$contractOverride = $contract->getReminderDays();
-		if ($contractOverride !== null && $contractOverride <= $reminderDays) {
+		// If the effective first reminder fires at the same time or later than the
+		// final reminder window, suppress the final reminder — it would be redundant
+		// and confusing. Example: per-contract override = 2 days, days2 = 3 days.
+		if ($days1 <= $reminderDays) {
 			return false;
 		}
 
@@ -317,9 +392,9 @@ class ReminderService {
 			return false; // Too late, deadline passed
 		}
 
-		// Check if final reminder was already sent
+		// Check if final reminder was already sent to this recipient
 		$reminderType = $this->getReminderType($contract, 'final');
-		if ($this->reminderSentMapper->hasBeenSent($contract->getId(), $reminderType)) {
+		if ($this->reminderSentMapper->hasBeenSent($contract->getId(), $reminderType, $userId)) {
 			return false;
 		}
 
@@ -360,30 +435,30 @@ class ReminderService {
 	}
 
 	/**
-	 * Send all configured reminders for a contract
+	 * Send the reminder for a contract to a single recipient via their channels.
 	 *
 	 * @param Contract $contract The contract
+	 * @param string $userId The recipient
 	 * @param string $reminderType 'first' or 'final'
+	 * @return bool True if at least one channel delivered the reminder
 	 */
-	private function sendReminders(Contract $contract, string $reminderType): void {
+	private function sendReminders(Contract $contract, string $userId, string $reminderType): bool {
 		$deadline = $this->getReminderDeadline($contract);
 		if ($deadline === null) {
-			return;
+			return false;
 		}
 
 		$deadlineFormatted = $deadline->format('d.m.Y');
-		$userId = $contract->getCreatedBy();
 		$contractType = $contract->getContractType();
+		$delivered = false;
 
-		// 1. Send Talk message if configured
-		if ($this->talkService->isTalkAvailable() && $this->talkService->isTalkConfigured()) {
+		// 1. Send to the user's personal Talk chat if they configured one
+		$talkToken = $this->settingsService->getUserTalkChatToken($userId);
+		if ($talkToken !== null && $this->talkService->isTalkAvailable()) {
 			try {
-				$this->talkService->sendReminderMessage(
-					$contract->getName(),
-					$deadlineFormatted,
-					$reminderType,
-					$contractType
-				);
+				if ($this->talkService->sendReminderMessage($talkToken, $contract->getName(), $deadlineFormatted, $reminderType, $contractType)) {
+					$delivered = true;
+				}
 			} catch (\Exception $e) {
 				$this->logger->warning('Failed to send Talk reminder: ' . $e->getMessage(), [
 					'app' => Application::APP_ID,
@@ -392,10 +467,12 @@ class ReminderService {
 			}
 		}
 
-		// 2. Send E-Mail if user has enabled it
+		// 2. Send E-Mail if the user has enabled it
 		if ($this->settingsService->getUserEmailReminder($userId)) {
 			try {
-				$this->emailService->sendReminder($contract, $userId, $deadlineFormatted, $reminderType, $contractType);
+				if ($this->emailService->sendReminder($contract, $userId, $deadlineFormatted, $reminderType, $contractType)) {
+					$delivered = true;
+				}
 			} catch (\Exception $e) {
 				$this->logger->warning('Failed to send Email reminder: ' . $e->getMessage(), [
 					'app' => Application::APP_ID,
@@ -403,29 +480,24 @@ class ReminderService {
 				]);
 			}
 		}
+
+		return $delivered;
 	}
 
 	/**
-	 * Mark a reminder as sent
+	 * Mark a reminder as sent to a specific recipient
 	 *
 	 * @param Contract $contract The contract
+	 * @param string $userId The recipient
 	 * @param string $type 'first' or 'final'
 	 */
-	private function markReminderSent(Contract $contract, string $type): void {
+	private function markReminderSent(Contract $contract, string $userId, string $type): void {
 		$reminder = new ReminderSent();
 		$reminder->setContractId($contract->getId());
 		$reminder->setReminderType($this->getReminderType($contract, $type));
 		$reminder->setSentAt(new DateTime());
-		$reminder->setSentTo($contract->getCreatedBy());
+		$reminder->setSentTo($userId);
 
 		$this->reminderSentMapper->insert($reminder);
-	}
-
-	/**
-	 * Legacy method for backwards compatibility
-	 * @deprecated Use shouldSendFirstReminder or shouldSendFinalReminder instead
-	 */
-	public function shouldSendReminder(Contract $contract): bool {
-		return $this->shouldSendFirstReminder($contract) || $this->shouldSendFinalReminder($contract);
 	}
 }

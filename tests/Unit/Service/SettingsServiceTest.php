@@ -21,45 +21,121 @@ class SettingsServiceTest extends TestCase {
 	}
 
 	// ========================================
-	// Talk Chat Token Tests
+	// Per-User Talk Chat Token Tests
 	// ========================================
 
-	public function testGetTalkChatTokenReturnsNullWhenEmpty(): void {
+	public function testGetUserTalkChatTokenReturnsNullWhenEmpty(): void {
 		$this->config->expects($this->once())
-			->method('getAppValue')
-			->with(Application::APP_ID, 'talk_chat_token', '')
+			->method('getUserValue')
+			->with('testuser', Application::APP_ID, 'talk_chat_token', '')
 			->willReturn('');
 
-		$result = $this->service->getTalkChatToken();
-
-		$this->assertNull($result);
+		$this->assertNull($this->service->getUserTalkChatToken('testuser'));
 	}
 
-	public function testGetTalkChatTokenReturnsValue(): void {
+	public function testGetUserTalkChatTokenReturnsValue(): void {
 		$this->config->expects($this->once())
-			->method('getAppValue')
-			->with(Application::APP_ID, 'talk_chat_token', '')
+			->method('getUserValue')
+			->with('testuser', Application::APP_ID, 'talk_chat_token', '')
 			->willReturn('abc123xyz');
 
-		$result = $this->service->getTalkChatToken();
-
-		$this->assertEquals('abc123xyz', $result);
+		$this->assertEquals('abc123xyz', $this->service->getUserTalkChatToken('testuser'));
 	}
 
-	public function testSetTalkChatToken(): void {
+	public function testSetUserTalkChatToken(): void {
 		$this->config->expects($this->once())
-			->method('setAppValue')
-			->with(Application::APP_ID, 'talk_chat_token', 'newtoken');
+			->method('setUserValue')
+			->with('testuser', Application::APP_ID, 'talk_chat_token', 'newtoken');
 
-		$this->service->setTalkChatToken('newtoken');
+		$this->service->setUserTalkChatToken('testuser', 'newtoken');
 	}
 
-	public function testSetTalkChatTokenWithNull(): void {
+	public function testSetUserTalkChatTokenWithNull(): void {
 		$this->config->expects($this->once())
-			->method('setAppValue')
-			->with(Application::APP_ID, 'talk_chat_token', '');
+			->method('setUserValue')
+			->with('testuser', Application::APP_ID, 'talk_chat_token', '');
 
-		$this->service->setTalkChatToken(null);
+		$this->service->setUserTalkChatToken('testuser', null);
+	}
+
+	// ========================================
+	// Reminder Mode Tests
+	// ========================================
+
+	public function testGetUserReminderModeDefaultsToOwn(): void {
+		$this->config->expects($this->once())
+			->method('getUserValue')
+			->with('testuser', Application::APP_ID, 'reminder_mode', 'own')
+			->willReturn('own');
+
+		$this->assertEquals('own', $this->service->getUserReminderMode('testuser'));
+	}
+
+	public function testGetUserReminderModeReturnsAll(): void {
+		$this->config->method('getUserValue')->willReturn('all');
+
+		$this->assertEquals('all', $this->service->getUserReminderMode('testuser'));
+	}
+
+	public function testGetUserReminderModeFallsBackOnInvalidValue(): void {
+		$this->config->method('getUserValue')->willReturn('garbage');
+
+		$this->assertEquals('own', $this->service->getUserReminderMode('testuser'));
+	}
+
+	public function testSetUserReminderModeStoresValidValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('testuser', Application::APP_ID, 'reminder_mode', 'all');
+
+		$this->service->setUserReminderMode('testuser', 'all');
+	}
+
+	public function testSetUserReminderModeIgnoresInvalidValue(): void {
+		$this->config->expects($this->never())
+			->method('setUserValue');
+
+		$this->service->setUserReminderMode('testuser', 'garbage');
+	}
+
+	// ========================================
+	// Per-User Reminder Days Tests
+	// ========================================
+
+	public function testGetUserReminderDays1ReturnsNullWhenUnset(): void {
+		$this->config->method('getUserValue')->willReturn('');
+
+		$this->assertNull($this->service->getUserReminderDays1('testuser'));
+	}
+
+	public function testGetUserReminderDays1ReturnsConfiguredValue(): void {
+		$this->config->method('getUserValue')->willReturn('30');
+
+		$this->assertEquals(30, $this->service->getUserReminderDays1('testuser'));
+	}
+
+	public function testSetUserReminderDays1StoresValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('testuser', Application::APP_ID, 'reminder_days_1', '30');
+
+		$this->service->setUserReminderDays1('testuser', 30);
+	}
+
+	public function testSetUserReminderDays1NullClearsValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('testuser', Application::APP_ID, 'reminder_days_1', '');
+
+		$this->service->setUserReminderDays1('testuser', null);
+	}
+
+	public function testSetUserReminderDays2StoresValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('testuser', Application::APP_ID, 'reminder_days_2', '5');
+
+		$this->service->setUserReminderDays2('testuser', 5);
 	}
 
 	// ========================================

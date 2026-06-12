@@ -20,27 +20,28 @@ class ReminderSentMapper extends QBMapper {
     }
 
     /**
-     * Find reminder by contract ID and type
+     * Find reminder by contract ID, type and recipient
      *
      * @throws DoesNotExistException
      * @throws MultipleObjectsReturnedException
      */
-    public function findByContractAndType(int $contractId, string $reminderType): ReminderSent {
+    public function findByContractTypeUser(int $contractId, string $reminderType, string $userId): ReminderSent {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('contract_id', $qb->createNamedParameter($contractId, IQueryBuilder::PARAM_INT)))
-            ->andWhere($qb->expr()->eq('reminder_type', $qb->createNamedParameter($reminderType)));
+            ->andWhere($qb->expr()->eq('reminder_type', $qb->createNamedParameter($reminderType)))
+            ->andWhere($qb->expr()->eq('sent_to', $qb->createNamedParameter($userId)));
 
         return $this->findEntity($qb);
     }
 
     /**
-     * Check if a reminder of this type has already been sent for this contract
+     * Check if a reminder of this type has already been sent to this recipient for this contract
      */
-    public function hasBeenSent(int $contractId, string $reminderType): bool {
+    public function hasBeenSent(int $contractId, string $reminderType, string $userId): bool {
         try {
-            $this->findByContractAndType($contractId, $reminderType);
+            $this->findByContractTypeUser($contractId, $reminderType, $userId);
             return true;
         } catch (DoesNotExistException $e) {
             return false;

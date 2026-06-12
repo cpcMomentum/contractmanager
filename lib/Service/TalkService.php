@@ -26,7 +26,6 @@ class TalkService {
 
 	public function __construct(
 		private IAppManager $appManager,
-		private SettingsService $settingsService,
 		private LoggerInterface $logger,
 		private IFactory $l10nFactory,
 	) {
@@ -40,20 +39,13 @@ class TalkService {
 	}
 
 	/**
-	 * Check if Talk is configured (token is set)
-	 */
-	public function isTalkConfigured(): bool {
-		$token = $this->settingsService->getTalkChatToken();
-		return $token !== null && $token !== '';
-	}
-
-	/**
-	 * Send a message to the configured Talk chat
+	 * Send a message to a Talk chat identified by its token
 	 *
+	 * @param string $chatToken The target chat token
 	 * @param string $message The message to send
 	 * @return bool True if message was sent successfully
 	 */
-	public function sendMessage(string $message): bool {
+	public function sendMessage(string $chatToken, string $message): bool {
 		if (!$this->isTalkAvailable()) {
 			$this->logger->warning('Talk app is not available', [
 				'app' => Application::APP_ID,
@@ -61,26 +53,23 @@ class TalkService {
 			return false;
 		}
 
-		$token = $this->settingsService->getTalkChatToken();
-		if ($token === null || $token === '') {
-			$this->logger->warning('Talk chat token is not configured', [
-				'app' => Application::APP_ID,
-			]);
+		if ($chatToken === '') {
 			return false;
 		}
 
-		return $this->sendToChat($token, $message);
+		return $this->sendToChat($chatToken, $message);
 	}
 
 	/**
-	 * Send a reminder message for a contract
+	 * Send a reminder message for a contract to a specific chat
 	 *
+	 * @param string $chatToken The target chat token
 	 * @param string $contractName The contract name
 	 * @param string $deadline The deadline date formatted
 	 * @param string $reminderType 'first' or 'final'
 	 * @return bool True if message was sent successfully
 	 */
-	public function sendReminderMessage(string $contractName, string $deadline, string $reminderType, string $contractType = 'auto_renewal'): bool {
+	public function sendReminderMessage(string $chatToken, string $contractName, string $deadline, string $reminderType, string $contractType = 'auto_renewal'): bool {
 		$l = $this->l10nFactory->get(Application::APP_ID);
 
 		if ($contractType === 'auto_renewal') {
@@ -109,7 +98,7 @@ class TalkService {
 			}
 		}
 
-		return $this->sendMessage($message);
+		return $this->sendMessage($chatToken, $message);
 	}
 
 	/**
