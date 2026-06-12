@@ -66,20 +66,16 @@ class EmailService {
 		}
 
 		$displayName = $user->getDisplayName() ?: $userId;
-		// Render the email in the recipient's language. Reminders are sent from a
-		// background job (no request context), so without this the server default
-		// language would be used instead of the recipient's.
-		$lang = $this->l10nFactory->getUserLanguage($user);
 
-		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType, $displayName, $contractType, $lang);
+		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType, $displayName, $contractType);
 	}
 
 	/**
 	 * Send reminder email to an address
 	 */
-	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType, string $displayName, string $contractType = 'auto_renewal', string $lang = ''): bool {
+	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType, string $displayName, string $contractType = 'auto_renewal'): bool {
 		try {
-			$l = $this->l10nFactory->get(Application::APP_ID, $lang !== '' ? $lang : null);
+			$l = $this->l10nFactory->get(Application::APP_ID);
 			$message = $this->mailer->createMessage();
 
 			// Set subject based on reminder type (no emoji)
