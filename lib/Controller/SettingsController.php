@@ -42,13 +42,18 @@ class SettingsController extends Controller {
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
+			'reminderMode' => $this->settingsService->getUserReminderMode($this->userId),
+			'reminderDays1Personal' => $this->settingsService->getUserReminderDays1($this->userId),
+			'reminderDays2Personal' => $this->settingsService->getUserReminderDays2($this->userId),
+			'talkChatToken' => $this->settingsService->getUserTalkChatToken($this->userId),
 			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
-			// App-globale Werte, die das Frontend zur Berechnung von "Kündigung naht"
-			// braucht. Read-only für Nicht-Admins.
+			// App-globale Standard-Vorlaufzeiten. Das Frontend nutzt sie zur Berechnung
+			// von "Kündigung naht" und als Fallback-Anzeige, wenn der Nutzer keine
+			// persönliche Vorlaufzeit gesetzt hat. Read-only für Nicht-Admins.
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
 		]);
@@ -60,6 +65,10 @@ class SettingsController extends Controller {
 	#[NoAdminRequired]
 	public function update(
 		?bool $emailReminder = null,
+		?string $reminderMode = null,
+		?int $reminderDays1Personal = null,
+		?int $reminderDays2Personal = null,
+		?string $talkChatToken = null,
 		?string $sortBy = null,
 		?string $sortDirection = null,
 		?array $filters = null,
@@ -71,6 +80,19 @@ class SettingsController extends Controller {
 
 		if ($emailReminder !== null) {
 			$this->settingsService->setUserEmailReminder($this->userId, $emailReminder);
+		}
+		if ($reminderMode !== null) {
+			$this->settingsService->setUserReminderMode($this->userId, $reminderMode);
+		}
+		// 0 clears the personal value (fall back to the admin default).
+		if ($reminderDays1Personal !== null) {
+			$this->settingsService->setUserReminderDays1($this->userId, $reminderDays1Personal ?: null);
+		}
+		if ($reminderDays2Personal !== null) {
+			$this->settingsService->setUserReminderDays2($this->userId, $reminderDays2Personal ?: null);
+		}
+		if ($talkChatToken !== null) {
+			$this->settingsService->setUserTalkChatToken($this->userId, $talkChatToken ?: null);
 		}
 		if ($sortBy !== null) {
 			$this->settingsService->setUserSortBy($this->userId, $sortBy);
@@ -87,6 +109,10 @@ class SettingsController extends Controller {
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
+			'reminderMode' => $this->settingsService->getUserReminderMode($this->userId),
+			'reminderDays1Personal' => $this->settingsService->getUserReminderDays1($this->userId),
+			'reminderDays2Personal' => $this->settingsService->getUserReminderDays2($this->userId),
+			'talkChatToken' => $this->settingsService->getUserTalkChatToken($this->userId),
 			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
@@ -107,7 +133,6 @@ class SettingsController extends Controller {
 	 */
 	public function getAdmin(): JSONResponse {
 		return new JSONResponse([
-			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
@@ -125,7 +150,6 @@ class SettingsController extends Controller {
 	 * No #[NoAdminRequired] = only admins can access
 	 */
 	public function updateAdmin(
-		?string $talkChatToken = null,
 		?int $reminderDays1 = null,
 		?int $reminderDays2 = null,
 		?string $customFieldLabel1 = null,
@@ -136,10 +160,6 @@ class SettingsController extends Controller {
 		?string $aiApiUrl = null,
 		?string $aiModel = null,
 	): JSONResponse {
-		if ($talkChatToken !== null) {
-			$this->settingsService->setTalkChatToken($talkChatToken ?: null);
-		}
-
 		if ($reminderDays1 !== null) {
 			$this->settingsService->setReminderDays1($reminderDays1);
 		}
@@ -179,7 +199,6 @@ class SettingsController extends Controller {
 		}
 
 		return new JSONResponse([
-			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),

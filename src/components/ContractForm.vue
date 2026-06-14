@@ -422,6 +422,17 @@
 										:disabled="readOnly"
 										:placeholder="t('contractmanager', 'Standard')" />
 								</div>
+								<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
+								<div v-if="isEdit && form.reminderEnabled" class="reminder-optout">
+									<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
+										:disabled="optOutSaving"
+										@update:model-value="onReminderOptOutChange">
+										{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
+									</NcCheckboxRadioSwitch>
+									<p class="optout-hint">
+										{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
+									</p>
+								</div>
 							</template>
 						</div>
 					</div>
@@ -574,6 +585,8 @@ export default {
 				customFieldLabel3: '',
 			},
 			vendorOptions: [],
+			reminderOptedOut: false,
+			optOutSaving: false,
 		}
 	},
 	computed: {
@@ -729,11 +742,30 @@ export default {
 		} catch (e) {
 			console.debug('Failed to load custom field labels:', e)
 		}
+		if (this.isEdit) {
+			try {
+				this.reminderOptedOut = await ContractService.getReminderOptOut(this.contract.id)
+			} catch (e) {
+				console.debug('Failed to load reminder opt-out state:', e)
+			}
+		}
 	},
 	mounted() {
 		this.loadVendorOptions()
 	},
 	methods: {
+		async onReminderOptOutChange(value) {
+			this.optOutSaving = true
+			try {
+				this.reminderOptedOut = await ContractService.setReminderOptOut(this.contract.id, value)
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (e) {
+				console.error('Failed to save reminder opt-out:', e)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+			} finally {
+				this.optOutSaving = false
+			}
+		},
 		async loadVendorOptions() {
 			if (this.readOnly) return
 			try {

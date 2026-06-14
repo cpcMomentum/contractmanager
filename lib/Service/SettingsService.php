@@ -27,6 +27,7 @@ class SettingsService {
 	private const KEY_REMINDER_DAYS_1 = 'reminder_days_1';
 	private const KEY_REMINDER_DAYS_2 = 'reminder_days_2';
 	private const KEY_EMAIL_REMINDER = 'email_reminder';
+	private const KEY_REMINDER_MODE = 'reminder_mode';
 	private const KEY_SORT_BY = 'sort_by';
 	private const KEY_SORT_DIRECTION = 'sort_direction';
 	private const KEY_FILTERS = 'filters';
@@ -52,6 +53,16 @@ class SettingsService {
 	private const DEFAULT_REMINDER_DAYS_1 = 14;
 	private const DEFAULT_REMINDER_DAYS_2 = 3;
 
+	public const REMINDER_MODE_ALL = 'all';
+	public const REMINDER_MODE_OWN = 'own';
+	public const REMINDER_MODE_NONE = 'none';
+	private const ALLOWED_REMINDER_MODES = [
+		self::REMINDER_MODE_ALL,
+		self::REMINDER_MODE_OWN,
+		self::REMINDER_MODE_NONE,
+	];
+	private const DEFAULT_REMINDER_MODE = self::REMINDER_MODE_OWN;
+
 	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost', 'cancellationDeadline'];
 	private const ALLOWED_AMOUNT_TYPES = ['netto', 'brutto'];
 	private const ALLOWED_SORT_DIRECTION = ['asc', 'desc'];
@@ -72,29 +83,6 @@ class SettingsService {
 	// ========================================
 	// Admin-Settings
 	// ========================================
-
-	/**
-	 * Get Nextcloud Talk chat token for reminders
-	 */
-	public function getTalkChatToken(): ?string {
-		$value = $this->config->getAppValue(
-			Application::APP_ID,
-			self::KEY_TALK_CHAT_TOKEN,
-			''
-		);
-		return $value !== '' ? $value : null;
-	}
-
-	/**
-	 * Set Nextcloud Talk chat token for reminders
-	 */
-	public function setTalkChatToken(?string $token): void {
-		$this->config->setAppValue(
-			Application::APP_ID,
-			self::KEY_TALK_CHAT_TOKEN,
-			$token ?? ''
-		);
-	}
 
 	/**
 	 * Get first reminder days (default: 14)
@@ -212,6 +200,83 @@ class SettingsService {
 			self::KEY_EMAIL_REMINDER,
 			$enabled ? '1' : '0'
 		);
+	}
+
+	/**
+	 * Get a user's reminder mode: which contracts they want reminders for.
+	 * One of 'all', 'own', 'none' (default: 'own').
+	 */
+	public function getUserReminderMode(string $userId): string {
+		$value = $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_REMINDER_MODE,
+			self::DEFAULT_REMINDER_MODE
+		);
+		return in_array($value, self::ALLOWED_REMINDER_MODES, true) ? $value : self::DEFAULT_REMINDER_MODE;
+	}
+
+	/**
+	 * Set a user's reminder mode (whitelist-validated).
+	 */
+	public function setUserReminderMode(string $userId, string $mode): void {
+		if (!in_array($mode, self::ALLOWED_REMINDER_MODES, true)) {
+			return;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_REMINDER_MODE,
+			$mode
+		);
+	}
+
+	/**
+	 * Get a user's personal first-reminder lead time in days, or null when the
+	 * user has not set one (falls back to the admin default in that case).
+	 */
+	public function getUserReminderDays1(string $userId): ?int {
+		$value = $this->config->getUserValue($userId, Application::APP_ID, self::KEY_REMINDER_DAYS_1, '');
+		return $value === '' ? null : max(1, (int)$value);
+	}
+
+	/**
+	 * Set a user's personal first-reminder lead time. Null/0 clears it (use default).
+	 */
+	public function setUserReminderDays1(string $userId, ?int $days): void {
+		$value = ($days === null || $days < 1) ? '' : (string)$days;
+		$this->config->setUserValue($userId, Application::APP_ID, self::KEY_REMINDER_DAYS_1, $value);
+	}
+
+	/**
+	 * Get a user's personal final-reminder lead time in days, or null when unset.
+	 */
+	public function getUserReminderDays2(string $userId): ?int {
+		$value = $this->config->getUserValue($userId, Application::APP_ID, self::KEY_REMINDER_DAYS_2, '');
+		return $value === '' ? null : max(1, (int)$value);
+	}
+
+	/**
+	 * Set a user's personal final-reminder lead time. Null/0 clears it (use default).
+	 */
+	public function setUserReminderDays2(string $userId, ?int $days): void {
+		$value = ($days === null || $days < 1) ? '' : (string)$days;
+		$this->config->setUserValue($userId, Application::APP_ID, self::KEY_REMINDER_DAYS_2, $value);
+	}
+
+	/**
+	 * Get a user's personal Talk chat token for reminders, or null when unset.
+	 */
+	public function getUserTalkChatToken(string $userId): ?string {
+		$value = $this->config->getUserValue($userId, Application::APP_ID, self::KEY_TALK_CHAT_TOKEN, '');
+		return $value !== '' ? $value : null;
+	}
+
+	/**
+	 * Set a user's personal Talk chat token for reminders.
+	 */
+	public function setUserTalkChatToken(string $userId, ?string $token): void {
+		$this->config->setUserValue($userId, Application::APP_ID, self::KEY_TALK_CHAT_TOKEN, $token ?? '');
 	}
 
 	/**

@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Service;
 use OCP\IConfig;
 use OCP\IGroupManager;
 use OCA\ContractManager\AppInfo\Application;
+use OCA\ContractManager\Db\Contract;
 
 /**
  * Service to check user permissions for ContractManager
@@ -82,6 +83,54 @@ class PermissionService {
 			'canEdit' => $isAdmin || $isEditor,
 			'canDeletePermanently' => $isAdmin,
 		];
+	}
+
+	/**
+	 * Get the user IDs of every user that has access to the app:
+	 * Nextcloud admins plus everyone configured as editor or viewer
+	 * (group entries expanded to their members). Deduplicated.
+	 *
+	 * @return string[]
+	 */
+	public function getAllUsersWithAccess(): array {
+		$userIds = [];
+
+		$adminGroup = $this->groupManager->get('admin');
+		if ($adminGroup !== null) {
+			foreach ($adminGroup->getUsers() as $user) {
+				$userIds[$user->getUID()] = true;
+			}
+		}
+
+		foreach ([...$this->getEditors(), ...$this->getViewers()] as $entry) {
+			if (!is_string($entry)) {
+				continue;
+			}
+			if (str_starts_with($entry, 'user:')) {
+				$userIds[substr($entry, 5)] = true;
+			} elseif (str_starts_with($entry, 'group:')) {
+				$group = $this->groupManager->get(substr($entry, 6));
+				if ($group !== null) {
+					foreach ($group->getUsers() as $user) {
+						$userIds[$user->getUID()] = true;
+					}
+				}
+			}
+		}
+
+		return array_keys($userIds);
+	}
+
+	/**
+	 * Whether a user is allowed to see a contract, mirroring
+	 * ContractMapper::findAllVisible: everyone sees non-private contracts,
+	 * private contracts are visible only to their creator or to admins.
+	 */
+	public function canUserSeeContract(Contract $contract, string $userId): bool {
+		if (!$contract->getIsPrivate()) {
+			return true;
+		}
+		return $contract->getCreatedBy() === $userId || $this->isAdmin($userId);
 	}
 
 	/**

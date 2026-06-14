@@ -22,24 +22,24 @@ use OCP\AppFramework\Db\Entity;
  */
 class ReminderSent extends Entity implements JsonSerializable {
 
-    protected int $contractId = 0;
-    protected string $reminderType = '';
-    protected ?DateTime $sentAt = null;
-    protected string $sentTo = '';
+	protected int $contractId = 0;
+	protected string $reminderType = '';
+	protected ?DateTime $sentAt = null;
+	protected string $sentTo = '';
 
-    public function __construct() {
-        $this->addType('id', 'integer');
-        $this->addType('contractId', 'integer');
-        $this->addType('sentAt', 'datetime');
-    }
+	public function __construct() {
+		$this->addType('id', 'integer');
+		$this->addType('contractId', 'integer');
+		$this->addType('sentAt', 'datetime');
+	}
 
-    public function jsonSerialize(): array {
-        return [
-            'id' => $this->id,
-            'contractId' => $this->contractId,
-            'reminderType' => $this->reminderType,
-            'sentAt' => $this->sentAt?->format('c'),
-            'sentTo' => $this->sentTo,
-        ];
-    }
+	public function jsonSerialize(): array {
+		return [
+			'id' => $this->id,
+			'contractId' => $this->contractId,
+			'reminderType' => $this->reminderType,
+			'sentAt' => $this->sentAt?->format('c'),
+			'sentTo' => $this->sentTo,
+		];
+	}
 }

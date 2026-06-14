@@ -4,6 +4,13 @@ import { generateUrl } from '@nextcloud/router'
 const baseUrl = generateUrl('/apps/contractmanager/api/settings')
 
 export interface UserSettings {
+	emailReminder?: boolean
+	reminderMode?: 'all' | 'own' | 'none'
+	reminderDays1Personal?: number | null
+	reminderDays2Personal?: number | null
+	talkChatToken?: string | null
+	reminderDays1?: number
+	reminderDays2?: number
 	[key: string]: unknown
 }
 

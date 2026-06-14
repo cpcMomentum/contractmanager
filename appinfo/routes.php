@@ -17,6 +17,8 @@ return [
         ['name' => 'contract#create', 'url' => '/api/contracts', 'verb' => 'POST'],
         ['name' => 'contract#update', 'url' => '/api/contracts/{id}', 'verb' => 'PUT'],
         ['name' => 'contract#destroy', 'url' => '/api/contracts/{id}', 'verb' => 'DELETE'],
+        ['name' => 'contract#getReminderOptOut', 'url' => '/api/contracts/{id}/reminder-optout', 'verb' => 'GET'],
+        ['name' => 'contract#setReminderOptOut', 'url' => '/api/contracts/{id}/reminder-optout', 'verb' => 'PUT'],
         ['name' => 'contract#archive', 'url' => '/api/contracts/{id}/archive', 'verb' => 'POST'],
         ['name' => 'contract#restore', 'url' => '/api/contracts/{id}/restore', 'verb' => 'POST'],
         ['name' => 'contract#restoreFromTrash', 'url' => '/api/contracts/{id}/restore-from-trash', 'verb' => 'POST'],

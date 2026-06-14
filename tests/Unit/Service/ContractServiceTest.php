@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Tests\Unit\Service;
 use DateTime;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
+use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Service\ContractService;
 use OCA\ContractManager\Service\ForbiddenException;
 use OCA\ContractManager\Service\NotFoundException;
@@ -19,17 +20,19 @@ use PHPUnit\Framework\TestCase;
 class ContractServiceTest extends TestCase {
 
 	private ContractMapper $mapper;
+	private ReminderOptOutMapper $optOutMapper;
 	private IFactory $l10nFactory;
 	private ContractService $service;
 
 	protected function setUp(): void {
 		parent::setUp();
 		$this->mapper = $this->createMock(ContractMapper::class);
+		$this->optOutMapper = $this->createMock(ReminderOptOutMapper::class);
 		$this->l10nFactory = $this->createMock(IFactory::class);
 		$l = $this->createMock(IL10N::class);
 		$l->method('t')->willReturnArgument(0);
 		$this->l10nFactory->method('get')->willReturn($l);
-		$this->service = new ContractService($this->mapper, $this->l10nFactory);
+		$this->service = new ContractService($this->mapper, $this->optOutMapper, $this->l10nFactory);
 	}
 
 	// ========================================

@@ -99,6 +99,51 @@ class ContractController extends Controller {
 	}
 
 	/**
+	 * Get the current user's reminder opt-out state for a contract.
+	 * Anyone who may read the contract can manage their own opt-out.
+	 */
+	#[NoAdminRequired]
+	public function getReminderOptOut(int $id): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+		try {
+			$contract = $this->service->find($id);
+			$isAdmin = $this->permissionService->isAdmin($this->userId);
+			$this->service->checkReadAccess($contract, $this->userId, $isAdmin);
+
+			return new JSONResponse(['optedOut' => $this->service->isReminderOptedOut($id, $this->userId)]);
+		} catch (NotFoundException $e) {
+			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
+		}
+	}
+
+	/**
+	 * Set the current user's reminder opt-out state for a contract.
+	 */
+	#[NoAdminRequired]
+	public function setReminderOptOut(int $id, bool $optedOut): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+		try {
+			$contract = $this->service->find($id);
+			$isAdmin = $this->permissionService->isAdmin($this->userId);
+			$this->service->checkReadAccess($contract, $this->userId, $isAdmin);
+
+			$this->service->setReminderOptOut($id, $this->userId, $optedOut);
+
+			return new JSONResponse(['optedOut' => $this->service->isReminderOptedOut($id, $this->userId)]);
+		} catch (NotFoundException $e) {
+			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
+		}
+	}
+
+	/**
 	 * Create a new contract (Editor or Admin)
 	 */
 	#[NoAdminRequired]

@@ -80,4 +80,15 @@ export default {
 		const response = await axios.post<{ deleted: number }>(`${baseUrl}/trash/empty`)
 		return response.data
 	},
+
+	// Per-user reminder opt-out for a single contract
+	async getReminderOptOut(id: number): Promise<boolean> {
+		const response = await axios.get<{ optedOut: boolean }>(`${baseUrl}/${id}/reminder-optout`)
+		return response.data.optedOut
+	},
+
+	async setReminderOptOut(id: number, optedOut: boolean): Promise<boolean> {
+		const response = await axios.put<{ optedOut: boolean }>(`${baseUrl}/${id}/reminder-optout`, { optedOut })
+		return response.data.optedOut
+	},
 }
