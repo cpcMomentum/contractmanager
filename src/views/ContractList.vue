@@ -218,7 +218,7 @@ export default {
 			filterVendor: filters.vendor || null,
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
-			// Window the badge / filter uses for "Kündigung naht". Defaults to the
+			// Window the badge / filter uses for "Kündigungsfrist endet". Defaults to the
 			// constant in utils/contractStatus; gets overridden once the admin
 			// setting comes back from the user-settings endpoint.
 			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
