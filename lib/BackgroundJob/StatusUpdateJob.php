@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Background job that runs once per day and:
- * - sets expired fixed contracts to "ended"
+ * - sets expired fixed contracts to "ended" and archives them (issue #176)
  * - ends and archives cancelled contracts once their effective termination
  *   date is reached (issue #136)
  */
@@ -41,11 +41,13 @@ class StatusUpdateJob extends TimedJob {
 
 			foreach ($expiredContracts as $contract) {
 				$contract->setStatus('ended');
+				// Auto-archive expired contracts, consistent with cancelled ones (#176).
+				$contract->setArchived(true);
 				$contract->setUpdatedAt(new DateTime());
 				$this->contractMapper->update($contract);
 				$updatedCount++;
 
-				$this->logger->info('Contract status set to ended: ' . $contract->getName(), [
+				$this->logger->info('Contract status set to ended and archived: ' . $contract->getName(), [
 					'app' => Application::APP_ID,
 					'contractId' => $contract->getId(),
 					'endDate' => $contract->getEndDate()?->format('Y-m-d'),
