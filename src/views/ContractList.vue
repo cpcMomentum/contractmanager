@@ -224,7 +224,7 @@ export default {
 			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
 			statusOptions: [
 				{ id: 'active', label: t('contractmanager', 'Aktiv') },
-				{ id: 'ending_soon', label: t('contractmanager', 'Kündigung naht') },
+				{ id: 'ending_soon', label: t('contractmanager', 'Kündigungsfrist endet') },
 				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
 				{ id: 'ended', label: t('contractmanager', 'Abgelaufen') },
 			],
