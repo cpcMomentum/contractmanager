@@ -31,6 +31,7 @@
 				<span v-if="contract.renewalPeriod && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
 				<span v-if="mode === 'trash' && contract.deletedAt">| {{ t('contractmanager', 'Gelöscht:') }} {{ formatDate(contract.deletedAt) }}</span>
 				<span v-if="showCreator && contract.createdBy">| {{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
+				<span v-if="contract.responsibleUser">| {{ t('contractmanager', 'Zuständig') }}: {{ contract.responsibleUser }}</span>
 			</div>
 		</div>
 		<div class="contract-list-item__actions">

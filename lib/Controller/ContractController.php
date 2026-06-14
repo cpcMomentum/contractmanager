@@ -16,6 +16,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUserManager;
 
 class ContractController extends Controller {
 
@@ -24,9 +25,31 @@ class ContractController extends Controller {
 		private ContractService $service,
 		private PermissionService $permissionService,
 		private IL10N $l,
+		private IUserManager $userManager,
 		private ?string $userId,
 	) {
 		parent::__construct(Application::APP_ID, $request);
+	}
+
+	/**
+	 * Search users for the "responsible" picker. Available to anyone who may
+	 * edit contracts (not just admins, unlike the settings principal search).
+	 */
+	#[NoAdminRequired]
+	public function searchUsers(string $query = ''): JSONResponse {
+		if ($this->userId === null || !$this->permissionService->canEdit($this->userId)) {
+			return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
+		}
+		$results = [];
+		foreach ($this->userManager->search($query, 25) as $user) {
+			$results[] = [
+				'id' => 'user:' . $user->getUID(),
+				'uid' => $user->getUID(),
+				'displayName' => $user->getDisplayName(),
+				'type' => 'user',
+			];
+		}
+		return new JSONResponse($results);
 	}
 
 	/**
@@ -171,6 +194,7 @@ class ContractController extends Controller {
 		string $amountType = 'netto',
 		?string $cancelledOn = null,
 		?string $cancelledTo = null,
+		?string $responsibleUser = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -218,6 +242,7 @@ class ContractController extends Controller {
 				$amountType,
 				$cancelledOn,
 				$cancelledTo,
+				$responsibleUser,
 			);
 
 			return new JSONResponse($contract, Http::STATUS_CREATED);
@@ -256,6 +281,7 @@ class ContractController extends Controller {
 		string $amountType = 'netto',
 		?string $cancelledOn = null,
 		?string $cancelledTo = null,
+		?string $responsibleUser = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -307,6 +333,7 @@ class ContractController extends Controller {
 				$amountType,
 				$cancelledOn,
 				$cancelledTo,
+				$responsibleUser,
 			);
 
 			return new JSONResponse($updatedContract);
@@ -422,5 +449,28 @@ class ContractController extends Controller {
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
+	}
+
+	/**
+	 * Preview how many contracts would be transferred from a user (Admin only).
+	 * No #[NoAdminRequired] = Nextcloud enforces admin.
+	 */
+	public function transferPreview(string $from): JSONResponse {
+		return new JSONResponse(['count' => $this->service->countByEffectiveOwner($from)]);
+	}
+
+	/**
+	 * Transfer responsibility for all of $from's contracts to $to (Admin only).
+	 * No #[NoAdminRequired] = Nextcloud enforces admin.
+	 */
+	public function transfer(string $from, string $to): JSONResponse {
+		if ($from === '' || $to === '') {
+			return new JSONResponse(['error' => $this->l->t('Both users are required')], Http::STATUS_BAD_REQUEST);
+		}
+		if ($from === $to) {
+			return new JSONResponse(['error' => $this->l->t('Source and target must differ')], Http::STATUS_BAD_REQUEST);
+		}
+		$count = $this->service->transferResponsibility($from, $to);
+		return new JSONResponse(['transferred' => $count]);
 	}
 }

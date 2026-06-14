@@ -40,7 +40,8 @@ class ContractMapper extends QBMapper {
             $qb->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
-                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId)),
+                    $qb->expr()->eq('responsible_user', $qb->createNamedParameter($userId))
                 )
             );
         }
@@ -67,7 +68,8 @@ class ContractMapper extends QBMapper {
             $qb->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
-                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId)),
+                    $qb->expr()->eq('responsible_user', $qb->createNamedParameter($userId))
                 )
             );
         }
@@ -105,7 +107,8 @@ class ContractMapper extends QBMapper {
             $qb->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
-                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId)),
+                    $qb->expr()->eq('responsible_user', $qb->createNamedParameter($userId))
                 )
             );
         }
@@ -343,7 +346,8 @@ class ContractMapper extends QBMapper {
             ->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->iLike('name', $qb->createNamedParameter($searchPattern)),
-                    $qb->expr()->iLike('vendor', $qb->createNamedParameter($searchPattern))
+                    $qb->expr()->iLike('vendor', $qb->createNamedParameter($searchPattern)),
+                    $qb->expr()->iLike('responsible_user', $qb->createNamedParameter($searchPattern))
                 )
             );
 
@@ -351,7 +355,8 @@ class ContractMapper extends QBMapper {
             $qb->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)),
-                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+                    $qb->expr()->eq('created_by', $qb->createNamedParameter($userId)),
+                    $qb->expr()->eq('responsible_user', $qb->createNamedParameter($userId))
                 )
             );
         }
@@ -366,5 +371,49 @@ class ContractMapper extends QBMapper {
         $qb->orderBy('end_date', 'ASC');
 
         return $this->findEntities($qb);
+    }
+
+    /**
+     * Build the "effective owner == user" condition: either the user is the
+     * explicit responsible, or no responsible is set and they are the creator.
+     */
+    private function effectiveOwnerExpr(IQueryBuilder $qb, string $userId): \OCP\DB\QueryBuilder\ICompositeExpression {
+        return $qb->expr()->orX(
+            $qb->expr()->eq('responsible_user', $qb->createNamedParameter($userId)),
+            $qb->expr()->andX(
+                $qb->expr()->isNull('responsible_user'),
+                $qb->expr()->eq('created_by', $qb->createNamedParameter($userId))
+            )
+        );
+    }
+
+    /**
+     * Count contracts whose effective owner is the given user (excludes trash).
+     */
+    public function countByEffectiveOwner(string $userId): int {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select($qb->func()->count('*', 'cnt'))
+            ->from($this->getTableName())
+            ->where($qb->expr()->isNull('deleted_at'))
+            ->andWhere($this->effectiveOwnerExpr($qb, $userId));
+        $result = $qb->executeQuery();
+        $count = (int)$result->fetchOne();
+        $result->closeCursor();
+        return $count;
+    }
+
+    /**
+     * Reassign responsibility for all contracts whose effective owner is $from
+     * to $to (excludes trash). createdBy is left untouched.
+     *
+     * @return int Number of contracts updated
+     */
+    public function reassignResponsible(string $from, string $to): int {
+        $qb = $this->db->getQueryBuilder();
+        $qb->update($this->getTableName())
+            ->set('responsible_user', $qb->createNamedParameter($to))
+            ->where($qb->expr()->isNull('deleted_at'))
+            ->andWhere($this->effectiveOwnerExpr($qb, $from));
+        return $qb->executeStatement();
     }
 }

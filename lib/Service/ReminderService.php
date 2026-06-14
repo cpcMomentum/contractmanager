@@ -116,8 +116,9 @@ class ReminderService {
 	 * @return string[] Recipient user IDs
 	 */
 	private function getRecipients(Contract $contract, array $accessUsers): array {
-		// The creator is always a candidate, even if they currently lack a role.
-		$candidates = array_unique([...$accessUsers, $contract->getCreatedBy()]);
+		// Creator and responsible user are always candidates, even without a role.
+		$effectiveOwner = $this->effectiveOwner($contract);
+		$candidates = array_unique([...$accessUsers, $contract->getCreatedBy(), $effectiveOwner]);
 		$optedOut = array_flip($this->optOutMapper->findOptedOutUsers($contract->getId()));
 
 		$recipients = [];
@@ -132,13 +133,23 @@ class ReminderService {
 			if ($mode === SettingsService::REMINDER_MODE_NONE) {
 				continue;
 			}
-			if ($mode === SettingsService::REMINDER_MODE_OWN && $contract->getCreatedBy() !== $userId) {
+			// "own" counts on the effective owner (responsible, else creator).
+			if ($mode === SettingsService::REMINDER_MODE_OWN && $effectiveOwner !== $userId) {
 				continue;
 			}
 			$recipients[] = $userId;
 		}
 
 		return $recipients;
+	}
+
+	/**
+	 * The effective owner of a contract: the responsible user when set,
+	 * otherwise the creator.
+	 */
+	private function effectiveOwner(Contract $contract): string {
+		$responsible = $contract->getResponsibleUser();
+		return ($responsible !== null && $responsible !== '') ? $responsible : $contract->getCreatedBy();
 	}
 
 	/**

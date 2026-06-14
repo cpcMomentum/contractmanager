@@ -43,6 +43,7 @@ export interface Contract {
 	isPrivate?: boolean
 	deletedAt?: string | null
 	createdBy?: string
+	responsibleUser?: string | null
 	createdAt?: string
 	updatedAt?: string
 }

@@ -61,6 +61,12 @@
 				:reduce="option => option.id"
 				input-id="filter-type"
 				@update:model-value="persistFilters" />
+			<NcSelect v-model="filterResponsible"
+				:options="responsibleOptions"
+				:placeholder="t('contractmanager', 'Zuständig')"
+				:clearable="true"
+				input-id="filter-responsible"
+				@update:model-value="persistFilters" />
 			<NcButton v-if="hasActiveFilters"
 				variant="tertiary"
 				@click="resetFilters">
@@ -218,6 +224,7 @@ export default {
 			filterVendor: filters.vendor || null,
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
+			filterResponsible: filters.responsible || null,
 			// Window the badge / filter uses for "Kündigungsfrist endet". Defaults to the
 			// constant in utils/contractStatus; gets overridden once the admin
 			// setting comes back from the user-settings endpoint.
@@ -246,6 +253,12 @@ export default {
 				.filter(v => v && v.trim() !== '')
 			return [...new Set(vendors)].sort((a, b) => a.localeCompare(b))
 		},
+		responsibleOptions() {
+			const users = this.allContracts
+				.map(c => c.responsibleUser)
+				.filter(u => u && u.trim() !== '')
+			return [...new Set(users)].sort((a, b) => a.localeCompare(b))
+		},
 		activeSortLabel() {
 			const option = this.sortOptions.find(o => o.key === this.sortBy)
 			return option ? option.label : ''
@@ -254,6 +267,7 @@ export default {
 			if (this.filterVendor) return true
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
+			if (this.filterResponsible) return true
 			return false
 		},
 		contracts() {
@@ -269,6 +283,7 @@ export default {
 						|| (c.customField1 || '').toLowerCase().includes(query)
 						|| (c.customField2 || '').toLowerCase().includes(query)
 						|| (c.customField3 || '').toLowerCase().includes(query)
+						|| (c.responsibleUser || '').toLowerCase().includes(query)
 				})
 			}
 
@@ -301,6 +316,11 @@ export default {
 			// Vertragstyp-Filter
 			if (this.filterContractType) {
 				filtered = filtered.filter(c => c.contractType === this.filterContractType)
+			}
+
+			// Zuständig-Filter
+			if (this.filterResponsible) {
+				filtered = filtered.filter(c => c.responsibleUser === this.filterResponsible)
 			}
 
 			return this.sortContracts(filtered)
@@ -475,6 +495,7 @@ export default {
 			this.filterVendor = null
 			this.filterStatuses = []
 			this.filterContractType = null
+			this.filterResponsible = null
 			this.persistFilters()
 		},
 
@@ -485,6 +506,7 @@ export default {
 						vendor: this.filterVendor || '',
 						statuses: this.filterStatuses,
 						contractType: this.filterContractType || '',
+						responsible: this.filterResponsible || '',
 					},
 				})
 			} catch (error) {
