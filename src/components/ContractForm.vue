@@ -525,6 +525,7 @@ import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUti
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
+import { reminderEnabledForEndDate } from '../utils/reminderForm'
 import ContractService from '../services/ContractService'
 import ExtractionService from '../services/ExtractionService'
 import SettingsService from '../services/SettingsService'
@@ -720,11 +721,9 @@ export default {
 			},
 		},
 		'form.endDate'(newVal) {
-			if (newVal === null) {
-				this.form.reminderEnabled = false
-			} else {
-				this.form.reminderEnabled = true
-			}
+			// Ohne Enddatum keine Erinnerung. Bei vorhandenem Enddatum bleibt der
+			// gespeicherte Zustand erhalten (kein Auto-Aktivieren beim Laden, #180).
+			this.form.reminderEnabled = reminderEnabledForEndDate(this.form.reminderEnabled, newVal)
 		},
 	},
 	async created() {
