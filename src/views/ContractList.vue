@@ -218,13 +218,13 @@ export default {
 			filterVendor: filters.vendor || null,
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
-			// Window the badge / filter uses for "Kündigung naht". Defaults to the
+			// Window the badge / filter uses for "Kündigungsfrist endet". Defaults to the
 			// constant in utils/contractStatus; gets overridden once the admin
 			// setting comes back from the user-settings endpoint.
 			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
 			statusOptions: [
 				{ id: 'active', label: t('contractmanager', 'Aktiv') },
-				{ id: 'ending_soon', label: t('contractmanager', 'Kündigung naht') },
+				{ id: 'ending_soon', label: t('contractmanager', 'Kündigungsfrist endet') },
 				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
 				{ id: 'ended', label: t('contractmanager', 'Abgelaufen') },
 			],

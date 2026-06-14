@@ -9,7 +9,7 @@
 				<span v-if="endingSoon"
 					class="status-indicator status-ending-soon"
 					:title="t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.')">
-					{{ t('contractmanager', 'Kündigung naht') }}
+					{{ t('contractmanager', 'Kündigungsfrist endet') }}
 				</span>
 				<span v-if="expiredFixed"
 					class="status-indicator status-expired"
