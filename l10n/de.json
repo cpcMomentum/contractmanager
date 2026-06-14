@@ -1,5 +1,15 @@
 {
 	"translations": {
+		"Cancellation reminder": "Kündigungserinnerung",
+		"The contract \"%1$s\" must be cancelled by **%2$s**.": "Der Vertrag „%1$s\" muss bis zum **%2$s** gekündigt werden.",
+		"This is the first reminder.": "Dies ist die erste Erinnerung.",
+		"Final cancellation reminder": "Letzte Kündigungserinnerung",
+		"The contract \"%1$s\" must be cancelled by **%2$s**!": "Der Vertrag „%1$s\" muss bis zum **%2$s** gekündigt werden!",
+		"This is the final reminder before the cancellation deadline.": "Dies ist die letzte Erinnerung vor Ablauf der Kündigungsfrist.",
+		"Contract expiring": "Vertrag läuft aus",
+		"The contract \"%1$s\" expires on **%2$s**.": "Der Vertrag „%1$s\" läuft am **%2$s** aus.",
+		"The contract \"%1$s\" expires on **%2$s**!": "Der Vertrag „%1$s\" läuft am **%2$s** aus!",
+		"This is the final reminder.": "Dies ist die letzte Erinnerung.",
 		"Legen Sie fest, für welche Verträge Sie Erinnerungen erhalten möchten, wie früh und auf welchem Weg.": "Legen Sie fest, für welche Verträge Sie Erinnerungen erhalten möchten, wie früh und auf welchem Weg.",
 		"Erinnerungen für": "Erinnerungen für",
 		"Alle Verträge, die ich sehe": "Alle Verträge, die ich sehe",
