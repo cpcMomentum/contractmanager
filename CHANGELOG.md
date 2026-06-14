@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-06-14
+
+### Added
+- Persönliches Erinnerungs-Modell: Jeder Nutzer legt in den Einstellungen selbst fest, für welche Verträge er Erinnerungen erhält – alle sichtbaren, nur eigene oder keine (#157)
+- Eigene Vorlaufzeit pro Nutzer; der vom Administrator eingestellte Wert dient nur noch als Standard für alle, die nichts Eigenes hinterlegen (#172)
+- Erinnerungen wahlweise zusätzlich über einen persönlichen Nextcloud-Talk-Chat (pro Nutzer konfigurierbar)
+- Opt-out pro Vertrag: einzelne Verträge gezielt von den eigenen Erinnerungen ausnehmen
+
+### Changed
+- Erinnerungen gehen nicht mehr nur an den Ersteller eines Vertrags, sondern an alle berechtigten Empfänger gemäß ihrem persönlichen Modus
+- Nextcloud-Talk-Benachrichtigungen sind jetzt pro Nutzer statt admin-global; private Verträge erscheinen dadurch nicht mehr in einem geteilten Chat
+
+### Fixed
+- Jahresbasierte Kündigungsfristen über den 29. Februar werden korrekt berechnet (z. B. 29.02. minus 1 Jahr → 28.02.)
+
 ## [1.0.0] - 2026-05-27
 
 ### Changed
