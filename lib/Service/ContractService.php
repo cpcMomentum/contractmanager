@@ -176,8 +176,10 @@ class ContractService {
 			return;
 		}
 
-		// Private contracts are only visible to creator
-		if ($contract->getIsPrivate() && $contract->getCreatedBy() !== $userId) {
+		// Private contracts are only visible to creator or the responsible user
+		if ($contract->getIsPrivate()
+			&& $contract->getCreatedBy() !== $userId
+			&& $contract->getResponsibleUser() !== $userId) {
 			throw new ForbiddenException($this->l()->t('No access to this private contract'));
 		}
 	}
