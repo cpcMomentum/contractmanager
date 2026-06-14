@@ -24,6 +24,10 @@ class StatusUpdateJobTest extends TestCase {
 		$this->job = new StatusUpdateJob($time, $this->contractMapper, $logger);
 	}
 
+	private function invokeRun(mixed $argument): void {
+		(new \ReflectionMethod($this->job, 'run'))->invoke($this->job, $argument);
+	}
+
 	/**
 	 * #176: An expired fixed contract must be set to "ended" AND archived,
 	 * consistent with how cancelled contracts are handled.
@@ -38,7 +42,7 @@ class StatusUpdateJobTest extends TestCase {
 		$this->contractMapper->method('findExpiredActiveFixed')->willReturn([$contract]);
 		$this->contractMapper->method('findCancelledDue')->willReturn([]);
 
-		$this->job->run(null);
+		$this->invokeRun(null);
 
 		$this->assertSame('ended', $contract->getStatus());
 		$this->assertTrue((bool)$contract->getArchived(), 'Expired contract should be archived');
@@ -57,7 +61,7 @@ class StatusUpdateJobTest extends TestCase {
 		$this->contractMapper->method('findExpiredActiveFixed')->willReturn([]);
 		$this->contractMapper->method('findCancelledDue')->willReturn([$contract]);
 
-		$this->job->run(null);
+		$this->invokeRun(null);
 
 		$this->assertSame('ended', $contract->getStatus());
 		$this->assertTrue((bool)$contract->getArchived());
