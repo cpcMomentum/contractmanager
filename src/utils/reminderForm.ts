@@ -10,6 +10,6 @@
  * @param endDate The (new) end date value, or null when cleared
  * @return The reminderEnabled value to apply
  */
-export function reminderEnabledForEndDate(current: boolean, endDate: string | null): boolean {
+export function reminderEnabledForEndDate(current: boolean, endDate: Date | string | null): boolean {
 	return endDate === null ? false : current
 }
