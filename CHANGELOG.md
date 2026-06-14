@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-06-14
+
+### Fixed
+- Erinnerungen lassen sich pro Vertrag wieder dauerhaft deaktivieren; der Schalter „Erinnerung aktivieren" bleibt nach dem Speichern auch beim erneuten Öffnen aus (#180)
+- Regulär ausgelaufene befristete Verträge werden jetzt automatisch ins Archiv verschoben, wie es bei gekündigten Verträgen bereits geschah (#176)
+
+### Changed
+- Das Listen-Badge „Kündigung naht" heißt jetzt „Kündigungsfrist endet" – treffender, da ohne aktive Kündigung nichts passiert (#179)
+
 ## [1.0.1] - 2026-06-14
 
 ### Added
