@@ -9,6 +9,7 @@ use OCA\ContractManager\Service\CategoryService;
 use OCA\ContractManager\Service\NotFoundException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
@@ -22,9 +23,7 @@ class CategoryController extends Controller {
         parent::__construct(Application::APP_ID, $request);
     }
 
-    /**
-     * @NoAdminRequired
-     */
+    #[NoAdminRequired]
     public function index(): JSONResponse {
         return new JSONResponse($this->service->findAll());
     }

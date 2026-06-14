@@ -95,6 +95,7 @@
 			<ContractListItem v-for="contract in contracts"
 				:key="contract.id"
 				:contract="contract"
+				:default-reminder-days="defaultReminderDays"
 				@edit="handleEdit"
 				@duplicate="handleDuplicate"
 				@view="handleView"
@@ -151,8 +152,9 @@ import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
-import SettingsService from '../services/SettingsService.js'
+import SettingsService from '../services/SettingsService'
 
 export default {
 	name: 'ContractList',
@@ -216,8 +218,13 @@ export default {
 			filterVendor: filters.vendor || null,
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
+			// Window the badge / filter uses for "Kündigung naht". Defaults to the
+			// constant in utils/contractStatus; gets overridden once the admin
+			// setting comes back from the user-settings endpoint.
+			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
 			statusOptions: [
 				{ id: 'active', label: t('contractmanager', 'Aktiv') },
+				{ id: 'ending_soon', label: t('contractmanager', 'Kündigung naht') },
 				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
 				{ id: 'ended', label: t('contractmanager', 'Abgelaufen') },
 			],
@@ -240,10 +247,10 @@ export default {
 			return [...new Set(vendors)].sort((a, b) => a.localeCompare(b))
 		},
 		activeSortLabel() {
-				const option = this.sortOptions.find(o => o.key === this.sortBy)
-				return option ? option.label : ''
-			},
-			hasActiveFilters() {
+			const option = this.sortOptions.find(o => o.key === this.sortBy)
+			return option ? option.label : ''
+		},
+		hasActiveFilters() {
 			if (this.filterVendor) return true
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
@@ -272,9 +279,18 @@ export default {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
 
-			// Status-Filter (leer = kein Filter = alle anzeigen)
+			// Status-Filter (leer = kein Filter = alle anzeigen).
+			// "ending_soon" is a virtual option: it matches active contracts whose
+			// cancellation deadline is inside the first-reminder window — see
+			// utils/contractStatus.isEndingSoon.
 			if (this.filterStatuses.length > 0) {
-				filtered = filtered.filter(c => this.filterStatuses.includes(c.status))
+				const wantsEndingSoon = this.filterStatuses.includes('ending_soon')
+				const realStatuses = this.filterStatuses.filter(id => id !== 'ending_soon')
+				const reminderDays = this.defaultReminderDays
+				filtered = filtered.filter(c => {
+					if (wantsEndingSoon && isEndingSoon(c, reminderDays)) return true
+					return realStatuses.includes(c.status)
+				})
 			}
 
 			// Vertragspartner-Filter
@@ -292,6 +308,7 @@ export default {
 	},
 	created() {
 		this.fetchContracts()
+		this.loadReminderWindow()
 		this.fetchCategories()
 		if (this.hasActiveFilters) {
 			this.showFilters = true
@@ -300,6 +317,20 @@ export default {
 	methods: {
 		...mapActions(useContractsStore, ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
 		...mapActions(useCategoriesStore, ['fetchCategories']),
+
+		async loadReminderWindow() {
+			try {
+				const settings = await SettingsService.getUserSettings()
+				const days = Number(settings.reminderDays1)
+				if (Number.isFinite(days) && days > 0) {
+					this.defaultReminderDays = days
+				}
+			} catch (e) {
+				// Falls die Settings nicht erreichbar sind, bleibt der Default
+				// (DEFAULT_REMINDER_DAYS_1) bestehen — kein Blocker für die Liste.
+				console.debug('Failed to load reminder window setting:', e)
+			}
+		},
 
 		handleEdit(contract) {
 			this.editingContract = contract

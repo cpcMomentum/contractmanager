@@ -181,7 +181,8 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod, option
 		effective.setDate(effective.getDate() + period.value * periodsNeeded)
 	}
 
-	// Adjust if estimate was slightly off (max 3 iterations for month-length variance)
+	// Adjust if estimate was slightly off (max 3 iterations for month-length variance).
+	// eslint-disable-next-line no-unmodified-loop-condition -- effective is mutated via setTime() inside the loop
 	while (effective <= now) {
 		const next = addPeriod(effective, renewalPeriod)
 		if (!next) return end

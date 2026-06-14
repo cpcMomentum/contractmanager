@@ -416,11 +416,22 @@
 									{{ t('contractmanager', 'Erinnerung aktivieren') }}
 								</NcCheckboxRadioSwitch>
 								<div v-if="form.reminderEnabled" class="reminder-days">
-									<NcTextField :label="t('contractmanager', 'X Tage vorher')"
-										v-model="form.reminderDays"
+									<NcTextField v-model="form.reminderDays"
+										:label="t('contractmanager', 'X Tage vorher')"
 										type="number"
 										:disabled="readOnly"
 										:placeholder="t('contractmanager', 'Standard')" />
+								</div>
+								<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
+								<div v-if="isEdit && form.reminderEnabled" class="reminder-optout">
+									<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
+										:disabled="optOutSaving"
+										@update:model-value="onReminderOptOutChange">
+										{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
+									</NcCheckboxRadioSwitch>
+									<p class="optout-hint">
+										{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
+									</p>
 								</div>
 							</template>
 						</div>
@@ -431,7 +442,7 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Notizen') }}</h3>
 
-					<div class="form-row">
+					<div class="form-row notes-field">
 						<!-- eslint-disable vue/no-v-html -- linkifyText escapes HTML before linkifying -->
 						<div v-if="readOnly && form.notes"
 							class="notes-readonly"
@@ -496,7 +507,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
-import { getFilePickerBuilder } from '@nextcloud/dialogs'
+import { getFilePickerBuilder, showSuccess, showError, showWarning } from '@nextcloud/dialogs'
 import { mapState } from 'pinia'
 import { useCategoriesStore } from '../store/categories'
 import Folder from 'vue-material-design-icons/Folder.vue'
@@ -514,10 +525,9 @@ import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUti
 import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
-import ContractService from '../services/ContractService.js'
-import ExtractionService from '../services/ExtractionService.js'
-import SettingsService from '../services/SettingsService.js'
-import { showSuccess, showError, showWarning } from '@nextcloud/dialogs'
+import ContractService from '../services/ContractService'
+import ExtractionService from '../services/ExtractionService'
+import SettingsService from '../services/SettingsService'
 
 export default {
 	name: 'ContractForm',
@@ -575,6 +585,8 @@ export default {
 				customFieldLabel3: '',
 			},
 			vendorOptions: [],
+			reminderOptedOut: false,
+			optOutSaving: false,
 		}
 	},
 	computed: {
@@ -693,22 +705,6 @@ export default {
 			return deadline ? formatDate(deadline) : null
 		},
 	},
-	async created() {
-		try {
-			const status = await ExtractionService.getStatus()
-			this.aiAvailable = status.configured
-		} catch (e) {
-			this.aiAvailable = false
-		}
-		try {
-			const settings = await SettingsService.getUserSettings()
-			if (settings.customFieldLabels) {
-				this.customFieldLabels = settings.customFieldLabels
-			}
-		} catch (e) {
-			console.debug('Failed to load custom field labels:', e)
-		}
-	},
 	watch: {
 		show(newVal) {
 			if (newVal) {
@@ -731,10 +727,45 @@ export default {
 			}
 		},
 	},
+	async created() {
+		try {
+			const status = await ExtractionService.getStatus()
+			this.aiAvailable = status.configured
+		} catch (e) {
+			this.aiAvailable = false
+		}
+		try {
+			const settings = await SettingsService.getUserSettings()
+			if (settings.customFieldLabels) {
+				this.customFieldLabels = settings.customFieldLabels
+			}
+		} catch (e) {
+			console.debug('Failed to load custom field labels:', e)
+		}
+		if (this.isEdit) {
+			try {
+				this.reminderOptedOut = await ContractService.getReminderOptOut(this.contract.id)
+			} catch (e) {
+				console.debug('Failed to load reminder opt-out state:', e)
+			}
+		}
+	},
 	mounted() {
 		this.loadVendorOptions()
 	},
 	methods: {
+		async onReminderOptOutChange(value) {
+			this.optOutSaving = true
+			try {
+				this.reminderOptedOut = await ContractService.setReminderOptOut(this.contract.id, value)
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (e) {
+				console.error('Failed to save reminder opt-out:', e)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+			} finally {
+				this.optOutSaving = false
+			}
+		},
 		async loadVendorOptions() {
 			if (this.readOnly) return
 			try {
@@ -835,7 +866,7 @@ export default {
 				reminderDays: contract.reminderDays ? String(contract.reminderDays) : '',
 				notes: contract.notes || '',
 				amountType: contract.amountType || 'netto',
-				isPrivate: contract.isPrivate === true || contract.isPrivate === 1,
+				isPrivate: contract.isPrivate === true,
 				customField1: contract.customField1 || '',
 				customField2: contract.customField2 || '',
 				customField3: contract.customField3 || '',
@@ -1357,6 +1388,12 @@ export default {
 			text-decoration: none;
 		}
 	}
+}
+
+// max-height keeps the resize handle inside the dialog viewport and above the modal footer.
+.notes-field :deep(textarea) {
+	min-height: 6em;
+	max-height: 50vh;
 }
 
 .selected-path {

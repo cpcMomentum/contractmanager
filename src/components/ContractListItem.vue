@@ -5,7 +5,17 @@
 				<a class="contract-name" href="#" @click.prevent="onEdit">
 					{{ contract.name }}
 				</a>
-				<StatusBadge :status="contract.status" />
+				<StatusBadge v-if="contract.status" :status="contract.status" />
+				<span v-if="endingSoon"
+					class="status-indicator status-ending-soon"
+					:title="t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.')">
+					{{ t('contractmanager', 'Kündigung naht') }}
+				</span>
+				<span v-if="expiredFixed"
+					class="status-indicator status-expired"
+					:title="t('contractmanager', 'Das Enddatum ist überschritten.')">
+					{{ t('contractmanager', 'Abgelaufen') }}
+				</span>
 				<span v-if="contract.isPrivate" class="private-badge" :title="t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')">
 					<LockIcon :size="16" />
 					{{ t('contractmanager', 'Privat') }}
@@ -82,7 +92,7 @@
 				<NcActionButton v-if="mode === 'trash' && isAdmin"
 					class="delete-action"
 					:close-after-click="true"
-					@click="$emit('delete-permanently', contract)">
+					@click="$emit('deletePermanently', contract)">
 					<template #icon>
 						<DeleteForeverIcon :size="20" />
 					</template>
@@ -122,6 +132,7 @@ import StatusBadge from './StatusBadge.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
+import { isEndingSoon, isExpiredFixed } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
@@ -156,8 +167,14 @@ export default {
 			type: String,
 			default: 'default',
 		},
+		// First-reminder window in days (admin setting). When omitted the
+		// helper falls back to its built-in default.
+		defaultReminderDays: {
+			type: Number,
+			default: undefined,
+		},
 	},
-	emits: ['edit', 'view', 'duplicate', 'archive', 'restore', 'delete', 'delete-permanently'],
+	emits: ['edit', 'view', 'duplicate', 'archive', 'restore', 'delete', 'deletePermanently'],
 	data() {
 		return {
 			showDeleteDialog: false,
@@ -176,6 +193,12 @@ export default {
 				status: this.contract.status,
 				cancelledTo: this.contract.cancelledTo,
 			})
+		},
+		endingSoon() {
+			return isEndingSoon(this.contract, this.defaultReminderDays)
+		},
+		expiredFixed() {
+			return isExpiredFixed(this.contract)
 		},
 		deleteDialogButtons() {
 			return [
@@ -341,6 +364,28 @@ export default {
 	border-radius: 12px;
 	font-size: 12px;
 	font-weight: 500;
+}
+
+.status-indicator {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: 0.2px;
+	white-space: nowrap;
+	cursor: help;
+
+	&.status-ending-soon {
+		background-color: var(--color-warning-hover, #fff4e0);
+		color: var(--color-warning-text, #92400e);
+	}
+
+	&.status-expired {
+		background-color: var(--color-error-hover, #fee2e2);
+		color: var(--color-error-text, #991b1b);
+	}
 }
 
 .delete-action {

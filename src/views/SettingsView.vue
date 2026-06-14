@@ -7,15 +7,95 @@
 		<!-- User Settings -->
 		<div class="settings-section">
 			<h3>{{ t('contractmanager', 'Benachrichtigungen') }}</h3>
+			<p class="settings-description">
+				{{ t('contractmanager', 'Legen Sie fest, für welche Verträge Sie Erinnerungen erhalten möchten, wie früh und auf welchem Weg.') }}
+			</p>
 
+			<!-- Reminder mode: which contracts -->
 			<div class="settings-item">
-				<NcCheckboxRadioSwitch v-model="emailReminder" @update:model-value="onEmailReminderChange">
-					{{ t('contractmanager', 'E-Mail-Benachrichtigungen aktivieren') }}
+				<label class="settings-label">{{ t('contractmanager', 'Erinnerungen für') }}</label>
+				<NcCheckboxRadioSwitch v-model="reminderMode"
+					value="all"
+					name="reminderMode"
+					type="radio"
+					@update:model-value="onReminderModeChange">
+					{{ t('contractmanager', 'Alle Verträge, die ich sehe') }}
 				</NcCheckboxRadioSwitch>
-				<p class="settings-description">
-					{{ t('contractmanager', 'Sie erhalten E-Mails an Ihre in Nextcloud hinterlegte Adresse, wenn Verträge bald auslaufen.') }}
-				</p>
+				<NcCheckboxRadioSwitch v-model="reminderMode"
+					value="own"
+					name="reminderMode"
+					type="radio"
+					@update:model-value="onReminderModeChange">
+					{{ t('contractmanager', 'Nur meine eigenen Verträge') }}
+				</NcCheckboxRadioSwitch>
+				<NcCheckboxRadioSwitch v-model="reminderMode"
+					value="none"
+					name="reminderMode"
+					type="radio"
+					@update:model-value="onReminderModeChange">
+					{{ t('contractmanager', 'Keine Erinnerungen') }}
+				</NcCheckboxRadioSwitch>
 			</div>
+
+			<template v-if="reminderMode !== 'none'">
+				<!-- Channel: e-mail -->
+				<div class="settings-item">
+					<NcCheckboxRadioSwitch v-model="emailReminder" @update:model-value="onEmailReminderChange">
+						{{ t('contractmanager', 'Per E-Mail benachrichtigen') }}
+					</NcCheckboxRadioSwitch>
+					<p class="settings-description">
+						{{ t('contractmanager', 'E-Mails gehen an Ihre in Nextcloud hinterlegte Adresse.') }}
+					</p>
+				</div>
+
+				<!-- Channel: personal Talk chat -->
+				<div class="settings-item">
+					<label class="settings-label">{{ t('contractmanager', 'Eigener Nextcloud Talk Chat (optional)') }}</label>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Token eines Chats, in dem Sie Erinnerungen erhalten möchten (aus der Chat-URL). Leer lassen, um Talk nicht zu nutzen.') }}
+					</p>
+					<NcTextField v-model="userReminders.talkChatToken"
+						:placeholder="t('contractmanager', 'z.B. abc123xyz')"
+						class="settings-input" />
+				</div>
+
+				<!-- Personal lead time -->
+				<div class="settings-item reminder-days">
+					<label class="settings-label">{{ t('contractmanager', 'Eigene Vorlaufzeit (Tage vor der Frist)') }}</label>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Leer lassen, um die Standardwerte des Administrators zu verwenden.') }}
+					</p>
+					<div class="reminder-inputs">
+						<div class="reminder-input-group">
+							<label>{{ t('contractmanager', 'Erste Erinnerung') }}</label>
+							<NcTextField v-model="userReminders.reminderDays1Personal"
+								type="number"
+								:min="1"
+								:placeholder="String(reminderDefaults.days1)"
+								class="number-input" />
+							<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
+						</div>
+						<div class="reminder-input-group">
+							<label>{{ t('contractmanager', 'Letzte Erinnerung') }}</label>
+							<NcTextField v-model="userReminders.reminderDays2Personal"
+								type="number"
+								:min="1"
+								:placeholder="String(reminderDefaults.days2)"
+								class="number-input" />
+							<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="settings-actions">
+					<NcButton variant="primary" :disabled="savingUserReminders" @click="saveUserReminderSettings">
+						<template #icon>
+							<NcLoadingIcon v-if="savingUserReminders" :size="20" />
+						</template>
+						{{ t('contractmanager', 'Speichern') }}
+					</NcButton>
+				</div>
+			</template>
 		</div>
 
 		<div class="settings-section">
@@ -127,20 +207,12 @@
 					{{ t('contractmanager', 'Administrator-Einstellungen') }}
 				</h3>
 
-				<!-- Talk Chat Token -->
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'Nextcloud Talk Chat-Token') }}</label>
-					<p class="settings-description">
-						{{ t('contractmanager', 'Token des Chats für Erinnerungen (aus der Chat-URL).') }}
-					</p>
-					<NcTextField v-model="adminSettings.talkChatToken"
-						:placeholder="t('contractmanager', 'z.B. abc123xyz')"
-						class="settings-input" />
-				</div>
-
-				<!-- Reminder Days -->
+				<!-- Default reminder lead time -->
 				<div class="settings-item reminder-days">
-					<label class="settings-label">{{ t('contractmanager', 'Erinnerungszeitpunkte (Tage vor Kündigungsfrist)') }}</label>
+					<label class="settings-label">{{ t('contractmanager', 'Standard-Vorlaufzeit (Tage vor Kündigungsfrist)') }}</label>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Gilt für alle Benutzer, die keine eigene Vorlaufzeit eingestellt haben.') }}
+					</p>
 
 					<div class="reminder-inputs">
 						<div class="reminder-input-group">
@@ -361,7 +433,7 @@ import CheckIcon from 'vue-material-design-icons/Check.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import AccountIcon from 'vue-material-design-icons/Account.vue'
 import AccountGroupIcon from 'vue-material-design-icons/AccountGroup.vue'
-import SettingsService from '../services/SettingsService.js'
+import SettingsService from '../services/SettingsService'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
 
@@ -388,10 +460,20 @@ export default {
 			showDeleteCategoryDialog: false,
 			deletingCategory: null,
 			emailReminder: false,
+			reminderMode: 'own',
+			userReminders: {
+				talkChatToken: '',
+				reminderDays1Personal: '',
+				reminderDays2Personal: '',
+			},
+			reminderDefaults: {
+				days1: 14,
+				days2: 3,
+			},
+			savingUserReminders: false,
 			defaultAmountType: 'netto',
 			savingAdmin: false,
 			adminSettings: {
-				talkChatToken: '',
 				reminderDays1: 14,
 				reminderDays2: 3,
 				customFieldLabel1: '',
@@ -468,9 +550,51 @@ export default {
 			try {
 				const settings = await SettingsService.getUserSettings()
 				this.emailReminder = settings.emailReminder
+				this.reminderMode = settings.reminderMode || 'own'
+				this.userReminders = {
+					talkChatToken: settings.talkChatToken || '',
+					reminderDays1Personal: settings.reminderDays1Personal ?? '',
+					reminderDays2Personal: settings.reminderDays2Personal ?? '',
+				}
+				this.reminderDefaults = {
+					days1: settings.reminderDays1 || 14,
+					days2: settings.reminderDays2 || 3,
+				}
 				this.defaultAmountType = settings.defaultAmountType || 'netto'
 			} catch (error) {
 				console.error('Failed to load user settings:', error)
+			}
+		},
+
+		async onReminderModeChange(value) {
+			const previous = this.reminderMode
+			try {
+				await SettingsService.updateUserSettings({ reminderMode: value })
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save reminder mode:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.reminderMode = previous
+			}
+		},
+
+		async saveUserReminderSettings() {
+			this.savingUserReminders = true
+			try {
+				// Empty string clears the personal value (0 → backend treats as "use default").
+				const days1 = this.userReminders.reminderDays1Personal
+				const days2 = this.userReminders.reminderDays2Personal
+				await SettingsService.updateUserSettings({
+					talkChatToken: this.userReminders.talkChatToken,
+					reminderDays1Personal: days1 === '' ? 0 : parseInt(days1, 10),
+					reminderDays2Personal: days2 === '' ? 0 : parseInt(days2, 10),
+				})
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save reminder settings:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+			} finally {
+				this.savingUserReminders = false
 			}
 		},
 
@@ -489,7 +613,6 @@ export default {
 			try {
 				const settings = await SettingsService.getAdminSettings()
 				this.adminSettings = {
-					talkChatToken: settings.talkChatToken || '',
 					reminderDays1: settings.reminderDays1 || 14,
 					reminderDays2: settings.reminderDays2 || 3,
 					customFieldLabel1: settings.customFieldLabel1 || '',
@@ -579,7 +702,6 @@ export default {
 			this.savingAdmin = true
 			try {
 				const result = await SettingsService.updateAdminSettings({
-					talkChatToken: this.adminSettings.talkChatToken,
 					reminderDays1: parseInt(this.adminSettings.reminderDays1, 10),
 					reminderDays2: parseInt(this.adminSettings.reminderDays2, 10),
 					customFieldLabel1: this.adminSettings.customFieldLabel1,
@@ -591,7 +713,6 @@ export default {
 					aiModel: this.adminSettings.aiModel,
 				})
 				this.adminSettings = {
-					talkChatToken: result.talkChatToken || '',
 					reminderDays1: result.reminderDays1 || 14,
 					reminderDays2: result.reminderDays2 || 3,
 					customFieldLabel1: result.customFieldLabel1 || '',

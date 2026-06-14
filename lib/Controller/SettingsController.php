@@ -28,7 +28,7 @@ class SettingsController extends Controller {
 	}
 
 	// ========================================
-	// User Settings (mit @NoAdminRequired)
+	// User Settings (mit #[NoAdminRequired])
 	// ========================================
 
 	/**
@@ -42,11 +42,20 @@ class SettingsController extends Controller {
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
+			'reminderMode' => $this->settingsService->getUserReminderMode($this->userId),
+			'reminderDays1Personal' => $this->settingsService->getUserReminderDays1($this->userId),
+			'reminderDays2Personal' => $this->settingsService->getUserReminderDays2($this->userId),
+			'talkChatToken' => $this->settingsService->getUserTalkChatToken($this->userId),
 			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
+			// App-globale Standard-Vorlaufzeiten. Das Frontend nutzt sie zur Berechnung
+			// von "Kündigung naht" und als Fallback-Anzeige, wenn der Nutzer keine
+			// persönliche Vorlaufzeit gesetzt hat. Read-only für Nicht-Admins.
+			'reminderDays1' => $this->settingsService->getReminderDays1(),
+			'reminderDays2' => $this->settingsService->getReminderDays2(),
 		]);
 	}
 
@@ -56,6 +65,10 @@ class SettingsController extends Controller {
 	#[NoAdminRequired]
 	public function update(
 		?bool $emailReminder = null,
+		?string $reminderMode = null,
+		?int $reminderDays1Personal = null,
+		?int $reminderDays2Personal = null,
+		?string $talkChatToken = null,
 		?string $sortBy = null,
 		?string $sortDirection = null,
 		?array $filters = null,
@@ -67,6 +80,19 @@ class SettingsController extends Controller {
 
 		if ($emailReminder !== null) {
 			$this->settingsService->setUserEmailReminder($this->userId, $emailReminder);
+		}
+		if ($reminderMode !== null) {
+			$this->settingsService->setUserReminderMode($this->userId, $reminderMode);
+		}
+		// 0 clears the personal value (fall back to the admin default).
+		if ($reminderDays1Personal !== null) {
+			$this->settingsService->setUserReminderDays1($this->userId, $reminderDays1Personal ?: null);
+		}
+		if ($reminderDays2Personal !== null) {
+			$this->settingsService->setUserReminderDays2($this->userId, $reminderDays2Personal ?: null);
+		}
+		if ($talkChatToken !== null) {
+			$this->settingsService->setUserTalkChatToken($this->userId, $talkChatToken ?: null);
 		}
 		if ($sortBy !== null) {
 			$this->settingsService->setUserSortBy($this->userId, $sortBy);
@@ -83,6 +109,10 @@ class SettingsController extends Controller {
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
+			'reminderMode' => $this->settingsService->getUserReminderMode($this->userId),
+			'reminderDays1Personal' => $this->settingsService->getUserReminderDays1($this->userId),
+			'reminderDays2Personal' => $this->settingsService->getUserReminderDays2($this->userId),
+			'talkChatToken' => $this->settingsService->getUserTalkChatToken($this->userId),
 			'sortBy' => $this->settingsService->getUserSortBy($this->userId),
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
@@ -91,19 +121,18 @@ class SettingsController extends Controller {
 	}
 
 	// ========================================
-	// Admin Settings (ohne @NoAdminRequired = nur Admins)
+	// Admin Settings (ohne #[NoAdminRequired] = nur Admins)
 	// ========================================
 
 	/**
 	 * Get admin settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 *
 	 * Note: User access control is now handled via Nextcloud's native
 	 * group-based app access (Admin → Apps → "Enable only for specific groups")
 	 */
 	public function getAdmin(): JSONResponse {
 		return new JSONResponse([
-			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
@@ -118,10 +147,9 @@ class SettingsController extends Controller {
 
 	/**
 	 * Update admin settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 */
 	public function updateAdmin(
-		?string $talkChatToken = null,
 		?int $reminderDays1 = null,
 		?int $reminderDays2 = null,
 		?string $customFieldLabel1 = null,
@@ -132,10 +160,6 @@ class SettingsController extends Controller {
 		?string $aiApiUrl = null,
 		?string $aiModel = null,
 	): JSONResponse {
-		if ($talkChatToken !== null) {
-			$this->settingsService->setTalkChatToken($talkChatToken ?: null);
-		}
-
 		if ($reminderDays1 !== null) {
 			$this->settingsService->setReminderDays1($reminderDays1);
 		}
@@ -175,7 +199,6 @@ class SettingsController extends Controller {
 		}
 
 		return new JSONResponse([
-			'talkChatToken' => $this->settingsService->getTalkChatToken(),
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
@@ -194,7 +217,7 @@ class SettingsController extends Controller {
 
 	/**
 	 * Get permission settings (editors and viewers)
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 */
 	public function getPermissions(): JSONResponse {
 		return new JSONResponse([
@@ -205,7 +228,7 @@ class SettingsController extends Controller {
 
 	/**
 	 * Update permission settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 *
 	 * @param string[] $editors Array of "group:groupId" or "user:userId" entries
 	 * @param string[] $viewers Array of "group:groupId" or "user:userId" entries
@@ -231,7 +254,7 @@ class SettingsController extends Controller {
 	/**
 	 * Search for users and groups
 	 * Used by the permission picker in settings
-	 * No @NoAdminRequired = only admins can access
+	 * No #[NoAdminRequired] = only admins can access
 	 */
 	public function searchPrincipals(string $query = ''): JSONResponse {
 		$results = [];

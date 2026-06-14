@@ -8,6 +8,7 @@ use DateTime;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
+use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\L10N\IFactory;
@@ -33,8 +34,23 @@ class ContractService {
 
 	public function __construct(
 		private ContractMapper $mapper,
+		private ReminderOptOutMapper $optOutMapper,
 		private IFactory $l10nFactory,
 	) {
+	}
+
+	/**
+	 * Whether a user has opted out of reminders for a contract.
+	 */
+	public function isReminderOptedOut(int $contractId, string $userId): bool {
+		return $this->optOutMapper->isOptedOut($contractId, $userId);
+	}
+
+	/**
+	 * Set or clear a user's reminder opt-out for a contract.
+	 */
+	public function setReminderOptOut(int $contractId, string $userId, bool $optedOut): void {
+		$this->optOutMapper->setOptOut($contractId, $userId, $optedOut);
 	}
 
 	private function l(): \OCP\IL10N {
@@ -465,6 +481,7 @@ class ContractService {
             throw new NotFoundException($e->getMessage());
         }
 
+        $this->optOutMapper->deleteByContract($id);
         $this->mapper->delete($contract);
     }
 
@@ -478,6 +495,7 @@ class ContractService {
         $count = 0;
 
         foreach ($contracts as $contract) {
+            $this->optOutMapper->deleteByContract($contract->getId());
             $this->mapper->delete($contract);
             $count++;
         }

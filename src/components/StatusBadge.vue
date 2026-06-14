@@ -7,8 +7,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { translate as t } from '@nextcloud/l10n'
-
-type ContractStatus = 'active' | 'cancelled' | 'ended'
+import type { ContractStatus } from '../store/contracts'
 
 const props = defineProps<{
 	status: ContractStatus

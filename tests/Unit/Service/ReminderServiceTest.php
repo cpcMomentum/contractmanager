@@ -7,8 +7,10 @@ namespace OCA\ContractManager\Tests\Unit\Service;
 use DateTime;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
+use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Db\ReminderSentMapper;
 use OCA\ContractManager\Service\EmailService;
+use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\ReminderService;
 use OCA\ContractManager\Service\SettingsService;
 use OCA\ContractManager\Service\TalkService;
@@ -17,12 +19,16 @@ use Psr\Log\LoggerInterface;
 
 class ReminderServiceTest extends TestCase {
 
+	private const TEST_USER = 'testuser';
+
 	private ContractMapper $contractMapper;
 	private ReminderSentMapper $reminderSentMapper;
 	private SettingsService $settingsService;
 	private TalkService $talkService;
 	private EmailService $emailService;
 	private LoggerInterface $logger;
+	private PermissionService $permissionService;
+	private ReminderOptOutMapper $optOutMapper;
 	private ReminderService $service;
 
 	protected function setUp(): void {
@@ -34,6 +40,13 @@ class ReminderServiceTest extends TestCase {
 		$this->talkService = $this->createMock(TalkService::class);
 		$this->emailService = $this->createMock(EmailService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->permissionService = $this->createMock(PermissionService::class);
+		$this->optOutMapper = $this->createMock(ReminderOptOutMapper::class);
+
+		// User reminder settings default to "no personal override" so the
+		// effective lead time falls back to the per-contract/admin values.
+		$this->settingsService->method('getUserReminderDays1')->willReturn(null);
+		$this->settingsService->method('getUserReminderDays2')->willReturn(null);
 
 		$this->service = new ReminderService(
 			$this->contractMapper,
@@ -42,6 +55,8 @@ class ReminderServiceTest extends TestCase {
 			$this->talkService,
 			$this->emailService,
 			$this->logger,
+			$this->permissionService,
+			$this->optOutMapper,
 		);
 	}
 
@@ -138,7 +153,7 @@ class ReminderServiceTest extends TestCase {
 		$contract->setStatus(Contract::STATUS_CANCELLED);
 		$contract->setReminderEnabled(1);
 
-		$result = $this->service->shouldSendFirstReminder($contract);
+		$result = $this->service->shouldSendFirstReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -148,7 +163,7 @@ class ReminderServiceTest extends TestCase {
 		$contract->setStatus(Contract::STATUS_ACTIVE);
 		$contract->setReminderEnabled(0);
 
-		$result = $this->service->shouldSendFirstReminder($contract);
+		$result = $this->service->shouldSendFirstReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -159,7 +174,7 @@ class ReminderServiceTest extends TestCase {
 		$contract->setReminderEnabled(1);
 		$contract->setArchived(1);
 
-		$result = $this->service->shouldSendFirstReminder($contract);
+		$result = $this->service->shouldSendFirstReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -176,7 +191,7 @@ class ReminderServiceTest extends TestCase {
 		$this->settingsService->method('getReminderDays1')->willReturn(14);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(true);
 
-		$result = $this->service->shouldSendFirstReminder($contract);
+		$result = $this->service->shouldSendFirstReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -190,7 +205,7 @@ class ReminderServiceTest extends TestCase {
 		$contract->setStatus(Contract::STATUS_CANCELLED);
 		$contract->setReminderEnabled(1);
 
-		$result = $this->service->shouldSendFinalReminder($contract);
+		$result = $this->service->shouldSendFinalReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -207,21 +222,7 @@ class ReminderServiceTest extends TestCase {
 		$this->settingsService->method('getReminderDays2')->willReturn(3);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(true);
 
-		$result = $this->service->shouldSendFinalReminder($contract);
-
-		$this->assertFalse($result);
-	}
-
-	// ========================================
-	// Legacy shouldSendReminder Test
-	// ========================================
-
-	public function testShouldSendReminderCombinesFirstAndFinal(): void {
-		$contract = $this->createContract(new DateTime('2026-06-30'), '1 month');
-		$contract->setStatus(Contract::STATUS_CANCELLED);
-		$contract->setReminderEnabled(1);
-
-		$result = $this->service->shouldSendReminder($contract);
+		$result = $this->service->shouldSendFinalReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -245,7 +246,7 @@ class ReminderServiceTest extends TestCase {
 
 		$this->settingsService->method('getReminderDays2')->willReturn(3);
 
-		$result = $this->service->shouldSendFinalReminder($contract);
+		$result = $this->service->shouldSendFinalReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -259,7 +260,7 @@ class ReminderServiceTest extends TestCase {
 
 		$this->settingsService->method('getReminderDays2')->willReturn(3);
 
-		$result = $this->service->shouldSendFinalReminder($contract);
+		$result = $this->service->shouldSendFinalReminder($contract, self::TEST_USER);
 
 		$this->assertFalse($result);
 	}
@@ -274,22 +275,23 @@ class ReminderServiceTest extends TestCase {
 		$this->settingsService->method('getReminderDays2')->willReturn(3);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
 
-		$result = $this->service->shouldSendFinalReminder($contract);
+		$result = $this->service->shouldSendFinalReminder($contract, self::TEST_USER);
 
 		$this->assertTrue($result);
 	}
 
 	public function testShouldSendFinalReminderFiresNormallyWithoutOverride(): void {
-		// Kein Override → globaler days2 gilt unverändert
+		// Kein Override → globaler days1/days2 gelten unverändert
 		$endDate = new DateTime('+2 days');
 		$contract = $this->createContract($endDate, '', 'fixed');
 		$contract->setId(1);
 		// reminderDays bleibt null (kein Override)
 
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
 		$this->settingsService->method('getReminderDays2')->willReturn(3);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
 
-		$result = $this->service->shouldSendFinalReminder($contract);
+		$result = $this->service->shouldSendFinalReminder($contract, self::TEST_USER);
 
 		$this->assertTrue($result);
 	}
@@ -430,10 +432,10 @@ class ReminderServiceTest extends TestCase {
 		// Verify hasBeenSent is called with the effective date in the reminder type
 		$this->reminderSentMapper->expects($this->once())
 			->method('hasBeenSent')
-			->with(1, $expectedType)
+			->with(1, $expectedType, self::TEST_USER)
 			->willReturn(true);
 
-		$this->service->shouldSendFirstReminder($contract);
+		$this->service->shouldSendFirstReminder($contract, self::TEST_USER);
 	}
 
 	// ========================================
@@ -473,7 +475,7 @@ class ReminderServiceTest extends TestCase {
 		$this->settingsService->method('getReminderDays1')->willReturn(14);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
 
-		$result = $this->service->shouldSendFirstReminder($contract);
+		$result = $this->service->shouldSendFirstReminder($contract, self::TEST_USER);
 
 		// Should return true: we're within 14 days of end date
 		$this->assertTrue($result);
@@ -491,10 +493,10 @@ class ReminderServiceTest extends TestCase {
 
 		$this->reminderSentMapper->expects($this->once())
 			->method('hasBeenSent')
-			->with(1, $expectedType)
+			->with(1, $expectedType, self::TEST_USER)
 			->willReturn(true);
 
-		$this->service->shouldSendFirstReminder($contract);
+		$this->service->shouldSendFirstReminder($contract, self::TEST_USER);
 	}
 
 	// ========================================
@@ -526,14 +528,93 @@ class ReminderServiceTest extends TestCase {
 		$this->contractMapper->method('findContractsNeedingReminder')->willReturn([$contract]);
 		$this->settingsService->method('getReminderDays1')->willReturn(14);
 		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_OWN);
 		$this->settingsService->method('getUserEmailReminder')->willReturn(true);
+		$this->settingsService->method('getUserTalkChatToken')->willReturn(null);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
 		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
 		$this->reminderSentMapper->method('insert')->willReturn(new \OCA\ContractManager\Db\ReminderSent());
+		$this->emailService->method('sendReminder')->willReturn(true);
 		$this->talkService->method('isTalkAvailable')->willReturn(false);
 
 		// KERN-ASSERTION: emailService darf genau 1x aufgerufen werden, nicht 2x
 		$this->emailService->expects($this->exactly(1))
 			->method('sendReminder');
+
+		$this->service->checkAndSendReminders();
+	}
+
+	/**
+	 * #157: Reminders go to every eligible recipient, not just the creator.
+	 * A non-creator with mode "all" must receive the reminder; a user who
+	 * cannot see the contract must not.
+	 */
+	public function testCheckAndSendRemindersDeliversToNonCreatorWithModeAll(): void {
+		$deadline = new DateTime('+2 days');
+		$contract = $this->createContract($deadline, '', 'fixed');
+		$contract->setId(7);
+		$contract->setCreatedBy('alice');
+
+		$this->contractMapper->method('findContractsNeedingReminder')->willReturn([$contract]);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		// alice = creator (own), bob = non-creator with mode all, carol cannot see it
+		$this->settingsService->method('getUserReminderMode')->willReturnMap([
+			['alice', SettingsService::REMINDER_MODE_OWN],
+			['bob', SettingsService::REMINDER_MODE_ALL],
+			['carol', SettingsService::REMINDER_MODE_ALL],
+		]);
+		$this->settingsService->method('getUserEmailReminder')->willReturn(true);
+		$this->settingsService->method('getUserTalkChatToken')->willReturn(null);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['alice', 'bob', 'carol']);
+		$this->permissionService->method('canUserSeeContract')->willReturnMap([
+			[$contract, 'alice', true],
+			[$contract, 'bob', true],
+			[$contract, 'carol', false],
+		]);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+		$this->reminderSentMapper->method('insert')->willReturn(new \OCA\ContractManager\Db\ReminderSent());
+		$this->talkService->method('isTalkAvailable')->willReturn(false);
+
+		// alice (own/creator) + bob (all, can see) = 2 recipients; carol excluded (cannot see)
+		$this->emailService->expects($this->exactly(2))
+			->method('sendReminder')
+			->willReturn(true);
+
+		$this->service->checkAndSendReminders();
+	}
+
+	/**
+	 * #157: A recipient who opted out of a specific contract is skipped even
+	 * though their mode would otherwise include it.
+	 */
+	public function testCheckAndSendRemindersRespectsOptOut(): void {
+		$deadline = new DateTime('+2 days');
+		$contract = $this->createContract($deadline, '', 'fixed');
+		$contract->setId(8);
+		$contract->setCreatedBy('alice');
+
+		$this->contractMapper->method('findContractsNeedingReminder')->willReturn([$contract]);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->settingsService->method('getUserEmailReminder')->willReturn(true);
+		$this->settingsService->method('getUserTalkChatToken')->willReturn(null);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['alice', 'bob']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		// bob opted out of this contract
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn(['bob']);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+		$this->reminderSentMapper->method('insert')->willReturn(new \OCA\ContractManager\Db\ReminderSent());
+		$this->talkService->method('isTalkAvailable')->willReturn(false);
+
+		// only alice receives it, bob opted out
+		$this->emailService->expects($this->exactly(1))
+			->method('sendReminder')
+			->willReturn(true);
 
 		$this->service->checkAndSendReminders();
 	}
