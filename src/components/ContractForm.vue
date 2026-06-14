@@ -460,6 +460,26 @@
 					</div>
 				</div>
 
+				<!-- Zuständig -->
+				<div class="form-section">
+					<div class="form-row">
+						<label class="form-label">{{ t('contractmanager', 'Zuständig') }}</label>
+						<p v-if="!readOnly" class="form-hint">
+							{{ t('contractmanager', 'Wer diesen Vertrag betreut. Leer lassen, dann bleibt der Ersteller zuständig.') }}
+						</p>
+						<NcSelect v-if="!readOnly"
+							v-model="form.responsiblePrincipal"
+							:options="responsibleSearchResults"
+							:loading="responsibleSearching"
+							:placeholder="t('contractmanager', 'Benutzer suchen...')"
+							label="displayName"
+							track-by="id"
+							:clearable="true"
+							@search="onResponsibleSearch" />
+						<span v-else>{{ form.responsiblePrincipal ? form.responsiblePrincipal.displayName : t('contractmanager', 'Ersteller') }}</span>
+					</div>
+				</div>
+
 				<!-- Privacy -->
 				<div class="form-section">
 					<div class="form-row">
@@ -588,6 +608,8 @@ export default {
 			vendorOptions: [],
 			reminderOptedOut: false,
 			optOutSaving: false,
+			responsibleSearchResults: [],
+			responsibleSearching: false,
 		}
 	},
 	computed: {
@@ -753,6 +775,21 @@ export default {
 		this.loadVendorOptions()
 	},
 	methods: {
+		async onResponsibleSearch(query) {
+			if (!query || query.trim().length < 1) {
+				this.responsibleSearchResults = []
+				return
+			}
+			try {
+				this.responsibleSearching = true
+				// Editor-zugänglicher User-Such-Endpunkt (nicht der admin-only Principal-Search)
+				this.responsibleSearchResults = await ContractService.searchUsers(query)
+			} catch (e) {
+				this.responsibleSearchResults = []
+			} finally {
+				this.responsibleSearching = false
+			}
+		},
 		async onReminderOptOutChange(value) {
 			this.optOutSaving = true
 			try {
@@ -808,6 +845,7 @@ export default {
 				reminderDays: '',
 				notes: '',
 				isPrivate: false,
+				responsiblePrincipal: null,
 				customField1: '',
 				customField2: '',
 				customField3: '',
@@ -866,6 +904,9 @@ export default {
 				notes: contract.notes || '',
 				amountType: contract.amountType || 'netto',
 				isPrivate: contract.isPrivate === true,
+				responsiblePrincipal: contract.responsibleUser
+					? { id: 'user:' + contract.responsibleUser, uid: contract.responsibleUser, displayName: contract.responsibleUser, type: 'user' }
+					: null,
 				customField1: contract.customField1 || '',
 				customField2: contract.customField2 || '',
 				customField3: contract.customField3 || '',
@@ -900,6 +941,9 @@ export default {
 				notes: this.form.notes.trim() || null,
 				amountType: this.form.amountType,
 				isPrivate: this.form.isPrivate,
+				responsibleUser: this.form.responsiblePrincipal
+					? (this.form.responsiblePrincipal.uid || String(this.form.responsiblePrincipal.id).replace('user:', ''))
+					: null,
 				customField1: this.form.customField1.trim() || null,
 				customField2: this.form.customField2.trim() || null,
 				customField3: this.form.customField3.trim() || null,

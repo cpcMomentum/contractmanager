@@ -1,5 +1,18 @@
 {
 	"translations": {
+		"Zuständig": "Responsible",
+		"Wer diesen Vertrag betreut. Leer lassen, dann bleibt der Ersteller zuständig.": "Who manages this contract. Leave empty to keep the creator responsible.",
+		"Benutzer suchen...": "Search users...",
+		"Ersteller": "Creator",
+		"Verträge übertragen": "Transfer contracts",
+		"Überträgt die Zuständigkeit für alle Verträge einer Person auf eine andere, zum Beispiel bei einem Mitarbeiterwechsel. „Erstellt von\" bleibt unverändert.": "Transfers responsibility for all of a person’s contracts to another, for example when staff changes. \"Created by\" stays unchanged.",
+		"Von": "From",
+		"Auf": "To",
+		"Betrifft {count} Verträge": "Affects {count} contracts",
+		"Übertragen": "Transfer",
+		"{count} Verträge von {from} auf {to} übertragen?": "Transfer {count} contracts from {from} to {to}?",
+		"{count} Verträge übertragen": "{count} contracts transferred",
+		"Übertragung fehlgeschlagen": "Transfer failed",
 		"Kündigungsfrist endet": "Cancellation deadline approaching",
 		"Cancellation reminder": "Cancellation reminder",
 		"The contract \"%1$s\" must be cancelled by **%2$s**.": "The contract \"%1$s\" must be cancelled by **%2$s**.",

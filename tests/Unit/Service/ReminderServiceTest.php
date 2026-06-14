@@ -619,6 +619,41 @@ class ReminderServiceTest extends TestCase {
 		$this->service->checkAndSendReminders();
 	}
 
+	/**
+	 * #174: "own" counts on the effective owner (responsible user), not the
+	 * creator. A contract created by alice but assigned to bob reminds bob
+	 * (mode own), not alice (mode own).
+	 */
+	public function testCheckAndSendRemindersOwnCountsOnResponsibleUser(): void {
+		$deadline = new DateTime('+2 days');
+		$contract = $this->createContract($deadline, '', 'fixed');
+		$contract->setId(9);
+		$contract->setCreatedBy('alice');
+		$contract->setResponsibleUser('bob');
+
+		$this->contractMapper->method('findContractsNeedingReminder')->willReturn([$contract]);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		// both on "own" — only the effective owner (bob) should receive it
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_OWN);
+		$this->settingsService->method('getUserEmailReminder')->willReturn(true);
+		$this->settingsService->method('getUserTalkChatToken')->willReturn(null);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['alice', 'bob']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+		$this->reminderSentMapper->method('insert')->willReturn(new \OCA\ContractManager\Db\ReminderSent());
+		$this->talkService->method('isTalkAvailable')->willReturn(false);
+
+		// only bob (responsible) receives it, not alice (creator)
+		$this->emailService->expects($this->exactly(1))
+			->method('sendReminder')
+			->with($this->anything(), 'bob', $this->anything(), $this->anything(), $this->anything())
+			->willReturn(true);
+
+		$this->service->checkAndSendReminders();
+	}
+
 	// ========================================
 	// Helper Methods
 	// ========================================

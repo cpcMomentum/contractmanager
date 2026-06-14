@@ -201,6 +201,64 @@
 				</div>
 			</div>
 
+			<!-- Verträge übertragen -->
+			<div class="settings-section admin-section">
+				<h3>
+					<ShieldIcon :size="20" class="admin-icon" />
+					{{ t('contractmanager', 'Verträge übertragen') }}
+				</h3>
+				<p class="settings-description">
+					{{ t('contractmanager', 'Überträgt die Zuständigkeit für alle Verträge einer Person auf eine andere, zum Beispiel bei einem Mitarbeiterwechsel. „Erstellt von" bleibt unverändert.') }}
+				</p>
+				<div class="settings-item">
+					<label class="settings-label">{{ t('contractmanager', 'Von') }}</label>
+					<NcSelect v-model="transferFrom"
+						:options="transferUserResults"
+						:loading="transferSearching"
+						:placeholder="t('contractmanager', 'Benutzer suchen...')"
+						label="displayName"
+						track-by="id"
+						:clearable="true"
+						@search="onTransferSearch"
+						@update:model-value="onTransferFromChange" />
+					<p v-if="transferCount !== null" class="settings-description">
+						{{ t('contractmanager', 'Betrifft {count} Verträge', { count: transferCount }) }}
+					</p>
+				</div>
+				<div class="settings-item">
+					<label class="settings-label">{{ t('contractmanager', 'Auf') }}</label>
+					<NcSelect v-model="transferTo"
+						:options="transferUserResults"
+						:loading="transferSearching"
+						:placeholder="t('contractmanager', 'Benutzer suchen...')"
+						label="displayName"
+						track-by="id"
+						:clearable="true"
+						@search="onTransferSearch" />
+				</div>
+				<div class="settings-actions">
+					<NcButton variant="primary" :disabled="!canTransfer || transferring" @click="showTransferDialog = true">
+						<template #icon>
+							<NcLoadingIcon v-if="transferring" :size="20" />
+						</template>
+						{{ t('contractmanager', 'Übertragen') }}
+					</NcButton>
+				</div>
+				<NcDialog v-if="showTransferDialog"
+					:name="t('contractmanager', 'Verträge übertragen')"
+					:message="t('contractmanager', '{count} Verträge von {from} auf {to} übertragen?', { count: transferCount || 0, from: transferFrom ? transferFrom.displayName : '', to: transferTo ? transferTo.displayName : '' })"
+					@update:open="showTransferDialog = $event">
+					<template #actions>
+						<NcButton @click="showTransferDialog = false">
+							{{ t('contractmanager', 'Abbrechen') }}
+						</NcButton>
+						<NcButton variant="primary" @click="doTransfer">
+							{{ t('contractmanager', 'Übertragen') }}
+						</NcButton>
+					</template>
+				</NcDialog>
+			</div>
+
 			<div class="settings-section admin-section">
 				<h3>
 					<ShieldIcon :size="20" class="admin-icon" />
@@ -434,6 +492,7 @@ import CloseIcon from 'vue-material-design-icons/Close.vue'
 import AccountIcon from 'vue-material-design-icons/Account.vue'
 import AccountGroupIcon from 'vue-material-design-icons/AccountGroup.vue'
 import SettingsService from '../services/SettingsService'
+import ContractService from '../services/ContractService'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
 
@@ -490,6 +549,13 @@ export default {
 			},
 			searchResults: [],
 			searching: false,
+			transferFrom: null,
+			transferTo: null,
+			transferCount: null,
+			transferUserResults: [],
+			transferSearching: false,
+			transferring: false,
+			showTransferDialog: false,
 			newCategoryName: '',
 			addingCategory: false,
 			editingCategoryId: null,
@@ -520,6 +586,10 @@ export default {
 		aiDefaultModel() {
 			if (this.adminSettings.aiProvider === 'claude') return 'claude-sonnet-4-5-20250514'
 			return 'gpt-4o'
+		},
+		canTransfer() {
+			return !!this.transferFrom && !!this.transferTo
+				&& this.principalUid(this.transferFrom) !== this.principalUid(this.transferTo)
 		},
 	},
 	async created() {
@@ -663,6 +733,54 @@ export default {
 				this.searchResults = []
 			} finally {
 				this.searching = false
+			}
+		},
+
+		principalUid(principal) {
+			if (!principal) return ''
+			return principal.uid || String(principal.id || '').replace('user:', '')
+		},
+
+		async onTransferSearch(query) {
+			if (!query || query.trim().length < 1) {
+				this.transferUserResults = []
+				return
+			}
+			try {
+				this.transferSearching = true
+				this.transferUserResults = await ContractService.searchUsers(query)
+			} catch (e) {
+				this.transferUserResults = []
+			} finally {
+				this.transferSearching = false
+			}
+		},
+
+		async onTransferFromChange() {
+			this.transferCount = null
+			if (!this.transferFrom) return
+			try {
+				this.transferCount = await ContractService.transferPreview(this.principalUid(this.transferFrom))
+			} catch (e) {
+				console.error('Failed to load transfer preview:', e)
+			}
+		},
+
+		async doTransfer() {
+			this.showTransferDialog = false
+			if (!this.canTransfer) return
+			this.transferring = true
+			try {
+				const count = await ContractService.transfer(this.principalUid(this.transferFrom), this.principalUid(this.transferTo))
+				showSuccess(t('contractmanager', '{count} Verträge übertragen', { count }))
+				this.transferFrom = null
+				this.transferTo = null
+				this.transferCount = null
+			} catch (e) {
+				console.error('Transfer failed:', e)
+				showError(t('contractmanager', 'Übertragung fehlgeschlagen'))
+			} finally {
+				this.transferring = false
 			}
 		},
 

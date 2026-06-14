@@ -66,13 +66,14 @@ class SettingsService {
 	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost', 'cancellationDeadline'];
 	private const ALLOWED_AMOUNT_TYPES = ['netto', 'brutto'];
 	private const ALLOWED_SORT_DIRECTION = ['asc', 'desc'];
-	private const ALLOWED_FILTER_KEYS = ['vendor', 'statuses', 'contractType'];
+	private const ALLOWED_FILTER_KEYS = ['vendor', 'statuses', 'contractType', 'responsible'];
 	private const ALLOWED_STATUSES = ['active', 'cancelled', 'ended'];
 	private const ALLOWED_CONTRACT_TYPES = ['', 'fixed', 'auto_renewal'];
 	private const DEFAULT_FILTERS = [
 		'vendor' => '',
 		'statuses' => [],
 		'contractType' => '',
+		'responsible' => '',
 	];
 
 	public function __construct(
@@ -363,6 +364,7 @@ class SettingsService {
 			'contractType' => isset($filters['contractType']) && in_array($filters['contractType'], self::ALLOWED_CONTRACT_TYPES, true)
 				? $filters['contractType']
 				: '',
+			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
 		];
 	}
 
@@ -378,6 +380,7 @@ class SettingsService {
 			'contractType' => isset($filters['contractType']) && in_array($filters['contractType'], self::ALLOWED_CONTRACT_TYPES, true)
 				? $filters['contractType']
 				: '',
+			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
 		];
 
 		$this->config->setUserValue(
