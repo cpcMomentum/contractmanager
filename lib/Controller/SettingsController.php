@@ -52,7 +52,7 @@ class SettingsController extends Controller {
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
 			// App-globale Standard-Vorlaufzeiten. Das Frontend nutzt sie zur Berechnung
-			// von "Kündigung naht" und als Fallback-Anzeige, wenn der Nutzer keine
+			// von "Kündigungsfrist endet" und als Fallback-Anzeige, wenn der Nutzer keine
 			// persönliche Vorlaufzeit gesetzt hat. Read-only für Nicht-Admins.
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),

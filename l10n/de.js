@@ -1,6 +1,7 @@
 OC.L10N.register(
     "contractmanager",
     {
+    "Kündigungsfrist endet" : "Kündigungsfrist endet",
     "Cancellation reminder" : "Kündigungserinnerung",
     "The contract \"%1$s\" must be cancelled by **%2$s**." : "Der Vertrag „%1$s\" muss bis zum **%2$s** gekündigt werden.",
     "This is the first reminder." : "Dies ist die erste Erinnerung.",
