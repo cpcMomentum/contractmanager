@@ -280,7 +280,8 @@ class ContractMapper extends QBMapper {
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('status', $qb->createNamedParameter(Contract::STATUS_ACTIVE)))
-            ->andWhere($qb->expr()->eq('contract_type', $qb->createNamedParameter('fixed')))
+            ->andWhere($qb->expr()->eq('contract_type', $qb->createNamedParameter(Contract::TYPE_FIXED)))
+            ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
             ->andWhere($qb->expr()->lt('end_date', $qb->createNamedParameter(new \DateTime(), IQueryBuilder::PARAM_DATE)))
             ->andWhere($qb->expr()->isNull('deleted_at'));
 
