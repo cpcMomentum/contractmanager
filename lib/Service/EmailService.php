@@ -108,10 +108,9 @@ class EmailService {
 			$message->setSubject($subject);
 			$message->setTo([$toEmail]);
 
-			// Build HTML body
-			$appUrl = htmlspecialchars($this->buildContractUrl($contract), ENT_QUOTES, 'UTF-8');
-			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
-			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
+			$rawUrl = $this->buildContractUrl($contract);
+			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $rawUrl, $l, $displayName, $contractType);
+			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $rawUrl, $l, $displayName, $contractType);
 
 			$message->setHtmlBody($htmlBody);
 			$message->setPlainBody($plainBody);
@@ -168,6 +167,7 @@ class EmailService {
 		$contractName = htmlspecialchars($contract->getName());
 		$vendor = htmlspecialchars($contract->getVendor());
 		$displayNameEscaped = htmlspecialchars($displayName);
+		$appUrl = htmlspecialchars($appUrl, ENT_QUOTES, 'UTF-8');
 
 		if ($reminderType === 'first') {
 			$intro = $l->t('dein Vertrag "%1$s" bei %2$s läuft bald ab.', [$contractName, $vendor]);
