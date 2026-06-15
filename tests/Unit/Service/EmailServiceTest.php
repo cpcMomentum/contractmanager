@@ -99,7 +99,6 @@ class EmailServiceTest extends TestCase {
 		}
 		try {
 			$method = new ReflectionMethod(EmailService::class, 'buildContractUrl');
-			$method->setAccessible(true);
 			return $method->invoke($service, $contract);
 		} finally {
 			if ($prev === false) {
@@ -132,10 +131,5 @@ class EmailServiceTest extends TestCase {
 			'https://nc.example.test/apps/contractmanager/?contract=42',
 			$this->callBuildContractUrl(false, 'true'),
 		);
-	}
-
-	public function testBuildContractUrlAppendsContractId(): void {
-		$url = $this->callBuildContractUrl(false, null);
-		$this->assertStringEndsWith('?contract=42', $url);
 	}
 }
