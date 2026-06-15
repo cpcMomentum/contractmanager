@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-06-15
+
+### Added
+- Zuständigkeit pro Vertrag: neues Feld „Zuständig" – der effektive Eigentümer für Sichtbarkeit und „nur meine"-Erinnerungen ist die zuständige Person, der Ersteller bleibt als Nachweis erhalten (#173)
+- Administratoren können Verträge von einem Nutzer auf einen anderen übertragen (mit Vorschau-Zähler); „Zuständig" steht zudem in Liste, Filter und Suche zur Verfügung (#174)
+
+### Fixed
+- Der Button in der Erinnerungs-Mail führt jetzt zuverlässig in die App und direkt zum betroffenen Vertrag – zuvor landete man auf der Startseite/dem Dashboard, weil der Link im Hintergrund-Versand nicht korrekt aufgebaut wurde (#187)
+- Die Lese-Ansicht eines Vertrags war kaum lesbar (sehr blasse Felder); die Werte werden jetzt mit vollem Kontrast dargestellt (#187)
+
+### Changed
+- Aus der Erinnerungs-Mail öffnet sich der Vertrag direkt: bei Bearbeitungsrecht im Bearbeiten-Formular, sonst in der Lese-Ansicht (#187)
+- Mail-Texte und der Nextcloud-Talk-Absender heißen jetzt „Verträge" statt „ContractManager" (#187)
+
 ## [1.0.2] - 2026-06-14
 
 ### Fixed
@@ -292,7 +306,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.2...v1.0.3
+[1.0.2]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.4...v1.0.0
 [0.5.4]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/cpcMomentum/contractmanager/compare/v0.5.2...v0.5.3
