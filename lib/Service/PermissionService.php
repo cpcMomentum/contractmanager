@@ -130,7 +130,9 @@ class PermissionService {
 		if (!$contract->getIsPrivate()) {
 			return true;
 		}
-		return $contract->getCreatedBy() === $userId || $this->isAdmin($userId);
+		return $contract->getCreatedBy() === $userId
+			|| $contract->getResponsibleUser() === $userId
+			|| $this->isAdmin($userId);
 	}
 
 	/**

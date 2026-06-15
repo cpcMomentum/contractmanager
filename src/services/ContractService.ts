@@ -91,4 +91,21 @@ export default {
 		const response = await axios.put<{ optedOut: boolean }>(`${baseUrl}/${id}/reminder-optout`, { optedOut })
 		return response.data.optedOut
 	},
+
+	// Search users for the "responsible" picker (available to editors)
+	async searchUsers(query: string): Promise<Array<{ id: string, uid: string, displayName: string, type: string }>> {
+		const response = await axios.get(`${baseUrl}/users/search`, { params: { query } })
+		return response.data
+	},
+
+	// Admin: transfer all contracts from one user to another
+	async transferPreview(from: string): Promise<number> {
+		const response = await axios.get<{ count: number }>(`${baseUrl}/transfer-preview`, { params: { from } })
+		return response.data.count
+	},
+
+	async transfer(from: string, to: string): Promise<number> {
+		const response = await axios.post<{ transferred: number }>(`${baseUrl}/transfer`, { from, to })
+		return response.data.transferred
+	},
 }

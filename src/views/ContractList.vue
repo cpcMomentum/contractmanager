@@ -61,6 +61,12 @@
 				:reduce="option => option.id"
 				input-id="filter-type"
 				@update:model-value="persistFilters" />
+			<NcSelect v-model="filterResponsible"
+				:options="responsibleOptions"
+				:placeholder="t('contractmanager', 'Zuständig')"
+				:clearable="true"
+				input-id="filter-responsible"
+				@update:model-value="persistFilters" />
 			<NcButton v-if="hasActiveFilters"
 				variant="tertiary"
 				@click="resetFilters">
@@ -155,6 +161,7 @@ import { calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
+import { showInfo } from '@nextcloud/dialogs'
 
 export default {
 	name: 'ContractList',
@@ -218,6 +225,7 @@ export default {
 			filterVendor: filters.vendor || null,
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
+			filterResponsible: filters.responsible || null,
 			// Window the badge / filter uses for "Kündigungsfrist endet". Defaults to the
 			// constant in utils/contractStatus; gets overridden once the admin
 			// setting comes back from the user-settings endpoint.
@@ -246,6 +254,12 @@ export default {
 				.filter(v => v && v.trim() !== '')
 			return [...new Set(vendors)].sort((a, b) => a.localeCompare(b))
 		},
+		responsibleOptions() {
+			const users = this.allContracts
+				.map(c => c.responsibleUser)
+				.filter(u => u && u.trim() !== '')
+			return [...new Set(users)].sort((a, b) => a.localeCompare(b))
+		},
 		activeSortLabel() {
 			const option = this.sortOptions.find(o => o.key === this.sortBy)
 			return option ? option.label : ''
@@ -254,6 +268,7 @@ export default {
 			if (this.filterVendor) return true
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
+			if (this.filterResponsible) return true
 			return false
 		},
 		contracts() {
@@ -269,6 +284,7 @@ export default {
 						|| (c.customField1 || '').toLowerCase().includes(query)
 						|| (c.customField2 || '').toLowerCase().includes(query)
 						|| (c.customField3 || '').toLowerCase().includes(query)
+						|| (c.responsibleUser || '').toLowerCase().includes(query)
 				})
 			}
 
@@ -303,11 +319,18 @@ export default {
 				filtered = filtered.filter(c => c.contractType === this.filterContractType)
 			}
 
+			// Zuständig-Filter
+			if (this.filterResponsible) {
+				filtered = filtered.filter(c => c.responsibleUser === this.filterResponsible)
+			}
+
 			return this.sortContracts(filtered)
 		},
 	},
 	created() {
-		this.fetchContracts()
+		// Wait for contracts AND permissions before resolving a deep link, so the
+		// edit-vs-view decision sees the real canEdit value (not the default false).
+		Promise.all([this.fetchContracts(), this.fetchPermissions()]).then(() => this.handleDeepLink())
 		this.loadReminderWindow()
 		this.fetchCategories()
 		if (this.hasActiveFilters) {
@@ -315,7 +338,7 @@ export default {
 		}
 	},
 	methods: {
-		...mapActions(useContractsStore, ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
+		...mapActions(useContractsStore, ['fetchContracts', 'fetchPermissions', 'createContract', 'updateContract', 'archiveContract']),
 		...mapActions(useCategoriesStore, ['fetchCategories']),
 
 		async loadReminderWindow() {
@@ -350,6 +373,35 @@ export default {
 		handleView(contract) {
 			this.viewingContract = contract
 			this.showViewForm = true
+		},
+
+		// Open a specific contract when arriving from a reminder email
+		// (…/apps/contractmanager/?contract=ID). Read once on load; the param is
+		// stripped afterwards so a reload doesn't reopen the contract.
+		handleDeepLink() {
+			const params = new URLSearchParams(window.location.search)
+			const idParam = params.get('contract')
+			if (!idParam) {
+				return
+			}
+			params.delete('contract')
+			const query = params.toString()
+			window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : ''))
+
+			const id = parseInt(idParam, 10)
+			const contract = Number.isNaN(id) ? null : this.allContracts.find(c => c.id === id)
+			if (!contract) {
+				showInfo(t('contractmanager', 'Der Vertrag aus der Erinnerung ist nicht mehr vorhanden.'))
+				return
+			}
+			// Mirror the normal list-click behaviour: editors land in the editable
+			// form (so they can act on the reminder right away), viewers get the
+			// read-only details.
+			if (this.canEdit) {
+				this.handleEdit(contract)
+			} else {
+				this.handleView(contract)
+			}
 		},
 
 		handleArchive(contract) {
@@ -475,6 +527,7 @@ export default {
 			this.filterVendor = null
 			this.filterStatuses = []
 			this.filterContractType = null
+			this.filterResponsible = null
 			this.persistFilters()
 		},
 
@@ -485,6 +538,7 @@ export default {
 						vendor: this.filterVendor || '',
 						statuses: this.filterStatuses,
 						contractType: this.filterContractType || '',
+						responsible: this.filterResponsible || '',
 					},
 				})
 			} catch (error) {

@@ -6,6 +6,7 @@ namespace OCA\ContractManager\Service;
 
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
+use OCP\IConfig;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\L10N\IFactory;
@@ -21,10 +22,29 @@ class EmailService {
 		private IMailer $mailer,
 		private IUserManager $userManager,
 		private IURLGenerator $urlGenerator,
+		private IConfig $config,
 		private IFactory $l10nFactory,
 		private SettingsService $settingsService,
 		private LoggerInterface $logger,
 	) {
+	}
+
+	/**
+	 * Build an absolute deep link to a contract.
+	 *
+	 * The reminder runs in a background (cron) job, where named app routes are
+	 * not resolvable — linkToRouteAbsolute() collapses to the bare instance root
+	 * and the recipient lands on their default app (Dashboard) instead of here.
+	 * We therefore build the path explicitly. The front-controller check mirrors
+	 * core's URLGenerator so the link is correct with and without URL rewriting.
+	 */
+	private function buildContractUrl(Contract $contract): string {
+		$frontControllerActive = (getenv('front_controller_active') === 'true')
+			|| $this->config->getSystemValueBool('htaccess.IgnoreFrontController', false);
+		$path = ($frontControllerActive ? '' : '/index.php')
+			. '/apps/' . Application::APP_ID . '/?contract=' . $contract->getId();
+
+		return $this->urlGenerator->getAbsoluteURL($path);
 	}
 
 	/**
@@ -88,10 +108,9 @@ class EmailService {
 			$message->setSubject($subject);
 			$message->setTo([$toEmail]);
 
-			// Build HTML body
-			$appUrl = htmlspecialchars($this->urlGenerator->linkToRouteAbsolute('contractmanager.page.index'), ENT_QUOTES, 'UTF-8');
-			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
-			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $appUrl, $l, $displayName, $contractType);
+			$rawUrl = $this->buildContractUrl($contract);
+			$htmlBody = $this->buildHtmlBody($contract, $deadline, $reminderType, $rawUrl, $l, $displayName, $contractType);
+			$plainBody = $this->buildPlainBody($contract, $deadline, $reminderType, $rawUrl, $l, $displayName, $contractType);
 
 			$message->setHtmlBody($htmlBody);
 			$message->setPlainBody($plainBody);
@@ -148,6 +167,7 @@ class EmailService {
 		$contractName = htmlspecialchars($contract->getName());
 		$vendor = htmlspecialchars($contract->getVendor());
 		$displayNameEscaped = htmlspecialchars($displayName);
+		$appUrl = htmlspecialchars($appUrl, ENT_QUOTES, 'UTF-8');
 
 		if ($reminderType === 'first') {
 			$intro = $l->t('dein Vertrag "%1$s" bei %2$s läuft bald ab.', [$contractName, $vendor]);
@@ -161,7 +181,7 @@ class EmailService {
 		} else {
 			$deadlineText = $l->t('Der Vertrag endet am %s.', [$deadline]);
 		}
-		$linkText = $l->t('Im ContractManager findest du alle Details:');
+		$linkText = $l->t('Hier kommst du direkt zum Vertrag:');
 
 		return <<<HTML
 <!DOCTYPE html>
@@ -182,7 +202,7 @@ class EmailService {
             <p>{$intro}</p>
             <p>{$deadlineText}</p>
             <p>{$linkText}</p>
-            <a href="{$appUrl}" class="button">{$l->t('Zum ContractManager')}</a>
+            <a href="{$appUrl}" class="button">{$l->t('Vertrag öffnen')}</a>
         </div>
     </div>
 </body>
@@ -206,7 +226,7 @@ HTML;
 		} else {
 			$deadlineText = $l->t('Der Vertrag endet am %s.', [$deadline]);
 		}
-		$linkText = $l->t('Im ContractManager findest du alle Details:');
+		$linkText = $l->t('Hier kommst du direkt zum Vertrag:');
 
 		return <<<TEXT
 {$greeting}

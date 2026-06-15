@@ -49,6 +49,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setNotes(?string $notes)
  * @method string getCreatedBy()
  * @method void setCreatedBy(string $createdBy)
+ * @method string|null getResponsibleUser()
+ * @method void setResponsibleUser(?string $responsibleUser)
  * @method DateTime getCreatedAt()
  * @method void setCreatedAt(DateTime $createdAt)
  * @method DateTime getUpdatedAt()
@@ -110,6 +112,7 @@ class Contract extends Entity implements JsonSerializable {
     protected int $isPrivate = 0;
     protected ?DateTime $deletedAt = null;
     protected string $createdBy = '';
+    protected ?string $responsibleUser = null;
     protected ?DateTime $createdAt = null;
     protected ?DateTime $updatedAt = null;
 
@@ -208,6 +211,7 @@ class Contract extends Entity implements JsonSerializable {
             'isPrivate' => (bool) $this->isPrivate,
             'deletedAt' => $this->deletedAt?->format('c'),
             'createdBy' => $this->createdBy,
+            'responsibleUser' => $this->responsibleUser,
             'createdAt' => $this->createdAt?->format('c'),
             'updatedAt' => $this->updatedAt?->format('c'),
         ];

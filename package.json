@@ -1,6 +1,6 @@
 {
     "name": "contractmanager",
-    "version": "0.5.4",
+    "version": "1.0.3",
     "description": "Nextcloud App zur Vertragsverwaltung mit Kündigungserinnerungen",
     "main": "src/main.ts",
     "scripts": {

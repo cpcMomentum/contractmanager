@@ -53,6 +53,25 @@ class ContractService {
 		$this->optOutMapper->setOptOut($contractId, $userId, $optedOut);
 	}
 
+	/**
+	 * Number of contracts whose effective owner is the given user.
+	 */
+	public function countByEffectiveOwner(string $userId): int {
+		return $this->mapper->countByEffectiveOwner($userId);
+	}
+
+	/**
+	 * Transfer responsibility for all contracts from one user to another.
+	 *
+	 * @return int Number of contracts reassigned
+	 */
+	public function transferResponsibility(string $from, string $to): int {
+		if ($from === '' || $to === '' || $from === $to) {
+			return 0;
+		}
+		return $this->mapper->reassignResponsible($from, $to);
+	}
+
 	private function l(): \OCP\IL10N {
 		return $this->l10nFactory->get(Application::APP_ID);
 	}
@@ -157,8 +176,10 @@ class ContractService {
 			return;
 		}
 
-		// Private contracts are only visible to creator
-		if ($contract->getIsPrivate() && $contract->getCreatedBy() !== $userId) {
+		// Private contracts are only visible to creator or the responsible user
+		if ($contract->getIsPrivate()
+			&& $contract->getCreatedBy() !== $userId
+			&& $contract->getResponsibleUser() !== $userId) {
 			throw new ForbiddenException($this->l()->t('No access to this private contract'));
 		}
 	}
@@ -316,6 +337,7 @@ class ContractService {
         string $amountType = Contract::AMOUNT_TYPE_NETTO,
         ?string $cancelledOn = null,
         ?string $cancelledTo = null,
+        ?string $responsibleUser = null,
     ): Contract {
         $contract = new Contract();
         $contract->setName($name);
@@ -344,6 +366,7 @@ class ContractService {
         $contract->setCustomField2($customField2);
         $contract->setCustomField3($customField3);
         $contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
+        $contract->setResponsibleUser($responsibleUser !== null && $responsibleUser !== '' ? $responsibleUser : null);
         $contract->setCreatedBy($userId);
         $contract->setCreatedAt(new DateTime());
         $contract->setUpdatedAt(new DateTime());
@@ -384,6 +407,7 @@ class ContractService {
         string $amountType = Contract::AMOUNT_TYPE_NETTO,
         ?string $cancelledOn = null,
         ?string $cancelledTo = null,
+        ?string $responsibleUser = null,
     ): Contract {
         try {
             $contract = $this->mapper->find($id);
@@ -417,6 +441,7 @@ class ContractService {
         $contract->setReminderEnabled($endDate !== null && $reminderEnabled ? 1 : 0);
         $contract->setReminderDays($reminderDays);
         $contract->setNotes($notes);
+        $contract->setResponsibleUser($responsibleUser !== null && $responsibleUser !== '' ? $responsibleUser : null);
         if ($isPrivate !== null) {
             $contract->setIsPrivate($isPrivate);
         }
