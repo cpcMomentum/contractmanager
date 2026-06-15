@@ -3,7 +3,7 @@
 		:name="readOnly ? t('contractmanager', 'Vertragsdetails') : (isEdit ? t('contractmanager', 'Vertrag bearbeiten') : t('contractmanager', 'Neuer Vertrag'))"
 		size="large"
 		@close="$emit('close')">
-		<div class="contract-form">
+		<div class="contract-form" :class="{ 'contract-form--readonly': readOnly }">
 			<form @submit.prevent="handleSubmit">
 				<!-- AI Extraction -->
 				<div v-if="aiAvailable && !isEdit && !readOnly" class="form-section ai-section">
@@ -1132,6 +1132,26 @@ export default {
 	padding: 20px 20px 0;
 	max-height: min(90vh, calc(100vh - 120px));
 	overflow-y: auto;
+}
+
+/*
+ * Read-only details view: NC renders disabled fields dimmed (muted colour +
+ * 0.7 opacity), which is too faint to read as a details view. Restore full
+ * contrast for the displayed values (inputs, textareas and NcSelect values).
+ */
+.contract-form--readonly {
+	:deep(input:disabled),
+	:deep(textarea:disabled) {
+		opacity: 1;
+		color: var(--color-main-text);
+		-webkit-text-fill-color: var(--color-main-text);
+	}
+
+	:deep(.v-select.vs--disabled .vs__selected) {
+		opacity: 1;
+		color: var(--color-main-text);
+		-webkit-text-fill-color: var(--color-main-text);
+	}
 }
 
 .form-section {

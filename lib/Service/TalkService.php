@@ -122,7 +122,7 @@ class TalkService {
 				$room,
 				null, // No specific attendee
 				'guests', // Actor type - triggers unread notifications
-				'ContractManager', // Actor ID (display name)
+				'Verträge', // Actor ID (display name)
 				$message,
 				new \DateTime(),
 				null, // No parent message (replyTo)

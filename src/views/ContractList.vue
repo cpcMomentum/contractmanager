@@ -161,6 +161,7 @@ import { calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
+import { showInfo } from '@nextcloud/dialogs'
 
 export default {
 	name: 'ContractList',
@@ -327,7 +328,9 @@ export default {
 		},
 	},
 	created() {
-		this.fetchContracts()
+		// Wait for contracts AND permissions before resolving a deep link, so the
+		// edit-vs-view decision sees the real canEdit value (not the default false).
+		Promise.all([this.fetchContracts(), this.fetchPermissions()]).then(() => this.handleDeepLink())
 		this.loadReminderWindow()
 		this.fetchCategories()
 		if (this.hasActiveFilters) {
@@ -335,7 +338,7 @@ export default {
 		}
 	},
 	methods: {
-		...mapActions(useContractsStore, ['fetchContracts', 'createContract', 'updateContract', 'archiveContract']),
+		...mapActions(useContractsStore, ['fetchContracts', 'fetchPermissions', 'createContract', 'updateContract', 'archiveContract']),
 		...mapActions(useCategoriesStore, ['fetchCategories']),
 
 		async loadReminderWindow() {
@@ -370,6 +373,35 @@ export default {
 		handleView(contract) {
 			this.viewingContract = contract
 			this.showViewForm = true
+		},
+
+		// Open a specific contract when arriving from a reminder email
+		// (…/apps/contractmanager/?contract=ID). Read once on load; the param is
+		// stripped afterwards so a reload doesn't reopen the contract.
+		handleDeepLink() {
+			const params = new URLSearchParams(window.location.search)
+			const idParam = params.get('contract')
+			if (!idParam) {
+				return
+			}
+			params.delete('contract')
+			const query = params.toString()
+			window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : ''))
+
+			const id = parseInt(idParam, 10)
+			const contract = Number.isNaN(id) ? null : this.allContracts.find(c => c.id === id)
+			if (!contract) {
+				showInfo(t('contractmanager', 'Der Vertrag aus der Erinnerung ist nicht mehr vorhanden.'))
+				return
+			}
+			// Mirror the normal list-click behaviour: editors land in the editable
+			// form (so they can act on the reminder right away), viewers get the
+			// read-only details.
+			if (this.canEdit) {
+				this.handleEdit(contract)
+			} else {
+				this.handleView(contract)
+			}
 		},
 
 		handleArchive(contract) {
