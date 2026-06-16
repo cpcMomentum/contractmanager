@@ -693,7 +693,7 @@ export default {
 		},
 		cancellationDeadlineTypeOptions() {
 			return [
-				{ value: 'normal', label: t('contractmanager', 'Normal') },
+				{ value: 'normal', label: t('contractmanager', 'Tagesgenau') },
 				{ value: 'month_end', label: t('contractmanager', 'Zum Monatsende') },
 			]
 		},

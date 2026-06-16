@@ -3,7 +3,7 @@ OC.L10N.register(
     {
     "Zuständig" : "Responsible",
     "Kündigen zum" : "Cancel to",
-    "Normal" : "Normal",
+    "Tagesgenau" : "To the day",
     "Zum Monatsende" : "At month end",
     "Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats." : "At month end: the cancellation deadline falls on the last day of the month.",
     "Hinweis" : "Notice",

@@ -3,7 +3,7 @@ OC.L10N.register(
     {
     "Zuständig" : "Zuständig",
     "Kündigen zum" : "Kündigen zum",
-    "Normal" : "Normal",
+    "Tagesgenau" : "Tagesgenau",
     "Zum Monatsende" : "Zum Monatsende",
     "Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats." : "Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.",
     "Hinweis" : "Hinweis",
