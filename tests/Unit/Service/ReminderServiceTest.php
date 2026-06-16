@@ -404,9 +404,12 @@ class ReminderServiceTest extends TestCase {
 	}
 
 	public function testCalculateCancellationDeadlineAutoRenewal(): void {
-		// End date in the past, auto_renewal with 12 months, cancellation 3 months
-		// Use dynamic past date so the test stays date-independent
-		$endDate = new DateTime('-2 years');
+		// End date in the past, auto_renewal with 12 months, cancellation 3 months.
+		// Use the 1st of the month to avoid month-end overflow: the assertion below
+		// relies on PHP-native modify('-3 month'), which has no overflow guard, so
+		// it must agree with the service's subtractPeriodFromDate (which does clamp).
+		// Day=1 never overflows for any 3-month subtraction.
+		$endDate = (new DateTime('first day of this month'))->modify('-2 years');
 		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
 
 		$result = $this->service->calculateCancellationDeadline($contract);
