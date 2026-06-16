@@ -14,7 +14,14 @@ export interface UserSettings {
 	[key: string]: unknown
 }
 
+export interface ReminderLinkDiagnostics {
+	status: 'ok' | 'missing' | 'mismatch'
+	cliUrl: string
+	accessHost: string
+}
+
 export interface AdminSettings {
+	reminderLink?: ReminderLinkDiagnostics
 	[key: string]: unknown
 }
 

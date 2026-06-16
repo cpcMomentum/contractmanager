@@ -2,6 +2,11 @@ OC.L10N.register(
     "contractmanager",
     {
     "Zuständig" : "Zuständig",
+    "Hinweis" : "Hinweis",
+    "Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:" : "Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:",
+    "Hinterlegt" : "Hinterlegt",
+    "Du nutzt" : "Du nutzt",
+    "So korrigierst du das: bei verwaltetem Hosting im Verwaltungs-Panel deines Anbieters, auf einem eigenen Server per Kommandozeile:" : "So korrigierst du das: bei verwaltetem Hosting im Verwaltungs-Panel deines Anbieters, auf einem eigenen Server per Kommandozeile:",
     "Wer diesen Vertrag betreut. Leer lassen, dann bleibt der Ersteller zuständig." : "Wer diesen Vertrag betreut. Leer lassen, dann bleibt der Ersteller zuständig.",
     "Benutzer suchen..." : "Benutzer suchen...",
     "Ersteller" : "Ersteller",
