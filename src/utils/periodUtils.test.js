@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
 	addPeriod,
+	applyDeadlineType,
 	calculateCancellationDeadline,
 	getEffectiveEndDate,
 	parsePeriod,
@@ -179,5 +180,49 @@ describe('calculateCancellationDeadline', () => {
 	it('does not roll a fixed contract whose deadline is already in the past', () => {
 		// Fixed contracts simply expire; the past deadline is returned as-is.
 		expect(ymd(calculateCancellationDeadline(new Date(2026, 5, 30), '90 days', 'fixed'))).toBe('2026-04-01')
+	})
+})
+
+describe('applyDeadlineType', () => {
+	it('leaves the date untouched for "normal" or undefined', () => {
+		const d = new Date(2026, 9, 21) // 2026-10-21
+		expect(ymd(applyDeadlineType(d, 'normal'))).toBe('2026-10-21')
+		expect(ymd(applyDeadlineType(d, undefined))).toBe('2026-10-21')
+	})
+
+	it('snaps to the last calendar day of the month for "month_end"', () => {
+		expect(ymd(applyDeadlineType(new Date(2026, 9, 21), 'month_end'))).toBe('2026-10-31')
+		expect(ymd(applyDeadlineType(new Date(2026, 1, 10), 'month_end'))).toBe('2026-02-28')
+		expect(ymd(applyDeadlineType(new Date(2024, 1, 10), 'month_end'))).toBe('2024-02-29') // leap year
+	})
+})
+
+describe('calculateCancellationDeadline — "zum Monatsende" (#159)', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+	})
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	// Volker: the 21st-anchored deadline becomes the month end (31.10) with
+	// month_end, while the default 'normal' stays 21.10 (asserted alongside).
+	it('snaps an auto_renewal deadline to month end (Volker: 21.10 → 31.10)', () => {
+		const args = [new Date(2026, 10, 21), '1 month', 'auto_renewal', '12 months']
+		expect(ymd(calculateCancellationDeadline(...args, { deadlineType: 'normal' }))).toBe('2026-10-21')
+		expect(ymd(calculateCancellationDeadline(...args, { deadlineType: 'month_end' }))).toBe('2026-10-31')
+	})
+
+	it('snaps a fixed-contract deadline to month end', () => {
+		expect(ymd(calculateCancellationDeadline(new Date(2026, 10, 21), '1 month', 'fixed', null, { deadlineType: 'month_end' }))).toBe('2026-10-31')
+	})
+
+	// Correctness of snapping INSIDE the roll loop: the normal deadline (10.06)
+	// is just past "now" (15.06), but the month-end deadline (30.06) is still
+	// upcoming — so it must NOT be rolled to next year. A buggy "snap after the
+	// loop" would yield 2027-06-30 here.
+	it('does not skip a month-end deadline that is still upcoming this period', () => {
+		expect(ymd(calculateCancellationDeadline(new Date(2026, 6, 10), '1 month', 'auto_renewal', '12 months', { deadlineType: 'month_end' }))).toBe('2026-06-30')
 	})
 })

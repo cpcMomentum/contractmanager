@@ -2,6 +2,10 @@ OC.L10N.register(
     "contractmanager",
     {
     "Zuständig" : "Responsible",
+    "Kündigen zum" : "Cancel to",
+    "Normal" : "Normal",
+    "Zum Monatsende" : "At month end",
+    "Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats." : "At month end: the cancellation deadline falls on the last day of the month.",
     "Hinweis" : "Notice",
     "Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:" : "Links in reminder emails may lead to the wrong address:",
     "Hinterlegt" : "Configured",

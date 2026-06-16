@@ -338,6 +338,7 @@ class ContractService {
         ?string $cancelledOn = null,
         ?string $cancelledTo = null,
         ?string $responsibleUser = null,
+        string $cancellationDeadlineType = Contract::DEADLINE_TYPE_NORMAL,
     ): Contract {
         $contract = new Contract();
         $contract->setName($name);
@@ -352,6 +353,7 @@ class ContractService {
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
+        $contract->setCancellationDeadlineType($this->normalizeDeadlineType($cancellationDeadlineType));
         $contract->setCost($cost);
         $contract->setCurrency($currency ?? 'EUR');
         $contract->setCostInterval($costInterval);
@@ -408,6 +410,7 @@ class ContractService {
         ?string $cancelledOn = null,
         ?string $cancelledTo = null,
         ?string $responsibleUser = null,
+        string $cancellationDeadlineType = Contract::DEADLINE_TYPE_NORMAL,
     ): Contract {
         try {
             $contract = $this->mapper->find($id);
@@ -432,6 +435,7 @@ class ContractService {
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
+        $contract->setCancellationDeadlineType($this->normalizeDeadlineType($cancellationDeadlineType));
         $contract->setCost($cost);
         $contract->setCurrency($currency ?? 'EUR');
         $contract->setCostInterval($costInterval);
@@ -452,6 +456,16 @@ class ContractService {
         $contract->setUpdatedAt(new DateTime());
 
         return $this->mapper->update($contract);
+    }
+
+    /**
+     * Validate the cancellation-deadline type, falling back to 'normal' for any
+     * unknown value so a malformed payload never stores garbage.
+     */
+    private function normalizeDeadlineType(string $deadlineType): string {
+        return in_array($deadlineType, [Contract::DEADLINE_TYPE_NORMAL, Contract::DEADLINE_TYPE_MONTH_END], true)
+            ? $deadlineType
+            : Contract::DEADLINE_TYPE_NORMAL;
     }
 
     /**

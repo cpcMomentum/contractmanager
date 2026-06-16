@@ -206,6 +206,52 @@ class ReminderServiceTest extends TestCase {
 		$this->assertEquals('2020-04-01', $result->format('Y-m-d'));
 	}
 
+	// --- #159 „Kündigen zum: zum Monatsende" ---
+
+	/**
+	 * month_end snaps the deadline to the last calendar day of its month
+	 * (Volker: 21.10 → 31.10). Default 'normal' stays 21.10 (covered above).
+	 * Fixed contract for determinism — the snap is identical for auto_renewal.
+	 */
+	public function testCalculateCancellationDeadlineMonthEndSnapsToLastDay(): void {
+		$contract = $this->createContract(new DateTime('2026-11-21'), '1 month');
+		$contract->setCancellationDeadlineType(Contract::DEADLINE_TYPE_MONTH_END);
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2026-10-31', $result->format('Y-m-d'));
+	}
+
+	/**
+	 * month_end on a leap February: 2026-03-10 − 1 month = 2026-02-10 → snap to
+	 * 2026-02-28 (non-leap).
+	 */
+	public function testCalculateCancellationDeadlineMonthEndFebruary(): void {
+		$contract = $this->createContract(new DateTime('2026-03-10'), '1 month');
+		$contract->setCancellationDeadlineType(Contract::DEADLINE_TYPE_MONTH_END);
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2026-02-28', $result->format('Y-m-d'));
+	}
+
+	/**
+	 * month_end with auto_renewal rolls into the future and always lands on the
+	 * last day of the month. Invariants (backend reads the real current time).
+	 */
+	public function testCalculateCancellationDeadlineMonthEndAutoRenewalRolls(): void {
+		$contract = $this->createContract(new DateTime('2018-11-21'), '1 month', 'auto_renewal', '12 months');
+		$contract->setCancellationDeadlineType(Contract::DEADLINE_TYPE_MONTH_END);
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertGreaterThanOrEqual((new DateTime('today'))->getTimestamp(), $result->getTimestamp());
+		$this->assertSame($result->format('t'), $result->format('d'), 'deadline must be the last day of its month');
+	}
+
 	// ========================================
 	// shouldSendFirstReminder Tests
 	// ========================================

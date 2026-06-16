@@ -190,6 +190,21 @@
 								:clearable="false" />
 						</div>
 					</div>
+					<div v-if="form.contractType === 'auto_renewal'" class="form-row">
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Kündigen zum') }}</label>
+							<NcSelect v-model="form.cancellationDeadlineType"
+								:options="cancellationDeadlineTypeOptions"
+								:disabled="readOnly"
+								label="label"
+								track-by="value"
+								:reduce="option => option.value"
+								:clearable="false" />
+							<p class="form-hint">
+								{{ t('contractmanager', 'Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.') }}
+							</p>
+						</div>
+					</div>
 				</div>
 
 				<!-- Cancellation (#136) -->
@@ -676,6 +691,12 @@ export default {
 				{ value: 'unlimited', label: t('contractmanager', 'Unbefristet') },
 			]
 		},
+		cancellationDeadlineTypeOptions() {
+			return [
+				{ value: 'normal', label: t('contractmanager', 'Normal') },
+				{ value: 'month_end', label: t('contractmanager', 'Zum Monatsende') },
+			]
+		},
 		currencyOptions() {
 			return [
 				{ value: 'EUR', label: 'EUR' },
@@ -724,7 +745,7 @@ export default {
 			const renewalPeriod = this.form.renewalPeriodValue && this.form.renewalPeriodUnit
 				? `${this.form.renewalPeriodValue} ${this.form.renewalPeriodUnit}`
 				: null
-			const deadline = calculateCancellationDeadline(this.form.endDate, periodString, this.form.contractType, renewalPeriod)
+			const deadline = calculateCancellationDeadline(this.form.endDate, periodString, this.form.contractType, renewalPeriod, { deadlineType: this.form.cancellationDeadlineType })
 			return deadline ? formatDate(deadline) : null
 		},
 	},
@@ -833,6 +854,7 @@ export default {
 				cancellationPeriodValue: '1',
 				cancellationPeriodUnit: 'months',
 				contractType: 'auto_renewal',
+				cancellationDeadlineType: 'normal',
 				renewalPeriodValue: '1',
 				renewalPeriodUnit: 'months',
 				cost: '',
@@ -892,6 +914,7 @@ export default {
 				cancellationPeriodValue: cancellation.value,
 				cancellationPeriodUnit: cancellation.unit,
 				contractType: contract.contractType || 'fixed',
+				cancellationDeadlineType: contract.cancellationDeadlineType || 'normal',
 				renewalPeriodValue: renewal.value,
 				renewalPeriodUnit: renewal.unit,
 				cost: contract.cost || '',
@@ -928,6 +951,9 @@ export default {
 					? this.formatPeriod(this.form.cancellationPeriodValue, this.form.cancellationPeriodUnit)
 					: null,
 				contractType: this.form.contractType,
+				cancellationDeadlineType: this.form.contractType === 'auto_renewal'
+					? this.form.cancellationDeadlineType
+					: 'normal',
 				renewalPeriod: this.form.contractType === 'auto_renewal'
 					? this.formatPeriod(this.form.renewalPeriodValue, this.form.renewalPeriodUnit)
 					: null,

@@ -31,6 +31,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setContractType(string $contractType)
  * @method string|null getRenewalPeriod()
  * @method void setRenewalPeriod(?string $renewalPeriod)
+ * @method string getCancellationDeadlineType()
+ * @method void setCancellationDeadlineType(string $cancellationDeadlineType)
  * @method string|null getCost()
  * @method void setCost(?string $cost)
  * @method string|null getCurrency()
@@ -76,6 +78,9 @@ class Contract extends Entity implements JsonSerializable {
     public const TYPE_FIXED = 'fixed';
     public const TYPE_AUTO_RENEWAL = 'auto_renewal';
 
+    public const DEADLINE_TYPE_NORMAL = 'normal';
+    public const DEADLINE_TYPE_MONTH_END = 'month_end';
+
     public const AMOUNT_TYPE_NETTO = 'netto';
     public const AMOUNT_TYPE_BRUTTO = 'brutto';
 
@@ -96,6 +101,7 @@ class Contract extends Entity implements JsonSerializable {
     protected ?string $cancellationPeriod = null;
     protected string $contractType = self::TYPE_FIXED;
     protected ?string $renewalPeriod = null;
+    protected string $cancellationDeadlineType = self::DEADLINE_TYPE_NORMAL;
     protected ?string $cost = null;
     protected ?string $currency = 'EUR';
     protected ?string $costInterval = null;
@@ -195,6 +201,7 @@ class Contract extends Entity implements JsonSerializable {
             'cancellationPeriod' => $this->cancellationPeriod,
             'contractType' => $this->contractType,
             'renewalPeriod' => $this->renewalPeriod,
+            'cancellationDeadlineType' => $this->cancellationDeadlineType,
             'cost' => $this->cost,
             'amountType' => $this->amountType,
             'currency' => $this->currency,

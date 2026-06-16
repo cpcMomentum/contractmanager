@@ -187,7 +187,7 @@ export default {
 			if (this.contract.status !== 'active') {
 				return null
 			}
-			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod, this.contract.contractType, this.contract.renewalPeriod)
+			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod, this.contract.contractType, this.contract.renewalPeriod, { deadlineType: this.contract.cancellationDeadlineType })
 		},
 		effectiveEndDate() {
 			return getEffectiveEndDate(this.contract.endDate, this.contract.contractType, this.contract.renewalPeriod, {

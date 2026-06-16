@@ -2,6 +2,10 @@ OC.L10N.register(
     "contractmanager",
     {
     "Zuständig" : "Zuständig",
+    "Kündigen zum" : "Kündigen zum",
+    "Normal" : "Normal",
+    "Zum Monatsende" : "Zum Monatsende",
+    "Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats." : "Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.",
     "Hinweis" : "Hinweis",
     "Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:" : "Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:",
     "Hinterlegt" : "Hinterlegt",
