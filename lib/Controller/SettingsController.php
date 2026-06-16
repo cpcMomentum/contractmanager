@@ -142,7 +142,49 @@ class SettingsController extends Controller {
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
 			'aiModel' => $this->settingsService->getAiModel(),
+			'reminderLink' => $this->getReminderLinkDiagnostics(),
 		]);
+	}
+
+	/**
+	 * Diagnose whether reminder mail links will point at the right host.
+	 *
+	 * Reminder mails are built in a background (cron) job from the system value
+	 * `overwrite.cli.url`. If it is empty or points at a different host than the
+	 * one the admin actually uses, the "open contract" link lands on the wrong
+	 * place. We compare it against the host of the current admin request (which
+	 * is the real access URL) and surface a hint in the settings UI.
+	 *
+	 * @return array{status: string, cliUrl: string, accessHost: string}
+	 */
+	private function getReminderLinkDiagnostics(): array {
+		$cliUrl = $this->settingsService->getCliUrl();
+		$accessHost = $this->request->getServerHost();
+
+		if ($cliUrl === '') {
+			$status = 'missing';
+		} else {
+			$cliHost = (string)parse_url($cliUrl, PHP_URL_HOST);
+			$status = $this->normalizeHost($cliHost) === $this->normalizeHost($accessHost)
+				? 'ok'
+				: 'mismatch';
+		}
+
+		return [
+			'status' => $status,
+			'cliUrl' => $cliUrl,
+			'accessHost' => $accessHost,
+		];
+	}
+
+	/**
+	 * Lower-case the host and strip an optional port so a pure scheme/port/path
+	 * difference does not trigger a false "mismatch".
+	 */
+	private function normalizeHost(string $host): string {
+		$host = strtolower(trim($host));
+		$colon = strpos($host, ':');
+		return $colon === false ? $host : substr($host, 0, $colon);
 	}
 
 	/**

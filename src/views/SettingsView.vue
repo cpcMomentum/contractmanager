@@ -265,6 +265,38 @@
 					{{ t('contractmanager', 'Administrator-Einstellungen') }}
 				</h3>
 
+				<!-- Reminder link health (overwrite.cli.url) -->
+				<div v-if="showReminderLinkWarning" class="reminder-link-note">
+					<button type="button"
+						class="reminder-link-summary"
+						:aria-expanded="reminderLinkExpanded ? 'true' : 'false'"
+						@click="reminderLinkExpanded = !reminderLinkExpanded">
+						<InformationOutlineIcon :size="18" class="reminder-link-summary__icon" />
+						<span>{{ t('contractmanager', 'Hinweis') }}</span>
+						<ChevronUpIcon v-if="reminderLinkExpanded" :size="18" />
+						<ChevronDownIcon v-else :size="18" />
+					</button>
+					<div v-if="reminderLinkExpanded" class="reminder-link-details">
+						<p class="reminder-link-intro">
+							{{ t('contractmanager', 'Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:') }}
+						</p>
+						<dl class="reminder-link-values">
+							<div>
+								<dt>{{ t('contractmanager', 'Hinterlegt') }}</dt>
+								<dd>{{ reminderLink.cliUrl || '—' }}</dd>
+							</div>
+							<div>
+								<dt>{{ t('contractmanager', 'Du nutzt') }}</dt>
+								<dd>{{ reminderLink.accessHost }}</dd>
+							</div>
+						</dl>
+						<p class="reminder-link-fix">
+							{{ t('contractmanager', 'So korrigierst du das: bei verwaltetem Hosting im Verwaltungs-Panel deines Anbieters, auf einem eigenen Server per Kommandozeile:') }}
+						</p>
+						<code class="reminder-link-command">{{ reminderLinkCommand }}</code>
+					</div>
+				</div>
+
 				<!-- Default reminder lead time -->
 				<div class="settings-item reminder-days">
 					<label class="settings-label">{{ t('contractmanager', 'Standard-Vorlaufzeit (Tage vor Kündigungsfrist)') }}</label>
@@ -491,6 +523,9 @@ import CheckIcon from 'vue-material-design-icons/Check.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
 import AccountIcon from 'vue-material-design-icons/Account.vue'
 import AccountGroupIcon from 'vue-material-design-icons/AccountGroup.vue'
+import ChevronDownIcon from 'vue-material-design-icons/ChevronDown.vue'
+import ChevronUpIcon from 'vue-material-design-icons/ChevronUp.vue'
+import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline.vue'
 import SettingsService from '../services/SettingsService'
 import ContractService from '../services/ContractService'
 import { showSuccess, showError } from '@nextcloud/dialogs'
@@ -513,6 +548,9 @@ export default {
 		CloseIcon,
 		AccountIcon,
 		AccountGroupIcon,
+		ChevronDownIcon,
+		ChevronUpIcon,
+		InformationOutlineIcon,
 	},
 	data() {
 		return {
@@ -543,6 +581,8 @@ export default {
 				aiApiUrl: '',
 				aiModel: '',
 			},
+			reminderLink: null,
+			reminderLinkExpanded: false,
 			permissionSettings: {
 				editors: [],
 				viewers: [],
@@ -590,6 +630,14 @@ export default {
 		canTransfer() {
 			return !!this.transferFrom && !!this.transferTo
 				&& this.principalUid(this.transferFrom) !== this.principalUid(this.transferTo)
+		},
+		// True when reminder mail links may point at the wrong host.
+		showReminderLinkWarning() {
+			return !!this.reminderLink && this.reminderLink.status !== 'ok'
+		},
+		reminderLinkCommand() {
+			const host = (this.reminderLink && this.reminderLink.accessHost) || 'deine-domain.tld'
+			return `sudo -u www-data php occ config:system:set overwrite.cli.url --value="https://${host}"`
 		},
 	},
 	async created() {
@@ -693,6 +741,7 @@ export default {
 					aiApiUrl: settings.aiApiUrl || '',
 					aiModel: settings.aiModel || '',
 				}
+				this.reminderLink = settings.reminderLink || null
 			} catch (error) {
 				console.error('Failed to load admin settings:', error)
 			}
@@ -962,6 +1011,82 @@ export default {
 
 .admin-icon {
 	color: var(--color-primary);
+}
+
+.reminder-link-note {
+	margin-bottom: 16px;
+}
+
+.reminder-link-summary {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border: none;
+	border-radius: var(--border-radius);
+	background: transparent;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.95em;
+	text-align: start;
+	cursor: pointer;
+
+	&:hover,
+	&:focus-visible {
+		background: var(--color-background-hover);
+		color: var(--color-main-text);
+	}
+
+	&__icon {
+		flex: 0 0 auto;
+	}
+}
+
+.reminder-link-details {
+	padding: 4px 8px 0 30px;
+	font-size: 0.9em;
+
+	p {
+		margin: 0 0 8px;
+	}
+
+	.reminder-link-intro {
+		color: var(--color-main-text);
+	}
+
+	.reminder-link-fix {
+		color: var(--color-text-maxcontrast);
+	}
+
+	.reminder-link-command {
+		display: block;
+		padding: 8px 12px;
+		background: var(--color-background-darker);
+		border-radius: var(--border-radius);
+		font-family: var(--font-face-monospace, monospace);
+		white-space: pre-wrap;
+		word-break: break-all;
+		user-select: all;
+	}
+}
+
+.reminder-link-values {
+	margin: 0 0 8px;
+
+	div {
+		display: flex;
+		gap: 8px;
+	}
+
+	dt {
+		flex: 0 0 80px;
+		color: var(--color-text-maxcontrast);
+	}
+
+	dd {
+		margin: 0;
+		font-family: var(--font-face-monospace, monospace);
+		word-break: break-all;
+	}
 }
 
 .settings-item {
