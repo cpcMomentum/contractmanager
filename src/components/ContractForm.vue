@@ -200,7 +200,7 @@
 								track-by="value"
 								:reduce="option => option.value"
 								:clearable="false" />
-							<p class="form-hint">
+							<p v-if="form.cancellationDeadlineType === 'month_end'" class="form-hint">
 								{{ t('contractmanager', 'Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.') }}
 							</p>
 						</div>
