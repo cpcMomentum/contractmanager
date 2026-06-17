@@ -1,38 +1,50 @@
 <template>
-	<div class="contract-list-item">
+	<div class="contract-list-item" :class="'contract-list-item--' + statusChip.cls">
+		<span class="contract-list-item__accent" aria-hidden="true" />
 		<div class="contract-list-item__main">
 			<div class="contract-list-item__header">
 				<a class="contract-name" href="#" @click.prevent="onEdit">
 					{{ contract.name }}
 				</a>
-				<StatusBadge v-if="contract.status" :status="contract.status" />
-				<span v-if="endingSoon"
-					class="status-indicator status-ending-soon"
-					:title="t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.')">
-					{{ t('contractmanager', 'Kündigungsfrist endet') }}
+				<span class="cm-chip" :class="'cm-chip--' + statusChip.cls" :title="statusChip.title">
+					<BellRingIcon v-if="statusChip.cls === 'soon'" :size="14" />
+					{{ statusChip.label }}
 				</span>
-				<span v-if="expiredFixed"
-					class="status-indicator status-expired"
-					:title="t('contractmanager', 'Das Enddatum ist überschritten.')">
-					{{ t('contractmanager', 'Abgelaufen') }}
-				</span>
-				<span v-if="contract.isPrivate" class="private-badge" :title="t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')">
-					<LockIcon :size="16" />
+				<span v-if="contract.isPrivate" class="cm-chip cm-chip--lock" :title="t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')">
+					<LockIcon :size="14" />
 					{{ t('contractmanager', 'Privat') }}
 				</span>
 			</div>
 			<div class="contract-list-item__details">
 				<span>{{ contract.vendor }}</span>
-				<span v-if="contract.cost">{{ formatCost(contract.cost, contract.currency) }}</span>
-				<span>|</span>
-				<span v-if="contract.contractType === 'auto_renewal'">{{ t('contractmanager', 'Endet:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
-				<span v-else>{{ t('contractmanager', 'Läuft aus am:') }} {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
-				<span v-if="cancellationDeadline && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Kündigen bis:') }} {{ formatDate(cancellationDeadline) }}</span>
-				<span v-if="contract.renewalPeriod && contract.contractType === 'auto_renewal'">| {{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
-				<span v-if="mode === 'trash' && contract.deletedAt">| {{ t('contractmanager', 'Gelöscht:') }} {{ formatDate(contract.deletedAt) }}</span>
-				<span v-if="showCreator && contract.createdBy">| {{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
-				<span v-if="contract.responsibleUser">| {{ t('contractmanager', 'Zuständig') }}: {{ contract.responsibleUser }}</span>
+				<template v-if="cancellationDeadline && contract.contractType === 'auto_renewal'">
+					<span class="sep">·</span>
+					<span><span class="lbl">{{ t('contractmanager', 'Kündigen bis:') }}</span> {{ formatDate(cancellationDeadline) }}</span>
+				</template>
+				<template v-else-if="effectiveEndDate || contract.endDate">
+					<span class="sep">·</span>
+					<span><span class="lbl">{{ contract.contractType === 'auto_renewal' ? t('contractmanager', 'Endet:') : t('contractmanager', 'Läuft aus am:') }}</span> {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
+				</template>
+				<template v-if="contract.renewalPeriod && contract.contractType === 'auto_renewal'">
+					<span class="sep">·</span>
+					<span>{{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
+				</template>
+				<template v-if="mode === 'trash' && contract.deletedAt">
+					<span class="sep">·</span>
+					<span>{{ t('contractmanager', 'Gelöscht:') }} {{ formatDate(contract.deletedAt) }}</span>
+				</template>
+				<template v-if="showCreator && contract.createdBy">
+					<span class="sep">·</span>
+					<span>{{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
+				</template>
+				<template v-if="contract.responsibleUser">
+					<span class="sep">·</span>
+					<span>{{ t('contractmanager', 'Zuständig') }}: {{ contract.responsibleUser }}</span>
+				</template>
 			</div>
+		</div>
+		<div v-if="contract.cost" class="contract-list-item__cost">
+			{{ formatCost(contract.cost, contract.currency) }}
 		</div>
 		<div class="contract-list-item__actions">
 			<NcButton v-if="contract.contractFolder"
@@ -129,7 +141,7 @@ import LockIcon from 'vue-material-design-icons/Lock.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import FolderOpenIcon from 'vue-material-design-icons/FolderOpen.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
-import StatusBadge from './StatusBadge.vue'
+import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
@@ -153,7 +165,7 @@ export default {
 		FileDocumentIcon,
 		FolderOpenIcon,
 		ContentDuplicate,
-		StatusBadge,
+		BellRingIcon,
 	},
 	props: {
 		contract: {
@@ -200,6 +212,23 @@ export default {
 		},
 		expiredFixed() {
 			return isExpiredFixed(this.contract)
+		},
+		// Single derived status chip — replaces the former stack of badges
+		// (Status + „Kündigungsfrist endet" + „Abgelaufen") with one clear signal.
+		statusChip() {
+			if (this.expiredFixed) {
+				return { cls: 'expired', label: t('contractmanager', 'Abgelaufen'), title: t('contractmanager', 'Das Enddatum ist überschritten.') }
+			}
+			if (this.endingSoon) {
+				return { cls: 'soon', label: t('contractmanager', 'Kündigung fällig'), title: t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.') }
+			}
+			if (this.contract.status === 'cancelled') {
+				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt'), title: '' }
+			}
+			if (this.contract.status === 'ended') {
+				return { cls: 'ended', label: t('contractmanager', 'Beendet'), title: '' }
+			}
+			return { cls: 'active', label: t('contractmanager', 'Laufend'), title: '' }
 		},
 		deleteDialogButtons() {
 			return [
@@ -299,17 +328,40 @@ export default {
 </script>
 
 <style scoped lang="scss">
+/* Status-Farbpalette (aus WorkTime/Vinarium übernommen) */
+$st: (
+	active:    (#eaf5ee, #2f7d49),
+	soon:      (#fbf3e6, #9a6c25),
+	cancelled: (#fef3c7, #92400e),
+	ended:     (#efefef, #5a5a5a),
+	expired:   (#fbecea, #b03b33),
+);
+
 .contract-list-item {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	padding: 10px 16px;
+	gap: 14px;
+	padding: 13px 16px 13px 0;
 	background: var(--color-main-background);
-	border-radius: 8px;
-	transition: background-color 0.15s ease;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large, 12px);
+	overflow: hidden;
+	position: relative;
+	transition: box-shadow 0.15s ease, transform 0.15s ease;
 
 	&:hover {
-		background: var(--color-background-hover);
+		box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+	}
+
+	&__accent {
+		align-self: stretch;
+		width: 5px;
+		flex: 0 0 auto;
+		background: #c9ccd0;
+	}
+
+	@each $name, $colors in $st {
+		&--#{$name} .contract-list-item__accent { background: nth($colors, 2); }
 	}
 
 	&__main {
@@ -320,7 +372,8 @@ export default {
 	&__header {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 10px;
+		flex-wrap: wrap;
 		margin-bottom: 4px;
 	}
 
@@ -328,9 +381,20 @@ export default {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 8px;
+		gap: 6px;
 		font-size: 13px;
 		color: var(--color-text-maxcontrast);
+
+		.sep { opacity: 0.5; }
+		.lbl { color: var(--color-main-text); font-weight: 500; }
+	}
+
+	&__cost {
+		flex: 0 0 auto;
+		font-size: 16px;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
 	}
 
 	&__actions {
@@ -338,55 +402,34 @@ export default {
 		align-items: center;
 		gap: 4px;
 		flex-shrink: 0;
-		margin-left: 16px;
 	}
 }
 
 .contract-name {
 	font-size: 16px;
 	font-weight: 600;
-	color: var(--color-main-text);
+	color: var(--color-primary-element);
 	text-decoration: none;
 	cursor: pointer;
 
-	&:hover {
-		text-decoration: underline;
-		color: var(--color-primary-element);
-	}
+	&:hover { text-decoration: underline; }
 }
 
-.private-badge {
+.cm-chip {
 	display: inline-flex;
 	align-items: center;
-	gap: 4px;
-	padding: 2px 8px;
-	background-color: var(--color-warning-hover);
-	color: var(--color-warning-text);
-	border-radius: 12px;
+	gap: 5px;
+	padding: 3px 10px;
+	border-radius: var(--border-radius, 8px);
 	font-size: 12px;
-	font-weight: 500;
-}
-
-.status-indicator {
-	display: inline-flex;
-	align-items: center;
-	padding: 4px 12px;
-	border-radius: 12px;
-	font-size: 13px;
 	font-weight: 600;
-	letter-spacing: 0.2px;
 	white-space: nowrap;
-	cursor: help;
 
-	&.status-ending-soon {
-		background-color: var(--color-warning-hover, #fff4e0);
-		color: var(--color-warning-text, #92400e);
+	@each $name, $colors in $st {
+		&--#{$name} { background: nth($colors, 1); color: nth($colors, 2); }
 	}
 
-	&.status-expired {
-		background-color: var(--color-error-hover, #fee2e2);
-		color: var(--color-error-text, #991b1b);
-	}
+	&--lock { background: #fbf3e6; color: #9a6c25; }
 }
 
 .delete-action {

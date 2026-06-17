@@ -35,6 +35,42 @@
 			</div>
 		</div>
 
+		<div v-if="!loading && allContracts.length" class="contract-kpis">
+			<div class="kpi">
+				<div class="kpi__lab">
+					<FileDocumentIcon :size="15" /> {{ t('contractmanager', 'Aktive Verträge') }}
+				</div>
+				<div class="kpi__num">
+					{{ kpiActiveCount }}
+				</div>
+				<div class="kpi__sub">
+					{{ kpiTypeSub }}
+				</div>
+			</div>
+			<div class="kpi">
+				<div class="kpi__lab">
+					<CashMultipleIcon :size="15" /> {{ t('contractmanager', 'Monatliche Kosten') }}
+				</div>
+				<div class="kpi__num">
+					{{ kpiMonthlyLabel }}
+				</div>
+				<div class="kpi__sub">
+					{{ t('contractmanager', 'Aktive Verträge, auf den Monat umgerechnet') }}
+				</div>
+			</div>
+			<div class="kpi" :class="{ 'kpi--warn': kpiEndingSoon > 0 }">
+				<div class="kpi__lab">
+					<BellRingIcon :size="15" /> {{ t('contractmanager', 'Kündigung fällig') }}
+				</div>
+				<div class="kpi__num">
+					{{ kpiEndingSoon }}
+				</div>
+				<div class="kpi__sub">
+					{{ t('contractmanager', 'innerhalb der Vorlaufzeit') }}
+				</div>
+			</div>
+		</div>
+
 		<div v-show="showFilters" class="contract-list__filters">
 			<NcSelect v-model="filterVendor"
 				:options="vendorOptions"
@@ -156,6 +192,8 @@ import CircleSmallIcon from 'vue-material-design-icons/CircleSmall.vue'
 import FilterIcon from 'vue-material-design-icons/Filter.vue'
 import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
+import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
@@ -182,6 +220,8 @@ export default {
 		FilterIcon,
 		FilterOffIcon,
 		CloseIcon,
+		CashMultipleIcon,
+		BellRingIcon,
 		ContractListItem,
 		ContractForm,
 	},
@@ -270,6 +310,37 @@ export default {
 			if (this.filterContractType) return true
 			if (this.filterResponsible) return true
 			return false
+		},
+		// --- KPI-Kennzahlen über das gesamte Portfolio (nicht die gefilterte Ansicht) ---
+		nonArchivedContracts() {
+			return this.allContracts.filter(c => c.status !== 'archived')
+		},
+		kpiActiveCount() {
+			return this.nonArchivedContracts.filter(c => c.status === 'active').length
+		},
+		kpiTypeSub() {
+			const auto = this.nonArchivedContracts.filter(c => c.status === 'active' && c.contractType === 'auto_renewal').length
+			const rest = this.kpiActiveCount - auto
+			return t('contractmanager', '{auto} mit autom. Verlängerung · {rest} weitere', { auto, rest })
+		},
+		kpiEndingSoon() {
+			return this.nonArchivedContracts.filter(c => isEndingSoon(c, this.defaultReminderDays)).length
+		},
+		kpiMonthlyTotal() {
+			const divisor = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
+			let sum = 0
+			this.nonArchivedContracts.forEach(c => {
+				if (c.status !== 'active') return
+				const cost = parseFloat(c.cost)
+				const d = divisor[c.costInterval]
+				// Einmalzahlungen und unbekannte Intervalle fließen nicht in die Monatssumme ein.
+				if (!Number.isFinite(cost) || !d) return
+				sum += cost / d
+			})
+			return sum
+		},
+		kpiMonthlyLabel() {
+			return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(this.kpiMonthlyTotal)
 		},
 		contracts() {
 			let filtered = this.allContracts.filter(c => c.status !== 'archived')
@@ -599,7 +670,51 @@ export default {
 	&__items {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 10px;
 	}
+}
+
+.contract-kpis {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin-bottom: 18px;
+	max-width: 920px;
+
+	.kpi {
+		background: var(--color-main-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large, 12px);
+		padding: 14px 16px;
+	}
+
+	.kpi__lab {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--color-text-maxcontrast);
+	}
+
+	.kpi__num {
+		font-size: 26px;
+		font-weight: 700;
+		line-height: 1;
+		margin-top: 8px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.kpi--warn .kpi__num { color: #9a6c25; }
+
+	.kpi__sub {
+		font-size: 12.5px;
+		color: var(--color-text-maxcontrast);
+		margin-top: 5px;
+	}
+}
+
+@media (max-width: 768px) {
+	.contract-kpis { grid-template-columns: 1fr; }
 }
 </style>
