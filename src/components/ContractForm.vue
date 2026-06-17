@@ -61,72 +61,59 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Grunddaten') }}</h3>
 
-					<div class="form-row form-row--half">
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</label>
-							<NcTextField v-model="form.name"
+					<div class="cm-field-row">
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Vertragsbezeichnung') + ' *' }}</span>
+							<input v-model="form.name"
+								class="cm-input"
 								:disabled="readOnly"
-								:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')" />
-						</div>
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Vertragspartner') + ' *' }}</label>
-							<NcSelect v-model="vendorSelection"
-								:options="vendorOptions"
+								:placeholder="t('contractmanager', 'z.B. Microsoft 365 Business')">
+						</label>
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Vertragspartner') + ' *' }}</span>
+							<input v-model="form.vendor"
+								class="cm-input"
+								list="cm-vendor-list"
 								:disabled="readOnly"
-								:taggable="true"
-								:multiple="false"
-								:close-on-select="true"
-								:reduce="option => typeof option === 'string' ? option : option.label"
-								label="label"
-								:placeholder="t('contractmanager', 'z.B. Microsoft')"
-								:create-option="text => text"
-								:no-wrap="true"
-								@search="onVendorSearch" />
-						</div>
+								:placeholder="t('contractmanager', 'z.B. Microsoft')">
+							<datalist id="cm-vendor-list">
+								<option v-for="opt in vendorOptions" :key="opt.label" :value="opt.label" />
+							</datalist>
+						</label>
 					</div>
 
-					<div class="form-row form-row--half">
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Kategorie') }}</label>
-							<NcSelect v-model="form.categoryId"
-								:options="categoryOptions"
-								:placeholder="t('contractmanager', 'Kategorie wählen')"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value" />
-						</div>
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Status') }}</label>
-							<div class="seg seg--full">
-								<button v-for="opt in statusOptions"
-									:key="opt.value"
-									type="button"
-									:class="{ 'is-active': form.contractStatus === opt.value }"
-									:disabled="readOnly"
-									@click="form.contractStatus = opt.value">
+					<div class="cm-field-row">
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Kategorie') }}</span>
+							<select v-model="form.categoryId" class="cm-input" :disabled="readOnly">
+								<option v-for="opt in categoryOptions" :key="String(opt.value)" :value="opt.value">
 									{{ opt.label }}
-								</button>
-							</div>
-						</div>
+								</option>
+							</select>
+						</label>
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Status') }}</span>
+							<select v-model="form.contractStatus" class="cm-input" :disabled="readOnly">
+								<option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+									{{ opt.label }}
+								</option>
+							</select>
+						</label>
 					</div>
 
-					<div v-if="hasCustomFields" class="form-row form-row--custom">
-						<div v-if="customFieldLabels.customFieldLabel1">
-							<label class="form-label">{{ customFieldLabels.customFieldLabel1 }}</label>
-							<NcTextField v-model="form.customField1"
-								:disabled="readOnly" />
-						</div>
-						<div v-if="customFieldLabels.customFieldLabel2">
-							<label class="form-label">{{ customFieldLabels.customFieldLabel2 }}</label>
-							<NcTextField v-model="form.customField2"
-								:disabled="readOnly" />
-						</div>
-						<div v-if="customFieldLabels.customFieldLabel3">
-							<label class="form-label">{{ customFieldLabels.customFieldLabel3 }}</label>
-							<NcTextField v-model="form.customField3"
-								:disabled="readOnly" />
-						</div>
+					<div v-if="hasCustomFields" class="cm-field-row cm-field-row--custom">
+						<label v-if="customFieldLabels.customFieldLabel1" class="cm-field">
+							<span>{{ customFieldLabels.customFieldLabel1 }}</span>
+							<input v-model="form.customField1" class="cm-input" :disabled="readOnly">
+						</label>
+						<label v-if="customFieldLabels.customFieldLabel2" class="cm-field">
+							<span>{{ customFieldLabels.customFieldLabel2 }}</span>
+							<input v-model="form.customField2" class="cm-input" :disabled="readOnly">
+						</label>
+						<label v-if="customFieldLabels.customFieldLabel3" class="cm-field">
+							<span>{{ customFieldLabels.customFieldLabel3 }}</span>
+							<input v-model="form.customField3" class="cm-input" :disabled="readOnly">
+						</label>
 					</div>
 				</div>
 
@@ -134,45 +121,31 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Laufzeit & Kündigung') }}</h3>
 
-					<div class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Vertragstyp') + ' *' }}</label>
-						<div class="seg seg--full">
-							<button v-for="opt in contractTypeOptions"
-								:key="opt.value"
-								type="button"
-								:class="{ 'is-active': form.contractType === opt.value }"
-								:disabled="readOnly"
-								@click="form.contractType = opt.value">
+					<label class="cm-field">
+						<span>{{ t('contractmanager', 'Vertragstyp') + ' *' }}</span>
+						<select v-model="form.contractType" class="cm-input" :disabled="readOnly">
+							<option v-for="opt in contractTypeOptions" :key="opt.value" :value="opt.value">
 								{{ opt.label }}
-							</button>
-						</div>
-					</div>
+							</option>
+						</select>
+					</label>
 
-					<div class="form-row form-row--half">
-						<div class="field-date">
-							<label class="form-label">{{ t('contractmanager', 'Startdatum') + ' *' }}</label>
-							<NcTextField v-if="readOnly"
-								:model-value="formatDateDisplay(form.startDate)"
-								:disabled="true" />
-							<NcDateTimePickerNative v-else
-								:model-value="form.startDate"
+					<div class="cm-field-row">
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Startdatum') + ' *' }}</span>
+							<input v-model="startDateStr"
 								type="date"
-								:label="t('contractmanager', 'Startdatum')"
-								hide-label
-								@update:model-value="form.startDate = $event" />
-						</div>
-						<div class="field-date">
-							<label class="form-label">{{ t('contractmanager', 'Enddatum') }}</label>
-							<NcTextField v-if="readOnly"
-								:model-value="formatDateDisplay(form.endDate) || '—'"
-								:disabled="true" />
-							<div v-else class="date-with-clear">
-								<NcDateTimePickerNative :model-value="form.endDate"
+								class="cm-input"
+								:disabled="readOnly">
+						</label>
+						<div class="cm-field">
+							<span>{{ t('contractmanager', 'Enddatum') }}</span>
+							<div class="cm-inline">
+								<input v-model="endDateStr"
 									type="date"
-									:label="t('contractmanager', 'Enddatum')"
-									hide-label
-									@update:model-value="form.endDate = $event" />
-								<NcButton v-if="form.endDate"
+									class="cm-input"
+									:disabled="readOnly">
+								<NcButton v-if="form.endDate && !readOnly"
 									variant="tertiary"
 									:title="t('contractmanager', 'Enddatum entfernen (unbefristet)')"
 									@click="form.endDate = null">
@@ -188,65 +161,55 @@
 						{{ dateError }}
 					</NcNoteCard>
 
-					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--periods">
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Kündigungsfrist') }}</label>
-							<NcTextField v-model="form.cancellationPeriodValue"
-								type="number"
-								min="1"
-								:disabled="readOnly" />
+					<div v-if="form.contractType === 'auto_renewal'" class="cm-field-row">
+						<div class="cm-field">
+							<span>{{ t('contractmanager', 'Kündigungsfrist') }}</span>
+							<div class="cm-inline">
+								<input v-model="form.cancellationPeriodValue"
+									type="number"
+									min="1"
+									class="cm-input cm-input--num"
+									:disabled="readOnly">
+								<select v-model="form.cancellationPeriodUnit" class="cm-input" :disabled="readOnly">
+									<option v-for="opt in periodUnitOptions" :key="opt.value" :value="opt.value">
+										{{ opt.label }}
+									</option>
+								</select>
+							</div>
 						</div>
-						<div>
-							<label class="form-label">&nbsp;</label>
-							<NcSelect v-model="form.cancellationPeriodUnit"
-								:options="periodUnitOptions"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value"
-								:clearable="false" />
-						</div>
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Verlängerung') }}</label>
-							<NcTextField v-model="form.renewalPeriodValue"
-								type="number"
-								min="1"
-								:disabled="readOnly" />
-						</div>
-						<div>
-							<label class="form-label">&nbsp;</label>
-							<NcSelect v-model="form.renewalPeriodUnit"
-								:options="periodUnitOptions"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value"
-								:clearable="false" />
+						<div class="cm-field">
+							<span>{{ t('contractmanager', 'Verlängerung') }}</span>
+							<div class="cm-inline">
+								<input v-model="form.renewalPeriodValue"
+									type="number"
+									min="1"
+									class="cm-input cm-input--num"
+									:disabled="readOnly">
+								<select v-model="form.renewalPeriodUnit" class="cm-input" :disabled="readOnly">
+									<option v-for="opt in periodUnitOptions" :key="opt.value" :value="opt.value">
+										{{ opt.label }}
+									</option>
+								</select>
+							</div>
 						</div>
 					</div>
-					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--half">
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Kündigen zum') }}</label>
-							<div class="seg seg--full">
-								<button v-for="opt in cancellationDeadlineTypeOptions"
-									:key="opt.value"
-									type="button"
-									:class="{ 'is-active': form.cancellationDeadlineType === opt.value }"
-									:disabled="readOnly"
-									@click="form.cancellationDeadlineType = opt.value">
+
+					<div v-if="form.contractType === 'auto_renewal'" class="cm-field-row">
+						<div class="cm-field">
+							<span>{{ t('contractmanager', 'Kündigen zum') }}</span>
+							<select v-model="form.cancellationDeadlineType" class="cm-input" :disabled="readOnly">
+								<option v-for="opt in cancellationDeadlineTypeOptions" :key="opt.value" :value="opt.value">
 									{{ opt.label }}
-								</button>
-							</div>
-							<p v-if="form.cancellationDeadlineType === 'month_end'" class="form-hint">
+								</option>
+							</select>
+							<p v-if="form.cancellationDeadlineType === 'month_end'" class="cm-hint">
 								{{ t('contractmanager', 'Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.') }}
 							</p>
 						</div>
-						<div v-if="showCancellationDeadline">
-							<label class="form-label">{{ t('contractmanager', 'Kündigen bis (berechnet)') }}</label>
-							<NcTextField :model-value="calculatedCancellationDeadline"
-								:disabled="true"
-								class="deadline-field" />
-						</div>
+						<label v-if="showCancellationDeadline" class="cm-field">
+							<span>{{ t('contractmanager', 'Kündigen bis (berechnet)') }}</span>
+							<input :value="calculatedCancellationDeadline" class="cm-input" disabled>
+						</label>
 					</div>
 				</div>
 
@@ -254,19 +217,15 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Kündigung') }}</h3>
 
-					<div class="form-row form-row--cancellation">
-						<div class="field-date field-date--end">
-							<label class="form-label">{{ t('contractmanager', 'Gekündigt am') }}</label>
-							<NcTextField v-if="readOnly"
-								:model-value="formatDateDisplay(form.cancelledOn) || '—'"
-								:disabled="true" />
-							<div v-else class="date-with-clear">
-								<NcDateTimePickerNative :model-value="form.cancelledOn"
+					<div class="cm-field-row">
+						<div class="cm-field">
+							<span>{{ t('contractmanager', 'Gekündigt am') }}</span>
+							<div class="cm-inline">
+								<input v-model="cancelledOnStr"
 									type="date"
-									:label="t('contractmanager', 'Gekündigt am')"
-									hide-label
-									@update:model-value="onCancelledOnInput" />
-								<NcButton v-if="form.cancelledOn"
+									class="cm-input"
+									:disabled="readOnly">
+								<NcButton v-if="form.cancelledOn && !readOnly"
 									variant="tertiary"
 									:title="t('contractmanager', 'Kündigung entfernen')"
 									@click="onCancelledOnInput(null)">
@@ -276,18 +235,14 @@
 								</NcButton>
 							</div>
 						</div>
-						<div v-if="form.cancelledOn" class="field-date field-date--end">
-							<label class="form-label">{{ t('contractmanager', 'Gekündigt zum') }}</label>
-							<NcTextField v-if="readOnly"
-								:model-value="formatDateDisplay(form.cancelledTo) || '—'"
-								:disabled="true" />
-							<div v-else class="date-with-clear">
-								<NcDateTimePickerNative :model-value="form.cancelledTo"
+						<div v-if="form.cancelledOn" class="cm-field">
+							<span>{{ t('contractmanager', 'Gekündigt zum') }}</span>
+							<div class="cm-inline">
+								<input v-model="cancelledToStr"
 									type="date"
-									:label="t('contractmanager', 'Gekündigt zum')"
-									hide-label
-									@update:model-value="form.cancelledTo = $event" />
-								<NcButton v-if="form.cancelledTo"
+									class="cm-input"
+									:disabled="readOnly">
+								<NcButton v-if="form.cancelledTo && !readOnly"
 									variant="tertiary"
 									:title="t('contractmanager', 'Datum entfernen')"
 									@click="form.cancelledTo = null">
@@ -299,7 +254,7 @@
 						</div>
 					</div>
 
-					<p v-if="!readOnly" class="field-hint">
+					<p v-if="!readOnly" class="cm-hint">
 						{{ t('contractmanager', 'Mit „Gekündigt am" wird der Vertrag am Laufzeitende automatisch beendet und archiviert. „Gekündigt zum" beendet ihn stattdessen zu diesem Datum (z. B. bei Sonderkündigung).') }}
 					</p>
 				</div>
@@ -307,63 +262,50 @@
 				<!-- Kosten -->
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Kosten') }}</h3>
-					<div class="form-row form-row--half">
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Betrag') }}</label>
-							<NcTextField v-model="form.cost"
+					<div class="cm-field-row">
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Betrag') }}</span>
+							<input v-model="form.cost"
 								type="number"
 								step="0.01"
+								class="cm-input"
 								:disabled="readOnly"
-								:placeholder="t('contractmanager', '0.00')" />
-						</div>
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
-							<NcSelect v-model="form.currency"
-								:options="currencyOptions"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value"
-								:clearable="false" />
-						</div>
+								:placeholder="t('contractmanager', '0.00')">
+						</label>
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Währung') }}</span>
+							<select v-model="form.currency" class="cm-input" :disabled="readOnly">
+								<option v-for="opt in currencyOptions" :key="opt.value" :value="opt.value">
+									{{ opt.label }}
+								</option>
+							</select>
+						</label>
 					</div>
-					<div class="form-row form-row--half">
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Zahlweise') }}</label>
-							<NcSelect v-model="form.costInterval"
-								:options="costIntervalOptions"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value"
-								:clearable="false" />
-						</div>
-						<div>
-							<label class="form-label">{{ t('contractmanager', 'Betragsart') }}</label>
-							<div class="seg seg--full">
-								<button type="button"
-									:class="{ 'is-active': form.amountType === 'netto' }"
-									:disabled="readOnly"
-									@click="form.amountType = 'netto'">
-									{{ t('contractmanager', 'Netto') }}
-								</button>
-								<button type="button"
-									:class="{ 'is-active': form.amountType === 'brutto' }"
-									:disabled="readOnly"
-									@click="form.amountType = 'brutto'">
-									{{ t('contractmanager', 'Brutto') }}
-								</button>
-							</div>
-						</div>
+					<div class="cm-field-row">
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Zahlweise') }}</span>
+							<select v-model="form.costInterval" class="cm-input" :disabled="readOnly">
+								<option v-for="opt in costIntervalOptions" :key="opt.value" :value="opt.value">
+									{{ opt.label }}
+								</option>
+							</select>
+						</label>
+						<label class="cm-field">
+							<span>{{ t('contractmanager', 'Betragsart') }}</span>
+							<select v-model="form.amountType" class="cm-input" :disabled="readOnly">
+								<option value="netto">{{ t('contractmanager', 'Netto') }}</option>
+								<option value="brutto">{{ t('contractmanager', 'Brutto') }}</option>
+							</select>
+						</label>
 					</div>
 				</div>
 
 				<!-- Dokumente -->
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Dokumente') }}</h3>
-					<div class="form-row form-row--half">
-						<div class="doc-row">
-							<label class="form-label">{{ t('contractmanager', 'Vertragsordner') }}</label>
+					<div class="cm-field-row">
+						<div class="cm-field">
+							<span>{{ t('contractmanager', 'Vertragsordner') }}</span>
 							<span v-if="form.contractFolder" class="selected-path" :title="form.contractFolder">
 								{{ form.contractFolder.split('/').filter(s => s).pop() }}
 							</span>
@@ -402,8 +344,8 @@
 								</NcButton>
 							</div>
 						</div>
-						<div class="doc-row">
-							<label class="form-label">{{ t('contractmanager', 'Vertragsdokument') }}</label>
+						<div class="cm-field">
+							<span>{{ t('contractmanager', 'Vertragsdokument') }}</span>
 							<span v-if="form.mainDocument" class="selected-path" :title="form.mainDocument">
 								<OpenInNewIcon v-if="isExternalDocument" :size="14" class="external-icon" />
 								{{ documentDisplayName }}
@@ -452,9 +394,10 @@
 								</NcButton>
 							</div>
 							<div v-if="showUrlInput && !readOnly && !form.mainDocument" class="url-input-row">
-								<NcTextField v-model="urlInput"
+								<input v-model="urlInput"
+									class="cm-input"
 									:placeholder="t('contractmanager', 'https://...')"
-									@keydown.enter.prevent="addExternalUrl" />
+									@keydown.enter.prevent="addExternalUrl">
 								<NcButton variant="primary" @click="addExternalUrl">
 									{{ t('contractmanager', 'Hinzufügen') }}
 								</NcButton>
@@ -473,13 +416,14 @@
 						<NcCheckboxRadioSwitch v-model="form.reminderEnabled" :disabled="readOnly">
 							{{ t('contractmanager', 'Erinnerung aktivieren') }}
 						</NcCheckboxRadioSwitch>
-						<div v-if="form.reminderEnabled" class="reminder-days">
-							<NcTextField v-model="form.reminderDays"
-								:label="t('contractmanager', 'X Tage vorher')"
+						<label v-if="form.reminderEnabled" class="cm-field reminder-days">
+							<span>{{ t('contractmanager', 'X Tage vorher') }}</span>
+							<input v-model="form.reminderDays"
 								type="number"
+								class="cm-input cm-input--num"
 								:disabled="readOnly"
-								:placeholder="t('contractmanager', 'Standard')" />
-						</div>
+								:placeholder="t('contractmanager', 'Standard')">
+						</label>
 						<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
 						<div v-if="isEdit && form.reminderEnabled" class="reminder-optout">
 							<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
@@ -487,7 +431,7 @@
 								@update:model-value="onReminderOptOutChange">
 								{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
 							</NcCheckboxRadioSwitch>
-							<p class="optout-hint">
+							<p class="cm-hint">
 								{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
 							</p>
 						</div>
@@ -498,29 +442,26 @@
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Notizen') }}</h3>
 
-					<div class="form-row notes-field">
-						<!-- eslint-disable vue/no-v-html -- linkifyText escapes HTML before linkifying -->
-						<div v-if="readOnly && form.notes"
-							class="notes-readonly"
-							:aria-label="t('contractmanager', 'Zusätzliche Notizen')"
-							v-html="linkifiedNotes" />
-						<!-- eslint-enable vue/no-v-html -->
-						<NcTextArea v-else
-							v-model="form.notes"
-							:label="t('contractmanager', 'Zusätzliche Notizen')"
-							:placeholder="t('contractmanager', 'Zusätzliche Notizen...')"
-							:maxlength="5000"
-							:disabled="readOnly"
-							resize="vertical"
-							rows="4" />
-					</div>
+					<!-- eslint-disable vue/no-v-html -- linkifyText escapes HTML before linkifying -->
+					<div v-if="readOnly && form.notes"
+						class="notes-readonly"
+						:aria-label="t('contractmanager', 'Zusätzliche Notizen')"
+						v-html="linkifiedNotes" />
+					<!-- eslint-enable vue/no-v-html -->
+					<textarea v-else
+						v-model="form.notes"
+						class="cm-input notes-textarea"
+						:maxlength="5000"
+						:disabled="readOnly"
+						:placeholder="t('contractmanager', 'Zusätzliche Notizen...')"
+						rows="4" />
 				</div>
 
 				<!-- Zuständig -->
 				<div class="form-section">
-					<div class="form-row">
-						<label class="form-label">{{ t('contractmanager', 'Zuständig') }}</label>
-						<p v-if="!readOnly" class="form-hint">
+					<div class="cm-field">
+						<span>{{ t('contractmanager', 'Zuständig') }}</span>
+						<p v-if="!readOnly" class="cm-hint cm-hint--top">
 							{{ t('contractmanager', 'Wer diesen Vertrag betreut. Leer lassen, dann bleibt der Ersteller zuständig.') }}
 						</p>
 						<NcSelect v-if="!readOnly"
@@ -538,17 +479,15 @@
 
 				<!-- Privacy -->
 				<div class="form-section">
-					<div class="form-row">
-						<NcCheckboxRadioSwitch v-model="form.isPrivate" :disabled="readOnly">
-							<template #icon>
-								<LockIcon v-if="form.isPrivate" :size="20" />
-								<LockOpenVariantIcon v-else :size="20" />
-							</template>
-							{{ form.isPrivate
-								? t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')
-								: t('contractmanager', 'Öffentlicher Vertrag (für alle Berechtigten sichtbar)') }}
-						</NcCheckboxRadioSwitch>
-					</div>
+					<NcCheckboxRadioSwitch v-model="form.isPrivate" :disabled="readOnly">
+						<template #icon>
+							<LockIcon v-if="form.isPrivate" :size="20" />
+							<LockOpenVariantIcon v-else :size="20" />
+						</template>
+						{{ form.isPrivate
+							? t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')
+							: t('contractmanager', 'Öffentlicher Vertrag (für alle Berechtigten sichtbar)') }}
+					</NcCheckboxRadioSwitch>
 				</div>
 
 				<!-- Actions -->
@@ -576,13 +515,10 @@
 <script>
 import NcModal from '@nextcloud/vue/components/NcModal'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
-import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
 import { getFilePickerBuilder, showSuccess, showError, showWarning } from '@nextcloud/dialogs'
 import { mapState } from 'pinia'
 import { useCategoriesStore } from '../store/categories'
@@ -611,13 +547,10 @@ export default {
 	components: {
 		NcModal,
 		NcButton,
-		NcTextField,
-		NcTextArea,
 		NcSelect,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 		NcNoteCard,
-		NcDateTimePickerNative,
 		Folder,
 		File,
 		Close,
@@ -679,19 +612,38 @@ export default {
 		linkifiedNotes() {
 			return linkifyText(this.form.notes)
 		},
-		vendorSelection: {
+		// Native <input type="date"> binds to a "yyyy-mm-dd" string; the form stores
+		// Date objects, so proxy through formatDateForInput/parseLocalDate.
+		startDateStr: {
 			get() {
-				return this.form.vendor || null
+				return this.form.startDate ? formatDateForInput(this.form.startDate) : ''
 			},
 			set(value) {
-				// NcSelect emits string (for created/tag) or option-object — normalize to plain string
-				if (value == null) {
-					this.form.vendor = ''
-				} else if (typeof value === 'string') {
-					this.form.vendor = value
-				} else if (typeof value === 'object' && value.label) {
-					this.form.vendor = value.label
-				}
+				this.form.startDate = value ? parseLocalDate(value) : null
+			},
+		},
+		endDateStr: {
+			get() {
+				return this.form.endDate ? formatDateForInput(this.form.endDate) : ''
+			},
+			set(value) {
+				this.form.endDate = value ? parseLocalDate(value) : null
+			},
+		},
+		cancelledOnStr: {
+			get() {
+				return this.form.cancelledOn ? formatDateForInput(this.form.cancelledOn) : ''
+			},
+			set(value) {
+				this.onCancelledOnInput(value ? parseLocalDate(value) : null)
+			},
+		},
+		cancelledToStr: {
+			get() {
+				return this.form.cancelledTo ? formatDateForInput(this.form.cancelledTo) : ''
+			},
+			set(value) {
+				this.form.cancelledTo = value ? parseLocalDate(value) : null
 			},
 		},
 		isExternalDocument() {
@@ -894,12 +846,6 @@ export default {
 				// Autocomplete is a nice-to-have — silently fall back to empty suggestions
 				this.vendorOptions = []
 			}
-		},
-		onVendorSearch(query) {
-			// NcSelect filters the visible list client-side automatically;
-			// hook is here for parity with potential future server-side search.
-			// No-op for now, kept for the @search binding contract.
-			void query
 		},
 		getInitialForm(defaultAmountType = 'netto') {
 			return {
@@ -1223,11 +1169,10 @@ export default {
 /*
  * Read-only details view: NC renders disabled fields dimmed (muted colour +
  * 0.7 opacity), which is too faint to read as a details view. Restore full
- * contrast for the displayed values (inputs, textareas and NcSelect values).
+ * contrast for the displayed values.
  */
 .contract-form--readonly {
-	:deep(input:disabled),
-	:deep(textarea:disabled) {
+	.cm-input:disabled {
 		opacity: 1;
 		color: var(--color-main-text);
 		-webkit-text-fill-color: var(--color-main-text);
@@ -1309,159 +1254,99 @@ export default {
 	&--ended { background: #efefef; color: #5a5a5a; }
 }
 
-/* Segmented control — replaces small fixed-option dropdowns. */
-.seg {
-	display: flex;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius, 8px);
-	overflow: hidden;
-	width: fit-content;
-	max-width: 100%;
+/*
+ * Uniform field system (modelled on the Vinarium modals): every control —
+ * text, number, date, <select> and <textarea> — shares the same .cm-input
+ * look so the form reads as one consistent surface instead of a mix of
+ * segmented switches and dropdown pills.
+ */
+.cm-field {
+	display: block;
+	margin-bottom: 14px;
 
-	&--full { width: 100%; }
+	&:last-child { margin-bottom: 0; }
 
-	button {
-		flex: 1;
-		font: inherit;
-		font-weight: 600;
+	> span {
+		display: block;
 		font-size: 13px;
-		border: none;
-		border-right: 1px solid var(--color-border);
-		background: var(--color-main-background);
-		color: var(--color-main-text);
-		padding: 8px 14px;
-		cursor: pointer;
-		white-space: nowrap;
-		transition: background-color 0.1s ease;
-
-		&:last-child { border-right: none; }
-		&:hover:not(.is-active):not(:disabled) { background: var(--color-background-hover); }
-		&.is-active { background: var(--color-primary-element-light); color: var(--color-primary-element); }
-		&:disabled { cursor: default; }
+		color: var(--color-text-maxcontrast);
+		margin-bottom: 4px;
 	}
 }
 
-@media (max-width: 720px) {
-	.form-row--triple { grid-template-columns: 1fr; gap: 12px; }
-	.form-row--dates,
-	.form-row--dates-extended,
-	.form-row--cancellation,
-	.form-row--periods { grid-template-columns: 1fr 1fr; }
+.cm-field-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px;
+	align-items: start;
+	margin-bottom: 14px;
+
+	&:last-child { margin-bottom: 0; }
+
+	.cm-field { margin-bottom: 0; }
+
+	&--custom { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 }
 
-.form-row {
-	margin-bottom: 12px;
+.cm-input {
+	width: 100%;
+	min-height: 36px;
+	padding: 6px 10px;
+	border: 1px solid var(--color-border-dark, var(--color-border));
+	border-radius: var(--border-radius, 8px);
+	background: var(--color-main-background);
+	color: var(--color-main-text);
+	font: inherit;
+	box-sizing: border-box;
 
-	&--half {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 12px;
-		align-items: start;
+	&:hover:not(:disabled) { border-color: var(--color-border-maxcontrast, var(--color-border-dark)); }
 
-		> div {
-			display: flex;
-			flex-direction: column;
-		}
+	&:focus,
+	&:focus-visible {
+		outline: none;
+		border-color: var(--color-primary-element);
+		box-shadow: 0 0 0 2px var(--color-primary-element-light);
 	}
 
-	&--dates {
-		display: grid;
-		grid-template-columns: 160px 210px 1fr;
-		gap: 12px;
-		align-items: start;
-
-		> div {
-			display: flex;
-			flex-direction: column;
-		}
-	}
-
-	&--custom {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: 12px;
-		align-items: start;
-
-		> div {
-			display: flex;
-			flex-direction: column;
-		}
-	}
-
-	&--dates-extended {
-		display: grid;
-		grid-template-columns: 160px 210px 160px 1fr;
-		gap: 12px;
-		align-items: start;
-
-		> div {
-			display: flex;
-			flex-direction: column;
-		}
-	}
-
-	&--cancellation {
-		display: grid;
-		grid-template-columns: 210px 210px 1fr;
-		gap: 12px;
-		align-items: start;
-
-		> div {
-			display: flex;
-			flex-direction: column;
-		}
-	}
-
-	&--triple {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
-		gap: 20px;
-		align-items: start;
-	}
+	&:disabled { cursor: default; }
 }
 
-.field-date {
-	min-width: 0;
-
-	:deep(.native-datetime-picker) {
-		width: 100%;
-	}
-
-	:deep(input) {
-		width: 100%;
-	}
-
-	&--end {
-		max-width: 210px;
-	}
+// NC's global stylesheet forces `appearance: none` on <select>, which strips the
+// native dropdown arrow. Add an explicit chevron so selects read as dropdowns and
+// stay visually distinct from the text inputs while sharing the same frame.
+select.cm-input {
+	cursor: pointer;
+	padding-right: 32px;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238b8b8b'%3E%3Cpath d='M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 8px center;
+	background-size: 18px;
 }
 
-.date-with-clear {
+textarea.cm-input {
+	min-height: 6em;
+	max-height: 50vh;
+	resize: vertical;
+	line-height: 1.5;
+}
+
+.cm-inline {
 	display: flex;
 	align-items: center;
-	gap: 4px;
+	gap: 8px;
 
-	:deep(.native-datetime-picker) {
-		flex: 1 1 auto;
-		min-width: 0;
-	}
+	.cm-input { flex: 1 1 auto; min-width: 0; }
+	.cm-input--num { flex: 0 0 84px; }
 }
 
-.field-hint {
-	margin-top: 8px;
+.cm-input--num { flex: 0 0 84px; }
+
+.cm-hint {
+	margin: 6px 0 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
-}
 
-.field-type {
-	min-width: 140px;
-}
-
-.form-label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: 500;
-	height: 20px;
+	&--top { margin: 0 0 8px; }
 }
 
 .form-actions {
@@ -1476,59 +1361,19 @@ export default {
 	background: var(--color-main-background);
 }
 
-.form-row--periods {
-	display: grid;
-	grid-template-columns: 55px 160px 55px 160px;
-	gap: 12px;
-	align-items: start;
-
-	> div {
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
-	}
-
-	:deep(.v-select.select) {
-		min-width: 0 !important;
-		width: 100% !important;
-		margin: 0 !important;
-	}
-
-	:deep(.select) {
-		min-width: 0 !important;
-		width: 100% !important;
-		margin: 0 !important;
-	}
-}
-
-.deadline-field {
-	:deep(.input-field) {
-		input {
-			color: var(--color-main-text) !important;
-			-webkit-text-fill-color: var(--color-main-text) !important;
-			opacity: 1 !important;
-		}
-	}
-}
-
-// Document buttons (compact)
+/* Document pickers */
 .document-buttons {
 	display: flex;
-	gap: 8px;
-	align-items: center;
-	height: 44px;
-}
-
-.document-buttons--compact {
 	gap: 4px;
-	height: auto;
+	align-items: center;
+	flex-wrap: wrap;
 }
 
 .url-input-row {
 	display: flex;
 	gap: 8px;
-	align-items: flex-end;
-	margin-top: 4px;
+	align-items: center;
+	margin-top: 8px;
 }
 
 .no-document-text {
@@ -1536,61 +1381,36 @@ export default {
 	font-size: 13px;
 }
 
-.triple-column {
-	display: flex;
-	flex-direction: column;
-
-	h3 {
-		margin-bottom: 8px;
-		font-size: 14px;
-		font-weight: 600;
-		color: var(--color-text-maxcontrast);
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-	}
+.selected-path {
+	display: block;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-bottom: 6px;
 }
 
-.cost-top {
-	display: flex;
-	gap: 8px;
-	margin-bottom: 8px;
-
-	.field-cost {
-		flex: 0 0 120px;
-	}
-
-	.field-currency {
-		flex: 0 0 72px;
-
-		:deep(.v-select.select) {
-			min-width: 0 !important;
-		}
-	}
-}
-
-.cost-bottom {
-	:deep(.v-select.select) {
-		min-width: 0 !important;
-	}
-}
-
-.doc-row {
-	margin-bottom: 8px;
-
-	&:last-child {
-		margin-bottom: 0;
-	}
+.external-icon {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	margin-right: 2px;
 }
 
 .reminder-days {
-	margin-top: 8px;
+	margin-top: 12px;
+	max-width: 220px;
+}
+
+.reminder-optout {
+	margin-top: 12px;
 }
 
 .ai-section {
 	background: var(--color-primary-element-light, #e8f0fe);
 	padding: 16px;
 	border-radius: 8px;
-	margin-bottom: 20px;
+	border-top: none;
 }
 
 .ai-extract-row {
@@ -1635,20 +1455,7 @@ export default {
 	}
 }
 
-// max-height keeps the resize handle inside the dialog viewport and above the modal footer.
-.notes-field :deep(textarea) {
-	min-height: 6em;
-	max-height: 50vh;
+@media (max-width: 720px) {
+	.cm-field-row { grid-template-columns: 1fr; gap: 12px; }
 }
-
-.selected-path {
-	display: block;
-	font-size: 13px;
-	color: var(--color-text-maxcontrast);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	margin-bottom: 2px;
-}
-
 </style>
