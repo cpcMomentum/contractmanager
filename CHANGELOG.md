@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-06-17
+
+### Added
+- Neues Feld „Kündigen zum" pro Vertrag (bei automatischer Verlängerung): „Tagesgenau" (wie bisher) oder „Zum Monatsende" – das Kündigungsdatum landet dann auf dem letzten Tag des Monats statt auf dem rückgerechneten Tag. Hilft bei Verträgen, die nur zum Monatsende kündbar sind (#159)
+- Hinweis in den Administrator-Einstellungen, wenn die für Erinnerungs-Links genutzte Server-Adresse (`overwrite.cli.url`) fehlt oder vom tatsächlichen Zugriff abweicht – andernfalls führen Links in Erinnerungs-E-Mails zur falschen Adresse (#194)
+
 ## [1.0.3] - 2026-06-15
 
 ### Added
