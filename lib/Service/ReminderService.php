@@ -184,9 +184,10 @@ class ReminderService {
 	 * repeatedly adds the renewal period until the date is in the future.
 	 *
 	 * @param Contract $contract The contract
+	 * @param DateTime|null $now Override for "now" (injectable for tests; defaults to current time)
 	 * @return DateTime|null The effective end date, or null if no end date set
 	 */
-	public function getEffectiveEndDate(Contract $contract): ?DateTime {
+	public function getEffectiveEndDate(Contract $contract, ?DateTime $now = null): ?DateTime {
 		$endDate = $contract->getEndDate();
 		if ($endDate === null) {
 			return null;
@@ -199,7 +200,7 @@ class ReminderService {
 			return clone $endDate;
 		}
 
-		$now = new DateTime();
+		$now = $now ?? new DateTime();
 		$effective = clone $endDate;
 
 		if ($effective > $now) {
@@ -244,8 +245,9 @@ class ReminderService {
 	 * Calculate the cancellation deadline based on end date and cancellation period
 	 * Uses conservative month-end calculation (1 month before March 31 = Feb 28, not Feb 31)
 	 */
-	public function calculateCancellationDeadline(Contract $contract): ?DateTime {
-		$endDate = $this->getEffectiveEndDate($contract);
+	public function calculateCancellationDeadline(Contract $contract, ?DateTime $now = null): ?DateTime {
+		$now = $now ?? new DateTime();
+		$endDate = $this->getEffectiveEndDate($contract, $now);
 		$cancellationPeriod = $contract->getCancellationPeriod();
 
 		if ($endDate === null || empty($cancellationPeriod)) {
@@ -274,7 +276,6 @@ class ReminderService {
 		$contractType = $contract->getContractType();
 		$renewalPeriod = $contract->getRenewalPeriod();
 		if ($contractType === 'auto_renewal' && !empty($renewalPeriod)) {
-			$now = new DateTime();
 			while ($deadline < $now) {
 				$endDate = $this->addPeriodToDate($endDate, $renewalPeriod);
 				if ($endDate === null) {

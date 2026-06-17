@@ -252,6 +252,25 @@ class ReminderServiceTest extends TestCase {
 		$this->assertSame($result->format('t'), $result->format('d'), 'deadline must be the last day of its month');
 	}
 
+	/**
+	 * #201 — month_end snap happens INSIDE the auto_renewal roll loop (PHP/cron
+	 * counterpart of the JS test in periodUtils.test.js). With now=2026-06-15 the
+	 * normal deadline (2026-06-10) is just past, but the month-end deadline
+	 * (2026-06-30) is still upcoming this period — so it must NOT be rolled to the
+	 * next year. A buggy "snap after the loop" would yield 2027-06-30.
+	 * Deterministic via the injected clock.
+	 */
+	public function testCalculateCancellationDeadlineMonthEndDoesNotOverRoll(): void {
+		$contract = $this->createContract(new DateTime('2026-07-10'), '1 month', 'auto_renewal', '12 months');
+		$contract->setCancellationDeadlineType(Contract::DEADLINE_TYPE_MONTH_END);
+		$now = new DateTime('2026-06-15');
+
+		$result = $this->service->calculateCancellationDeadline($contract, $now);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2026-06-30', $result->format('Y-m-d'));
+	}
+
 	// ========================================
 	// shouldSendFirstReminder Tests
 	// ========================================
@@ -450,22 +469,18 @@ class ReminderServiceTest extends TestCase {
 	}
 
 	public function testCalculateCancellationDeadlineAutoRenewal(): void {
-		// End date in the past, auto_renewal with 12 months, cancellation 3 months.
-		// Use the 1st of the month to avoid month-end overflow: the assertion below
-		// relies on PHP-native modify('-3 month'), which has no overflow guard, so
-		// it must agree with the service's subtractPeriodFromDate (which does clamp).
-		// Day=1 never overflows for any 3-month subtraction.
-		$endDate = (new DateTime('first day of this month'))->modify('-2 years');
-		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
+		// Deterministic via injected clock (#201): end on the 1st in the past,
+		// auto_renewal 12 months, 3-month notice. With now=2026-06-15 the effective
+		// end rolls to 2026-11-01, so the deadline is 2026-08-01. The expected value
+		// is a fixed literal — independent of the service's own date math, so a
+		// symmetric bug cannot hide.
+		$contract = $this->createContract(new DateTime('2018-11-01'), '3 months', 'auto_renewal', '12 months');
+		$now = new DateTime('2026-06-15');
 
-		$result = $this->service->calculateCancellationDeadline($contract);
+		$result = $this->service->calculateCancellationDeadline($contract, $now);
 
 		$this->assertInstanceOf(DateTime::class, $result);
-		// Deadline must be based on effective end date minus 3 months
-		$effectiveEnd = $this->service->getEffectiveEndDate($contract);
-		$expected = clone $effectiveEnd;
-		$expected->modify('-3 month');
-		$this->assertEquals($expected->format('Y-m-d'), $result->format('Y-m-d'));
+		$this->assertEquals('2026-08-01', $result->format('Y-m-d'));
 	}
 
 	/**
