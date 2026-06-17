@@ -184,6 +184,7 @@ class ReminderService {
 	 * repeatedly adds the renewal period until the date is in the future.
 	 *
 	 * @param Contract $contract The contract
+	 * @param DateTime|null $now Override for "now" (injectable for tests; defaults to current time)
 	 * @return DateTime|null The effective end date, or null if no end date set
 	 */
 	public function getEffectiveEndDate(Contract $contract, ?DateTime $now = null): ?DateTime {
