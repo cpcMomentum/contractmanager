@@ -338,7 +338,18 @@ class ReminderService {
 		$val = (int) $matches[1];
 		$u = rtrim(strtolower($matches[2]), 's');
 		$result = clone $date;
-		$result->modify("+{$val} {$u}");
+		if ($u === 'month') {
+			// Month-end overflow: Jan 31 + 1 month → Feb 31 doesn't exist → PHP gives
+			// Mar 3, not Feb 28. Clamp back to the last day of the intended month to
+			// keep the anchor consistent across renewal cycles (mirrors JS addPeriod).
+			$originalDay = (int) $result->format('d');
+			$result->modify("+{$val} month");
+			if ((int) $result->format('d') !== $originalDay) {
+				$result->modify('last day of previous month');
+			}
+		} else {
+			$result->modify("+{$val} {$u}");
+		}
 		return $result;
 	}
 
