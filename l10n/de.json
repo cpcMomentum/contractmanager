@@ -1,6 +1,10 @@
 {
 	"translations": {
 		"Zuständig": "Zuständig",
+		"Kündigen zum": "Kündigen zum",
+		"Tagesgenau": "Tagesgenau",
+		"Zum Monatsende": "Zum Monatsende",
+		"Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.": "Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.",
 		"Hinweis": "Hinweis",
 		"Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:": "Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:",
 		"Hinterlegt": "Hinterlegt",

@@ -193,12 +193,37 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod, option
 }
 
 /**
+ * Move a date to the last calendar day of its month (e.g. the 21st → the 31st).
+ * @param {Date} date
+ * @returns {Date}
+ */
+function moveToMonthEnd(date) {
+	// Day 0 of the next month is the last day of this month.
+	return new Date(date.getFullYear(), date.getMonth() + 1, 0)
+}
+
+/**
+ * Apply the cancellation-deadline-type transform.
+ * 'month_end' snaps the deadline to the last calendar day of its month (#159).
+ * Any other value (incl. 'normal') returns the date unchanged.
+ * @param {Date} deadline
+ * @param {string} [deadlineType] - 'normal' or 'month_end'
+ * @returns {Date}
+ */
+export function applyDeadlineType(deadline, deadlineType) {
+	if (deadlineType === 'month_end') {
+		return moveToMonthEnd(deadline)
+	}
+	return deadline
+}
+
+/**
  * Calculates the cancellation deadline for a contract
  * @param {string|Date} endDate - Contract end date
  * @param {string} cancellationPeriod - e.g. "3 months"
  * @param {string} [contractType] - 'fixed' or 'auto_renewal'
  * @param {string} [renewalPeriod] - e.g. "12 months"
- * @param {{ status?: string, cancelledTo?: string|Date|null }} [options] - Cancellation info
+ * @param {{ status?: string, cancelledTo?: string|Date|null, deadlineType?: string }} [options] - Cancellation info
  * @returns {Date|null} Cancellation deadline or null
  */
 export function calculateCancellationDeadline(endDate, cancellationPeriod, contractType, renewalPeriod, options = {}) {
@@ -207,13 +232,18 @@ export function calculateCancellationDeadline(endDate, cancellationPeriod, contr
 	// Cancelled contracts have no upcoming cancellation deadline.
 	if (isCancelled(options.status)) return null
 
+	const deadlineType = options.deadlineType
 	let effectiveEnd = getEffectiveEndDate(endDate, contractType, renewalPeriod, options)
 	if (!effectiveEnd || isNaN(effectiveEnd.getTime())) return null
 
 	let deadline = subtractPeriod(effectiveEnd, cancellationPeriod)
+	if (deadline) deadline = applyDeadlineType(deadline, deadlineType)
 
 	// For auto_renewal: if cancellation deadline is past, the contract will
 	// renew — advance to the next period where the deadline is in the future.
+	// The deadline-type transform is applied to each candidate BEFORE the
+	// past-check, so a "month_end" deadline still upcoming this period is not
+	// skipped to the next year.
 	if (deadline && contractType === 'auto_renewal' && renewalPeriod) {
 		const now = new Date()
 		while (deadline < now) {
@@ -221,6 +251,7 @@ export function calculateCancellationDeadline(endDate, cancellationPeriod, contr
 			if (!effectiveEnd) break
 			deadline = subtractPeriod(effectiveEnd, cancellationPeriod)
 			if (!deadline) break
+			deadline = applyDeadlineType(deadline, deadlineType)
 		}
 	}
 
