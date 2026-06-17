@@ -287,7 +287,7 @@
 							</div>
 							<div>
 								<dt>{{ t('contractmanager', 'Du nutzt') }}</dt>
-								<dd>{{ reminderLink.accessHost }}</dd>
+								<dd>{{ safeAccessHost }}</dd>
 							</div>
 						</dl>
 						<p class="reminder-link-fix">
@@ -635,8 +635,15 @@ export default {
 		showReminderLinkWarning() {
 			return !!this.reminderLink && this.reminderLink.status !== 'ok'
 		},
+		// accessHost stammt aus dem HTTP-Host-Header. Vor der Anzeige defensiv auf
+		// gültige Hostname-/Port-Zeichen reduzieren, damit ein manipulierter Header
+		// keinen präparierten Text in den angezeigten occ-Befehl schmuggeln kann.
+		safeAccessHost() {
+			const raw = (this.reminderLink && this.reminderLink.accessHost) || ''
+			return raw.replace(/[^a-zA-Z0-9.:-]/g, '')
+		},
 		reminderLinkCommand() {
-			const host = (this.reminderLink && this.reminderLink.accessHost) || 'deine-domain.tld'
+			const host = this.safeAccessHost || 'deine-domain.tld'
 			return `sudo -u www-data php occ config:system:set overwrite.cli.url --value="https://${host}"`
 		},
 	},
