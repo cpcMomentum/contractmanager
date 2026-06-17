@@ -250,6 +250,7 @@ class SettingsController extends Controller {
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
 			'aiModel' => $this->settingsService->getAiModel(),
+			'reminderLink' => $this->getReminderLinkDiagnostics(),
 		]);
 	}
 
