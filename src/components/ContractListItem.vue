@@ -1,30 +1,12 @@
 <template>
 	<div class="contract-list-item" :class="'contract-list-item--' + statusChip.cls">
 		<span class="contract-list-item__accent" aria-hidden="true" />
-		<div class="contract-list-item__main">
-			<div class="contract-list-item__header">
-				<a class="contract-name" href="#" @click.prevent="onEdit">
-					{{ contract.name }}
-				</a>
-				<span class="cm-chip" :class="'cm-chip--' + statusChip.cls" :title="statusChip.title">
-					<BellRingIcon v-if="statusChip.cls === 'soon'" :size="14" />
-					{{ statusChip.label }}
-				</span>
-				<span v-if="contract.isPrivate" class="cm-chip cm-chip--lock" :title="t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')">
-					<LockIcon :size="14" />
-					{{ t('contractmanager', 'Privat') }}
-				</span>
-			</div>
-			<div class="contract-list-item__details">
+		<div class="contract-list-item__name">
+			<a class="contract-name" href="#" @click.prevent="onEdit">
+				{{ contract.name }}
+			</a>
+			<div class="contract-list-item__meta">
 				<span>{{ contract.vendor }}</span>
-				<template v-if="cancellationDeadline && contract.contractType === 'auto_renewal'">
-					<span class="sep">·</span>
-					<span><span class="lbl">{{ t('contractmanager', 'Kündigen bis:') }}</span> {{ formatDate(cancellationDeadline) }}</span>
-				</template>
-				<template v-else-if="effectiveEndDate || contract.endDate">
-					<span class="sep">·</span>
-					<span><span class="lbl">{{ contract.contractType === 'auto_renewal' ? t('contractmanager', 'Endet:') : t('contractmanager', 'Läuft aus am:') }}</span> {{ formatDate(effectiveEndDate || contract.endDate) }}</span>
-				</template>
 				<template v-if="contract.renewalPeriod && contract.contractType === 'auto_renewal'">
 					<span class="sep">·</span>
 					<span>{{ t('contractmanager', 'Verlängerung:') }} {{ formatPeriod(contract.renewalPeriod) }}</span>
@@ -43,8 +25,21 @@
 				</template>
 			</div>
 		</div>
-		<div v-if="contract.cost" class="contract-list-item__cost">
-			{{ formatCost(contract.cost, contract.currency) }}
+		<div class="contract-list-item__status">
+			<span class="cm-chip" :class="'cm-chip--' + statusChip.cls" :title="statusChip.title">
+				<BellRingIcon v-if="statusChip.cls === 'soon'" :size="14" />
+				{{ statusChip.label }}
+			</span>
+			<span v-if="contract.isPrivate" class="cm-chip cm-chip--lock" :title="t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')">
+				<LockIcon :size="14" />
+				{{ t('contractmanager', 'Privat') }}
+			</span>
+		</div>
+		<div class="contract-list-item__cost">
+			{{ contract.cost ? formatCost(contract.cost, contract.currency) : '—' }}
+		</div>
+		<div class="contract-list-item__deadline">
+			{{ deadlineDisplay }}
 		</div>
 		<div class="contract-list-item__actions">
 			<NcButton v-if="contract.contractFolder"
@@ -230,6 +225,15 @@ export default {
 			}
 			return { cls: 'active', label: t('contractmanager', 'Laufend'), title: '' }
 		},
+		// Value for the "Kündigen bis" column: cancellation deadline for
+		// auto_renewal, otherwise the (effective) end date; em dash if neither.
+		deadlineDisplay() {
+			if (this.contract.contractType === 'auto_renewal' && this.cancellationDeadline) {
+				return this.formatDate(this.cancellationDeadline)
+			}
+			const end = this.effectiveEndDate || this.contract.endDate
+			return end ? this.formatDate(end) : '—'
+		},
 		deleteDialogButtons() {
 			return [
 				{
@@ -337,71 +341,77 @@ $st: (
 	expired:   (#fbecea, #b03b33),
 );
 
+/* Shared column layout — MUST match .contract-list__thead in ContractList.vue */
 .contract-list-item {
-	display: flex;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 150px 110px 120px 116px;
 	align-items: center;
 	gap: 14px;
-	padding: 13px 16px 13px 0;
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large, 12px);
-	overflow: hidden;
 	position: relative;
-	transition: box-shadow 0.15s ease, transform 0.15s ease;
+	background: var(--color-main-background);
+	border-bottom: 1px solid var(--color-border-light, var(--color-border));
+	min-height: 58px;
+	transition: background-color 0.15s ease;
 
-	&:hover {
-		box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
-	}
+	&:last-child { border-bottom: none; }
+
+	&:hover { background: var(--color-background-hover); }
 
 	&__accent {
-		align-self: stretch;
-		width: 5px;
-		flex: 0 0 auto;
-		background: #c9ccd0;
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 3px;
+		background: transparent;
 	}
 
 	@each $name, $colors in $st {
 		&--#{$name} .contract-list-item__accent { background: nth($colors, 2); }
 	}
 
-	&__main {
-		flex: 1;
+	&__name {
 		min-width: 0;
+		padding: 9px 0 9px 18px;
 	}
 
-	&__header {
+	&__meta {
 		display: flex;
-		align-items: center;
-		gap: 10px;
-		flex-wrap: wrap;
-		margin-bottom: 4px;
-	}
-
-	&__details {
-		display: flex;
-		align-items: center;
 		flex-wrap: wrap;
 		gap: 6px;
-		font-size: 13px;
+		margin-top: 2px;
+		font-size: 12.5px;
 		color: var(--color-text-maxcontrast);
 
 		.sep { opacity: 0.5; }
-		.lbl { color: var(--color-main-text); font-weight: 500; }
+	}
+
+	&__status {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
 	}
 
 	&__cost {
-		flex: 0 0 auto;
-		font-size: 16px;
+		text-align: right;
+		font-size: 15px;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
 
+	&__deadline {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		color: var(--color-main-text);
+	}
+
 	&__actions {
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		flex-shrink: 0;
+		justify-content: flex-end;
+		gap: 2px;
+		padding-right: 8px;
 	}
 }
 

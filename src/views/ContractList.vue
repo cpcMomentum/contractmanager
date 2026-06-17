@@ -133,15 +133,24 @@
 			</template>
 		</NcEmptyContent>
 
-		<div v-else class="contract-list__items">
-			<ContractListItem v-for="contract in contracts"
-				:key="contract.id"
-				:contract="contract"
-				:default-reminder-days="defaultReminderDays"
-				@edit="handleEdit"
-				@duplicate="handleDuplicate"
-				@view="handleView"
-				@archive="handleArchive" />
+		<div v-else class="contract-list__table">
+			<div class="contract-list__thead">
+				<span class="col-name">{{ t('contractmanager', 'Vertrag') }}</span>
+				<span>{{ t('contractmanager', 'Status') }}</span>
+				<span class="col-cost">{{ t('contractmanager', 'Kosten') }}</span>
+				<span>{{ t('contractmanager', 'Kündigen bis') }}</span>
+				<span aria-hidden="true" />
+			</div>
+			<div class="contract-list__items">
+				<ContractListItem v-for="contract in contracts"
+					:key="contract.id"
+					:contract="contract"
+					:default-reminder-days="defaultReminderDays"
+					@edit="handleEdit"
+					@duplicate="handleDuplicate"
+					@view="handleView"
+					@archive="handleArchive" />
+			</div>
 		</div>
 
 		<ContractForm :show="showCreateForm || showEditForm"
@@ -667,10 +676,30 @@ export default {
 		height: 200px;
 	}
 
+	&__table {
+		background: var(--color-main-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large, 12px);
+		overflow: hidden;
+	}
+
+	&__thead {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 150px 110px 120px 116px;
+		gap: 14px;
+		align-items: center;
+		padding: 11px 0;
+		border-bottom: 1px solid var(--color-border);
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--color-text-maxcontrast);
+
+		.col-name { padding-left: 18px; }
+		.col-cost { text-align: right; }
+	}
+
 	&__items {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
+		display: block;
 	}
 }
 
