@@ -98,13 +98,16 @@
 						</div>
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Status') }}</label>
-							<NcSelect v-model="form.contractStatus"
-								:options="statusOptions"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value"
-								:clearable="false" />
+							<div class="seg seg--full">
+								<button v-for="opt in statusOptions"
+									:key="opt.value"
+									type="button"
+									:class="{ 'is-active': form.contractStatus === opt.value }"
+									:disabled="readOnly"
+									@click="form.contractStatus = opt.value">
+									{{ opt.label }}
+								</button>
+							</div>
 						</div>
 					</div>
 
@@ -129,9 +132,23 @@
 
 				<!-- Dates -->
 				<div class="form-section">
-					<h3>{{ t('contractmanager', 'Laufzeit') }}</h3>
+					<h3>{{ t('contractmanager', 'Laufzeit & Kündigung') }}</h3>
 
-					<div :class="['form-row', showCancellationDeadline ? 'form-row--dates-extended' : 'form-row--dates']">
+					<div class="form-row">
+						<label class="form-label">{{ t('contractmanager', 'Vertragstyp') + ' *' }}</label>
+						<div class="seg seg--full">
+							<button v-for="opt in contractTypeOptions"
+								:key="opt.value"
+								type="button"
+								:class="{ 'is-active': form.contractType === opt.value }"
+								:disabled="readOnly"
+								@click="form.contractType = opt.value">
+								{{ opt.label }}
+							</button>
+						</div>
+					</div>
+
+					<div class="form-row form-row--half">
 						<div class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Startdatum') + ' *' }}</label>
 							<NcTextField v-if="readOnly"
@@ -144,7 +161,7 @@
 								hide-label
 								@update:model-value="form.startDate = $event" />
 						</div>
-						<div class="field-date field-date--end">
+						<div class="field-date">
 							<label class="form-label">{{ t('contractmanager', 'Enddatum') }}</label>
 							<NcTextField v-if="readOnly"
 								:model-value="formatDateDisplay(form.endDate) || '—'"
@@ -164,22 +181,6 @@
 									</template>
 								</NcButton>
 							</div>
-						</div>
-						<div v-if="showCancellationDeadline" class="field-date">
-							<label class="form-label">{{ t('contractmanager', 'Kündigen bis') }}</label>
-							<NcTextField :model-value="calculatedCancellationDeadline"
-								:disabled="true"
-								class="deadline-field" />
-						</div>
-						<div class="field-type">
-							<label class="form-label">{{ t('contractmanager', 'Vertragstyp') + ' *' }}</label>
-							<NcSelect v-model="form.contractType"
-								:options="contractTypeOptions"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value"
-								:clearable="false" />
 						</div>
 					</div>
 
@@ -223,19 +224,28 @@
 								:clearable="false" />
 						</div>
 					</div>
-					<div v-if="form.contractType === 'auto_renewal'" class="form-row">
+					<div v-if="form.contractType === 'auto_renewal'" class="form-row form-row--half">
 						<div>
 							<label class="form-label">{{ t('contractmanager', 'Kündigen zum') }}</label>
-							<NcSelect v-model="form.cancellationDeadlineType"
-								:options="cancellationDeadlineTypeOptions"
-								:disabled="readOnly"
-								label="label"
-								track-by="value"
-								:reduce="option => option.value"
-								:clearable="false" />
+							<div class="seg seg--full">
+								<button v-for="opt in cancellationDeadlineTypeOptions"
+									:key="opt.value"
+									type="button"
+									:class="{ 'is-active': form.cancellationDeadlineType === opt.value }"
+									:disabled="readOnly"
+									@click="form.cancellationDeadlineType = opt.value">
+									{{ opt.label }}
+								</button>
+							</div>
 							<p v-if="form.cancellationDeadlineType === 'month_end'" class="form-hint">
 								{{ t('contractmanager', 'Zum Monatsende: Die Kündigungsfrist endet am letzten Tag des Monats.') }}
 							</p>
+						</div>
+						<div v-if="showCancellationDeadline">
+							<label class="form-label">{{ t('contractmanager', 'Kündigen bis (berechnet)') }}</label>
+							<NcTextField :model-value="calculatedCancellationDeadline"
+								:disabled="true"
+								class="deadline-field" />
 						</div>
 					</div>
 				</div>
@@ -294,196 +304,194 @@
 					</p>
 				</div>
 
-				<!-- Costs / Documents / Reminder -->
+				<!-- Kosten -->
 				<div class="form-section">
-					<div class="form-row form-row--triple">
-						<!-- Kosten -->
-						<div class="triple-column">
-							<h3>{{ t('contractmanager', 'Kosten') }}</h3>
-							<div class="cost-top">
-								<div class="field-cost">
-									<label class="form-label">
-										{{ form.amountType === 'brutto' ? t('contractmanager', 'Betrag (brutto)') : t('contractmanager', 'Betrag (netto)') }}
-									</label>
-									<NcTextField v-model="form.cost"
-										type="number"
-										step="0.01"
-										:disabled="readOnly"
-										:placeholder="t('contractmanager', '0.00')" />
-									<div class="amount-type-toggle">
-										<NcCheckboxRadioSwitch v-model="form.amountType"
-											value="netto"
-											name="amountType"
-											type="radio"
-											:disabled="readOnly">
-											{{ t('contractmanager', 'Netto') }}
-										</NcCheckboxRadioSwitch>
-										<NcCheckboxRadioSwitch v-model="form.amountType"
-											value="brutto"
-											name="amountType"
-											type="radio"
-											:disabled="readOnly">
-											{{ t('contractmanager', 'Brutto') }}
-										</NcCheckboxRadioSwitch>
-									</div>
-								</div>
-								<div class="field-currency">
-									<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
-									<NcSelect v-model="form.currency"
-										:options="currencyOptions"
-										:disabled="readOnly"
-										label="label"
-										track-by="value"
-										:reduce="option => option.value"
-										:clearable="false" />
-								</div>
-							</div>
-							<div class="cost-bottom">
-								<label class="form-label">{{ t('contractmanager', 'Zahlweise') }}</label>
-								<NcSelect v-model="form.costInterval"
-									:options="costIntervalOptions"
-									:disabled="readOnly"
-									label="label"
-									track-by="value"
-									:reduce="option => option.value"
-									:clearable="false" />
-							</div>
+					<h3>{{ t('contractmanager', 'Kosten') }}</h3>
+					<div class="form-row form-row--half">
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Betrag') }}</label>
+							<NcTextField v-model="form.cost"
+								type="number"
+								step="0.01"
+								:disabled="readOnly"
+								:placeholder="t('contractmanager', '0.00')" />
 						</div>
-
-						<!-- Dokumente -->
-						<div class="triple-column">
-							<h3>{{ t('contractmanager', 'Dokumente') }}</h3>
-							<div class="doc-row">
-								<label class="form-label">{{ t('contractmanager', 'Vertragsordner') }}</label>
-								<span v-if="form.contractFolder" class="selected-path" :title="form.contractFolder">
-									{{ form.contractFolder.split('/').filter(s => s).pop() }}
-								</span>
-								<div class="document-buttons document-buttons--compact">
-									<span v-if="readOnly && !form.contractFolder" class="no-document-text">
-										{{ t('contractmanager', 'Kein Ordner') }}
-									</span>
-									<NcButton v-else-if="form.contractFolder"
-										variant="primary"
-										@click="openInNextcloud(form.contractFolder)">
-										<template #icon>
-											<Folder :size="20" />
-										</template>
-										{{ t('contractmanager', 'Öffnen') }}
-									</NcButton>
-									<NcButton v-else
-										variant="secondary"
-										@click="openFolderPicker">
-										<template #icon>
-											<Folder :size="20" />
-										</template>
-										{{ t('contractmanager', 'Wählen') }}
-									</NcButton>
-									<NcButton v-if="form.contractFolder && !readOnly"
-										variant="secondary"
-										@click="openFolderPicker">
-										{{ t('contractmanager', 'Ändern') }}
-									</NcButton>
-									<NcButton v-if="form.contractFolder && !readOnly"
-										variant="tertiary"
-										:title="t('contractmanager', 'Entfernen')"
-										@click="form.contractFolder = ''">
-										<template #icon>
-											<Close :size="20" />
-										</template>
-									</NcButton>
-								</div>
-							</div>
-							<div class="doc-row">
-								<label class="form-label">{{ t('contractmanager', 'Vertragsdokument') }}</label>
-								<span v-if="form.mainDocument" class="selected-path" :title="form.mainDocument">
-									<OpenInNewIcon v-if="isExternalDocument" :size="14" class="external-icon" />
-									{{ documentDisplayName }}
-								</span>
-								<div class="document-buttons document-buttons--compact">
-									<span v-if="readOnly && !form.mainDocument" class="no-document-text">
-										{{ t('contractmanager', 'Kein Dokument') }}
-									</span>
-									<NcButton v-else-if="form.mainDocument"
-										variant="primary"
-										@click="openDocument(form.mainDocument)">
-										<template #icon>
-											<OpenInNewIcon v-if="isExternalDocument" :size="20" />
-											<File v-else :size="20" />
-										</template>
-										{{ t('contractmanager', 'Öffnen') }}
-									</NcButton>
-									<template v-if="!form.mainDocument && !readOnly">
-										<NcButton variant="secondary"
-											@click="openFilePicker">
-											<template #icon>
-												<File :size="20" />
-											</template>
-											{{ t('contractmanager', 'Datei wählen') }}
-										</NcButton>
-										<NcButton variant="tertiary"
-											@click="showUrlInput = !showUrlInput">
-											<template #icon>
-												<OpenInNewIcon :size="20" />
-											</template>
-											{{ t('contractmanager', 'Externer Link') }}
-										</NcButton>
-									</template>
-									<NcButton v-if="form.mainDocument && !readOnly"
-										variant="secondary"
-										@click="openFilePicker">
-										{{ t('contractmanager', 'Ändern') }}
-									</NcButton>
-									<NcButton v-if="form.mainDocument && !readOnly"
-										variant="tertiary"
-										:title="t('contractmanager', 'Entfernen')"
-										@click="form.mainDocument = ''">
-										<template #icon>
-											<Close :size="20" />
-										</template>
-									</NcButton>
-								</div>
-								<div v-if="showUrlInput && !readOnly && !form.mainDocument" class="url-input-row">
-									<NcTextField v-model="urlInput"
-										:placeholder="t('contractmanager', 'https://...')"
-										@keydown.enter.prevent="addExternalUrl" />
-									<NcButton variant="primary" @click="addExternalUrl">
-										{{ t('contractmanager', 'Hinzufügen') }}
-									</NcButton>
-								</div>
-							</div>
-						</div>
-
-						<!-- Erinnerung -->
-						<div class="triple-column">
-							<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
-							<NcNoteCard v-if="!form.endDate" type="warning">
-								{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
-							</NcNoteCard>
-							<template v-else>
-								<NcCheckboxRadioSwitch v-model="form.reminderEnabled" :disabled="readOnly">
-									{{ t('contractmanager', 'Erinnerung aktivieren') }}
-								</NcCheckboxRadioSwitch>
-								<div v-if="form.reminderEnabled" class="reminder-days">
-									<NcTextField v-model="form.reminderDays"
-										:label="t('contractmanager', 'X Tage vorher')"
-										type="number"
-										:disabled="readOnly"
-										:placeholder="t('contractmanager', 'Standard')" />
-								</div>
-								<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
-								<div v-if="isEdit && form.reminderEnabled" class="reminder-optout">
-									<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
-										:disabled="optOutSaving"
-										@update:model-value="onReminderOptOutChange">
-										{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
-									</NcCheckboxRadioSwitch>
-									<p class="optout-hint">
-										{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
-									</p>
-								</div>
-							</template>
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Währung') }}</label>
+							<NcSelect v-model="form.currency"
+								:options="currencyOptions"
+								:disabled="readOnly"
+								label="label"
+								track-by="value"
+								:reduce="option => option.value"
+								:clearable="false" />
 						</div>
 					</div>
+					<div class="form-row form-row--half">
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Zahlweise') }}</label>
+							<NcSelect v-model="form.costInterval"
+								:options="costIntervalOptions"
+								:disabled="readOnly"
+								label="label"
+								track-by="value"
+								:reduce="option => option.value"
+								:clearable="false" />
+						</div>
+						<div>
+							<label class="form-label">{{ t('contractmanager', 'Betragsart') }}</label>
+							<div class="seg seg--full">
+								<button type="button"
+									:class="{ 'is-active': form.amountType === 'netto' }"
+									:disabled="readOnly"
+									@click="form.amountType = 'netto'">
+									{{ t('contractmanager', 'Netto') }}
+								</button>
+								<button type="button"
+									:class="{ 'is-active': form.amountType === 'brutto' }"
+									:disabled="readOnly"
+									@click="form.amountType = 'brutto'">
+									{{ t('contractmanager', 'Brutto') }}
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Dokumente -->
+				<div class="form-section">
+					<h3>{{ t('contractmanager', 'Dokumente') }}</h3>
+					<div class="form-row form-row--half">
+						<div class="doc-row">
+							<label class="form-label">{{ t('contractmanager', 'Vertragsordner') }}</label>
+							<span v-if="form.contractFolder" class="selected-path" :title="form.contractFolder">
+								{{ form.contractFolder.split('/').filter(s => s).pop() }}
+							</span>
+							<div class="document-buttons document-buttons--compact">
+								<span v-if="readOnly && !form.contractFolder" class="no-document-text">
+									{{ t('contractmanager', 'Kein Ordner') }}
+								</span>
+								<NcButton v-else-if="form.contractFolder"
+									variant="primary"
+									@click="openInNextcloud(form.contractFolder)">
+									<template #icon>
+										<Folder :size="20" />
+									</template>
+									{{ t('contractmanager', 'Öffnen') }}
+								</NcButton>
+								<NcButton v-else
+									variant="secondary"
+									@click="openFolderPicker">
+									<template #icon>
+										<Folder :size="20" />
+									</template>
+									{{ t('contractmanager', 'Wählen') }}
+								</NcButton>
+								<NcButton v-if="form.contractFolder && !readOnly"
+									variant="secondary"
+									@click="openFolderPicker">
+									{{ t('contractmanager', 'Ändern') }}
+								</NcButton>
+								<NcButton v-if="form.contractFolder && !readOnly"
+									variant="tertiary"
+									:title="t('contractmanager', 'Entfernen')"
+									@click="form.contractFolder = ''">
+									<template #icon>
+										<Close :size="20" />
+									</template>
+								</NcButton>
+							</div>
+						</div>
+						<div class="doc-row">
+							<label class="form-label">{{ t('contractmanager', 'Vertragsdokument') }}</label>
+							<span v-if="form.mainDocument" class="selected-path" :title="form.mainDocument">
+								<OpenInNewIcon v-if="isExternalDocument" :size="14" class="external-icon" />
+								{{ documentDisplayName }}
+							</span>
+							<div class="document-buttons document-buttons--compact">
+								<span v-if="readOnly && !form.mainDocument" class="no-document-text">
+									{{ t('contractmanager', 'Kein Dokument') }}
+								</span>
+								<NcButton v-else-if="form.mainDocument"
+									variant="primary"
+									@click="openDocument(form.mainDocument)">
+									<template #icon>
+										<OpenInNewIcon v-if="isExternalDocument" :size="20" />
+										<File v-else :size="20" />
+									</template>
+									{{ t('contractmanager', 'Öffnen') }}
+								</NcButton>
+								<template v-if="!form.mainDocument && !readOnly">
+									<NcButton variant="secondary"
+										@click="openFilePicker">
+										<template #icon>
+											<File :size="20" />
+										</template>
+										{{ t('contractmanager', 'Datei wählen') }}
+									</NcButton>
+									<NcButton variant="tertiary"
+										@click="showUrlInput = !showUrlInput">
+										<template #icon>
+											<OpenInNewIcon :size="20" />
+										</template>
+										{{ t('contractmanager', 'Externer Link') }}
+									</NcButton>
+								</template>
+								<NcButton v-if="form.mainDocument && !readOnly"
+									variant="secondary"
+									@click="openFilePicker">
+									{{ t('contractmanager', 'Ändern') }}
+								</NcButton>
+								<NcButton v-if="form.mainDocument && !readOnly"
+									variant="tertiary"
+									:title="t('contractmanager', 'Entfernen')"
+									@click="form.mainDocument = ''">
+									<template #icon>
+										<Close :size="20" />
+									</template>
+								</NcButton>
+							</div>
+							<div v-if="showUrlInput && !readOnly && !form.mainDocument" class="url-input-row">
+								<NcTextField v-model="urlInput"
+									:placeholder="t('contractmanager', 'https://...')"
+									@keydown.enter.prevent="addExternalUrl" />
+								<NcButton variant="primary" @click="addExternalUrl">
+									{{ t('contractmanager', 'Hinzufügen') }}
+								</NcButton>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Erinnerung -->
+				<div class="form-section">
+					<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
+					<NcNoteCard v-if="!form.endDate" type="warning">
+						{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
+					</NcNoteCard>
+					<template v-else>
+						<NcCheckboxRadioSwitch v-model="form.reminderEnabled" :disabled="readOnly">
+							{{ t('contractmanager', 'Erinnerung aktivieren') }}
+						</NcCheckboxRadioSwitch>
+						<div v-if="form.reminderEnabled" class="reminder-days">
+							<NcTextField v-model="form.reminderDays"
+								:label="t('contractmanager', 'X Tage vorher')"
+								type="number"
+								:disabled="readOnly"
+								:placeholder="t('contractmanager', 'Standard')" />
+						</div>
+						<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
+						<div v-if="isEdit && form.reminderEnabled" class="reminder-optout">
+							<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
+								:disabled="optOutSaving"
+								@update:model-value="onReminderOptOutChange">
+								{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
+							</NcCheckboxRadioSwitch>
+							<p class="optout-hint">
+								{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
+							</p>
+						</div>
+					</template>
 				</div>
 
 				<!-- Notes -->
@@ -1207,11 +1215,9 @@ export default {
 
 <style scoped lang="scss">
 .contract-form {
-	padding: 18px 18px 0;
+	padding: 4px 22px 0;
 	max-height: min(90vh, calc(100vh - 120px));
 	overflow-y: auto;
-	/* Light grey canvas so the white section cards stand out (Variante B). */
-	background: var(--color-background-hover);
 }
 
 /*
@@ -1235,14 +1241,16 @@ export default {
 }
 
 .form-section {
-	margin-bottom: 14px;
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large, 12px);
-	padding: 16px 18px;
+	padding: 18px 0;
+	border-top: 1px solid var(--color-border-light, var(--color-border));
+
+	&:first-of-type { border-top: none; }
 
 	h3 {
-		margin: 0 0 12px;
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		margin: 0 0 14px;
 		font-size: 12px;
 		font-weight: 700;
 		color: var(--color-text-maxcontrast);
@@ -1253,11 +1261,8 @@ export default {
 
 /* Summary header with the key facts (existing contracts). */
 .form-summary {
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large, 12px);
-	padding: 16px 18px;
-	margin-bottom: 14px;
+	padding: 6px 0 16px;
+	border-bottom: 1px solid var(--color-border);
 
 	&__top {
 		display: flex;
@@ -1267,15 +1272,15 @@ export default {
 
 	&__id { flex: 1; min-width: 0; }
 
-	&__title { font-size: 18px; font-weight: 700; line-height: 1.2; }
+	&__title { font-size: 19px; font-weight: 700; line-height: 1.2; }
 
 	&__sub { font-size: 13px; color: var(--color-text-maxcontrast); margin-top: 2px; }
 
 	&__facts {
 		display: flex;
-		gap: 22px;
+		gap: 26px;
 		flex-wrap: wrap;
-		margin-top: 12px;
+		margin-top: 14px;
 
 		.fact { font-size: 12px; color: var(--color-text-maxcontrast); }
 
@@ -1302,6 +1307,38 @@ export default {
 	&--active { background: #eaf5ee; color: #2f7d49; }
 	&--cancelled { background: #fef3c7; color: #92400e; }
 	&--ended { background: #efefef; color: #5a5a5a; }
+}
+
+/* Segmented control — replaces small fixed-option dropdowns. */
+.seg {
+	display: flex;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius, 8px);
+	overflow: hidden;
+	width: fit-content;
+	max-width: 100%;
+
+	&--full { width: 100%; }
+
+	button {
+		flex: 1;
+		font: inherit;
+		font-weight: 600;
+		font-size: 13px;
+		border: none;
+		border-right: 1px solid var(--color-border);
+		background: var(--color-main-background);
+		color: var(--color-main-text);
+		padding: 8px 14px;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background-color 0.1s ease;
+
+		&:last-child { border-right: none; }
+		&:hover:not(.is-active):not(:disabled) { background: var(--color-background-hover); }
+		&.is-active { background: var(--color-primary-element-light); color: var(--color-primary-element); }
+		&:disabled { cursor: default; }
+	}
 }
 
 @media (max-width: 720px) {
