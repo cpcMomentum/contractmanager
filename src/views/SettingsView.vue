@@ -4,488 +4,546 @@
 			<h2>{{ t('contractmanager', 'Einstellungen') }}</h2>
 		</div>
 
-		<!-- User Settings -->
-		<div class="settings-section">
-			<h3>{{ t('contractmanager', 'Benachrichtigungen') }}</h3>
-			<p class="settings-description">
-				{{ t('contractmanager', 'Legen Sie fest, für welche Verträge Sie Erinnerungen erhalten möchten, wie früh und auf welchem Weg.') }}
-			</p>
-
-			<!-- Reminder mode: which contracts -->
-			<div class="settings-item">
-				<label class="settings-label">{{ t('contractmanager', 'Erinnerungen für') }}</label>
-				<NcCheckboxRadioSwitch v-model="reminderMode"
-					value="all"
-					name="reminderMode"
-					type="radio"
-					@update:model-value="onReminderModeChange">
-					{{ t('contractmanager', 'Alle Verträge, die ich sehe') }}
-				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch v-model="reminderMode"
-					value="own"
-					name="reminderMode"
-					type="radio"
-					@update:model-value="onReminderModeChange">
-					{{ t('contractmanager', 'Nur meine eigenen Verträge') }}
-				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch v-model="reminderMode"
-					value="none"
-					name="reminderMode"
-					type="radio"
-					@update:model-value="onReminderModeChange">
-					{{ t('contractmanager', 'Keine Erinnerungen') }}
-				</NcCheckboxRadioSwitch>
-			</div>
-
-			<template v-if="reminderMode !== 'none'">
-				<!-- Channel: e-mail -->
-				<div class="settings-item">
-					<NcCheckboxRadioSwitch v-model="emailReminder" @update:model-value="onEmailReminderChange">
-						{{ t('contractmanager', 'Per E-Mail benachrichtigen') }}
-					</NcCheckboxRadioSwitch>
-					<p class="settings-description">
-						{{ t('contractmanager', 'E-Mails gehen an Ihre in Nextcloud hinterlegte Adresse.') }}
-					</p>
+		<div class="settings-layout">
+			<nav class="settings-nav">
+				<div class="settings-nav-group">
+					{{ t('contractmanager', 'Meine Einstellungen') }}
 				</div>
-
-				<!-- Channel: personal Talk chat -->
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'Eigener Nextcloud Talk Chat (optional)') }}</label>
-					<p class="settings-description">
-						{{ t('contractmanager', 'Token eines Chats, in dem Sie Erinnerungen erhalten möchten (aus der Chat-URL). Leer lassen, um Talk nicht zu nutzen.') }}
-					</p>
-					<NcTextField v-model="userReminders.talkChatToken"
-						:placeholder="t('contractmanager', 'z.B. abc123xyz')"
-						class="settings-input" />
-				</div>
-
-				<!-- Personal lead time -->
-				<div class="settings-item reminder-days">
-					<label class="settings-label">{{ t('contractmanager', 'Eigene Vorlaufzeit (Tage vor der Frist)') }}</label>
-					<p class="settings-description">
-						{{ t('contractmanager', 'Leer lassen, um die Standardwerte des Administrators zu verwenden.') }}
-					</p>
-					<div class="reminder-inputs">
-						<div class="reminder-input-group">
-							<label>{{ t('contractmanager', 'Erste Erinnerung') }}</label>
-							<NcTextField v-model="userReminders.reminderDays1Personal"
-								type="number"
-								:min="1"
-								:placeholder="String(reminderDefaults.days1)"
-								class="number-input" />
-							<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
-						</div>
-						<div class="reminder-input-group">
-							<label>{{ t('contractmanager', 'Letzte Erinnerung') }}</label>
-							<NcTextField v-model="userReminders.reminderDays2Personal"
-								type="number"
-								:min="1"
-								:placeholder="String(reminderDefaults.days2)"
-								class="number-input" />
-							<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
-						</div>
+				<button type="button"
+					class="settings-nav-item"
+					:class="{ active: activeSection === 'notifications' }"
+					@click="activeSection = 'notifications'">
+					<BellIcon :size="18" /> {{ t('contractmanager', 'Benachrichtigungen') }}
+				</button>
+				<button type="button"
+					class="settings-nav-item"
+					:class="{ active: activeSection === 'amount' }"
+					@click="activeSection = 'amount'">
+					<CashMultipleIcon :size="18" /> {{ t('contractmanager', 'Betragsangabe') }}
+				</button>
+				<template v-if="$isAdmin">
+					<div class="settings-nav-group">
+						{{ t('contractmanager', 'Administration') }}
 					</div>
-				</div>
-
-				<div class="settings-actions">
-					<NcButton variant="primary" :disabled="savingUserReminders" @click="saveUserReminderSettings">
-						<template #icon>
-							<NcLoadingIcon v-if="savingUserReminders" :size="20" />
-						</template>
-						{{ t('contractmanager', 'Speichern') }}
-					</NcButton>
-				</div>
-			</template>
-		</div>
-
-		<div class="settings-section">
-			<h3>{{ t('contractmanager', 'Betragsangabe') }}</h3>
-			<p class="settings-description">
-				{{ t('contractmanager', 'Standard für neue Verträge. Pro Vertrag kann davon abgewichen werden.') }}
-			</p>
-			<div class="settings-item">
-				<NcCheckboxRadioSwitch v-model="defaultAmountType"
-					value="netto"
-					name="defaultAmountType"
-					type="radio"
-					@update:model-value="onDefaultAmountTypeChange">
-					{{ t('contractmanager', 'Netto') }}
-				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch v-model="defaultAmountType"
-					value="brutto"
-					name="defaultAmountType"
-					type="radio"
-					@update:model-value="onDefaultAmountTypeChange">
-					{{ t('contractmanager', 'Brutto') }}
-				</NcCheckboxRadioSwitch>
-			</div>
-		</div>
-
-		<!-- Admin Settings -->
-		<template v-if="$isAdmin">
-			<!-- Permission Settings -->
-			<div class="settings-section admin-section">
-				<h3>
-					<ShieldIcon :size="20" class="admin-icon" />
-					{{ t('contractmanager', 'Berechtigungen') }}
-				</h3>
-
-				<!-- Editor Permission -->
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'Editor-Berechtigung') }}</label>
-					<p class="settings-description">
-						{{ t('contractmanager', 'Benutzer und Gruppen mit Editor-Rechten können alle sichtbaren Verträge erstellen und bearbeiten.') }}
-					</p>
-					<NcSelect v-model="permissionSettings.editors"
-						:options="searchResults"
-						:loading="searching"
-						:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
-						:multiple="true"
-						label="displayName"
-						track-by="id"
-						class="permission-select"
-						@update:model-value="onEditorsChange">
-						<template #option="option">
-							<div class="permission-option">
-								<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
-								<AccountIcon v-else :size="20" />
-								<span>{{ option.displayName }}</span>
-								<span class="permission-option-type">
-									{{ option.type === 'group' ? t('contractmanager', 'Gruppe') : t('contractmanager', 'Benutzer') }}
-								</span>
-							</div>
-						</template>
-						<template #selected-option="option">
-							<div class="permission-tag">
-								<AccountGroupIcon v-if="option.type === 'group'" :size="16" />
-								<AccountIcon v-else :size="16" />
-								<span>{{ option.displayName }}</span>
-							</div>
-						</template>
-					</NcSelect>
-				</div>
-
-				<!-- Viewer Permission -->
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'Viewer-Berechtigung') }}</label>
-					<p class="settings-description">
-						{{ t('contractmanager', 'Benutzer und Gruppen mit Viewer-Rechten können alle Verträge nur ansehen.') }}
-					</p>
-					<NcSelect v-model="permissionSettings.viewers"
-						:options="searchResults"
-						:loading="searching"
-						:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
-						:multiple="true"
-						label="displayName"
-						track-by="id"
-						class="permission-select"
-						@update:model-value="onViewersChange">
-						<template #option="option">
-							<div class="permission-option">
-								<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
-								<AccountIcon v-else :size="20" />
-								<span>{{ option.displayName }}</span>
-								<span class="permission-option-type">
-									{{ option.type === 'group' ? t('contractmanager', 'Gruppe') : t('contractmanager', 'Benutzer') }}
-								</span>
-							</div>
-						</template>
-						<template #selected-option="option">
-							<div class="permission-tag">
-								<AccountGroupIcon v-if="option.type === 'group'" :size="16" />
-								<AccountIcon v-else :size="16" />
-								<span>{{ option.displayName }}</span>
-							</div>
-						</template>
-					</NcSelect>
-				</div>
-			</div>
-
-			<!-- Verträge übertragen -->
-			<div class="settings-section admin-section">
-				<h3>
-					<ShieldIcon :size="20" class="admin-icon" />
-					{{ t('contractmanager', 'Verträge übertragen') }}
-				</h3>
-				<p class="settings-description">
-					{{ t('contractmanager', 'Überträgt die Zuständigkeit für alle Verträge einer Person auf eine andere, zum Beispiel bei einem Mitarbeiterwechsel. „Erstellt von" bleibt unverändert.') }}
-				</p>
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'Von') }}</label>
-					<NcSelect v-model="transferFrom"
-						:options="transferUserResults"
-						:loading="transferSearching"
-						:placeholder="t('contractmanager', 'Benutzer suchen...')"
-						label="displayName"
-						track-by="id"
-						:clearable="true"
-						@search="onTransferSearch"
-						@update:model-value="onTransferFromChange" />
-					<p v-if="transferCount !== null" class="settings-description">
-						{{ t('contractmanager', 'Betrifft {count} Verträge', { count: transferCount }) }}
-					</p>
-				</div>
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'Auf') }}</label>
-					<NcSelect v-model="transferTo"
-						:options="transferUserResults"
-						:loading="transferSearching"
-						:placeholder="t('contractmanager', 'Benutzer suchen...')"
-						label="displayName"
-						track-by="id"
-						:clearable="true"
-						@search="onTransferSearch" />
-				</div>
-				<div class="settings-actions">
-					<NcButton variant="primary" :disabled="!canTransfer || transferring" @click="showTransferDialog = true">
-						<template #icon>
-							<NcLoadingIcon v-if="transferring" :size="20" />
-						</template>
-						{{ t('contractmanager', 'Übertragen') }}
-					</NcButton>
-				</div>
-				<NcDialog v-if="showTransferDialog"
-					:name="t('contractmanager', 'Verträge übertragen')"
-					:message="t('contractmanager', '{count} Verträge von {from} auf {to} übertragen?', { count: transferCount || 0, from: transferFrom ? transferFrom.displayName : '', to: transferTo ? transferTo.displayName : '' })"
-					@update:open="showTransferDialog = $event">
-					<template #actions>
-						<NcButton @click="showTransferDialog = false">
-							{{ t('contractmanager', 'Abbrechen') }}
-						</NcButton>
-						<NcButton variant="primary" @click="doTransfer">
-							{{ t('contractmanager', 'Übertragen') }}
-						</NcButton>
-					</template>
-				</NcDialog>
-			</div>
-
-			<div class="settings-section admin-section">
-				<h3>
-					<ShieldIcon :size="20" class="admin-icon" />
-					{{ t('contractmanager', 'Administrator-Einstellungen') }}
-				</h3>
-
-				<!-- Reminder link health (overwrite.cli.url) -->
-				<div v-if="showReminderLinkWarning" class="reminder-link-note">
 					<button type="button"
-						class="reminder-link-summary"
-						:aria-expanded="reminderLinkExpanded ? 'true' : 'false'"
-						@click="reminderLinkExpanded = !reminderLinkExpanded">
-						<InformationOutlineIcon :size="18" class="reminder-link-summary__icon" />
-						<span>{{ t('contractmanager', 'Hinweis') }}</span>
-						<ChevronUpIcon v-if="reminderLinkExpanded" :size="18" />
-						<ChevronDownIcon v-else :size="18" />
+						class="settings-nav-item"
+						:class="{ active: activeSection === 'permissions' }"
+						@click="activeSection = 'permissions'">
+						<ShieldIcon :size="18" /> {{ t('contractmanager', 'Berechtigungen') }}
 					</button>
-					<div v-if="reminderLinkExpanded" class="reminder-link-details">
-						<p class="reminder-link-intro">
-							{{ t('contractmanager', 'Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:') }}
-						</p>
-						<dl class="reminder-link-values">
-							<div>
-								<dt>{{ t('contractmanager', 'Hinterlegt') }}</dt>
-								<dd>{{ reminderLink.cliUrl || '—' }}</dd>
-							</div>
-							<div>
-								<dt>{{ t('contractmanager', 'Du nutzt') }}</dt>
-								<dd>{{ safeAccessHost }}</dd>
-							</div>
-						</dl>
-						<p class="reminder-link-fix">
-							{{ t('contractmanager', 'So korrigierst du das: bei verwaltetem Hosting im Verwaltungs-Panel deines Anbieters, auf einem eigenen Server per Kommandozeile:') }}
-						</p>
-						<code class="reminder-link-command">{{ reminderLinkCommand }}</code>
-					</div>
-				</div>
+					<button type="button"
+						class="settings-nav-item"
+						:class="{ active: activeSection === 'transfer' }"
+						@click="activeSection = 'transfer'">
+						<SwapHorizontalIcon :size="18" /> {{ t('contractmanager', 'Verträge übertragen') }}
+					</button>
+					<button type="button"
+						class="settings-nav-item"
+						:class="{ active: activeSection === 'admin' }"
+						@click="activeSection = 'admin'">
+						<CogIcon :size="18" /> {{ t('contractmanager', 'Administrator-Einstellungen') }}
+					</button>
+					<button type="button"
+						class="settings-nav-item"
+						:class="{ active: activeSection === 'categories' }"
+						@click="activeSection = 'categories'">
+						<TagIcon :size="18" /> {{ t('contractmanager', 'Kategorien') }}
+					</button>
+				</template>
+				<button v-else
+					type="button"
+					class="settings-nav-item"
+					:class="{ active: activeSection === 'categories' }"
+					@click="activeSection = 'categories'">
+					<TagIcon :size="18" /> {{ t('contractmanager', 'Kategorien') }}
+				</button>
+			</nav>
 
-				<!-- Default reminder lead time -->
-				<div class="settings-item reminder-days">
-					<label class="settings-label">{{ t('contractmanager', 'Standard-Vorlaufzeit (Tage vor Kündigungsfrist)') }}</label>
+			<div class="settings-content">
+				<!-- User Settings -->
+				<div v-show="activeSection === 'notifications'" class="settings-section">
+					<h3>{{ t('contractmanager', 'Benachrichtigungen') }}</h3>
 					<p class="settings-description">
-						{{ t('contractmanager', 'Gilt für alle Benutzer, die keine eigene Vorlaufzeit eingestellt haben.') }}
+						{{ t('contractmanager', 'Legen Sie fest, für welche Verträge Sie Erinnerungen erhalten möchten, wie früh und auf welchem Weg.') }}
 					</p>
 
-					<div class="reminder-inputs">
-						<div class="reminder-input-group">
-							<label>{{ t('contractmanager', 'Erste Erinnerung') }}</label>
-							<NcTextField v-model="adminSettings.reminderDays1"
-								type="number"
-								:min="1"
-								class="number-input" />
-							<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
-						</div>
-
-						<div class="reminder-input-group">
-							<label>{{ t('contractmanager', 'Letzte Erinnerung') }}</label>
-							<NcTextField v-model="adminSettings.reminderDays2"
-								type="number"
-								:min="1"
-								class="number-input" />
-							<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Custom Fields Settings -->
-			<div class="settings-section admin-section">
-				<h3>
-					<ShieldIcon :size="20" class="admin-icon" />
-					{{ t('contractmanager', 'Zusatzfelder') }}
-				</h3>
-				<p class="settings-description">
-					{{ t('contractmanager', 'Aktivieren Sie bis zu 3 optionale Zusatzfelder für Verträge.') }}
-				</p>
-
-				<div v-for="n in 3" :key="'cf' + n" class="settings-item custom-field-item">
-					<NcCheckboxRadioSwitch :model-value="customFieldEnabled(n)"
-						@update:model-value="toggleCustomField(n, $event)">
-						{{ t('contractmanager', 'Zusatzfeld {n}', { n }) }}
-					</NcCheckboxRadioSwitch>
-					<NcTextField v-if="customFieldEnabled(n)"
-						v-model="adminSettings['customFieldLabel' + n]"
-						:placeholder="customFieldPlaceholders[n - 1]"
-						class="settings-input custom-field-label" />
-				</div>
-			</div>
-
-			<!-- AI Extraction Settings -->
-			<div class="settings-section admin-section">
-				<h3>
-					<ShieldIcon :size="20" class="admin-icon" />
-					{{ t('contractmanager', 'KI-Vertragsanalyse') }}
-				</h3>
-				<p class="settings-description">
-					{{ t('contractmanager', 'Automatische Erkennung von Vertragsdaten aus PDF-Dokumenten.') }}
-				</p>
-
-				<div class="settings-item">
-					<label class="settings-label">{{ t('contractmanager', 'KI-Provider') }}</label>
-					<NcSelect v-model="adminSettings.aiProvider"
-						:options="aiProviderOptions"
-						:placeholder="t('contractmanager', 'Deaktiviert')"
-						label="label"
-						track-by="value"
-						:reduce="option => option.value"
-						:clearable="true"
-						class="settings-input" />
-				</div>
-
-				<template v-if="adminSettings.aiProvider">
+					<!-- Reminder mode: which contracts -->
 					<div class="settings-item">
-						<label class="settings-label">{{ t('contractmanager', 'API Key') }}</label>
-						<NcTextField v-model="adminSettings.aiApiKey"
-							type="password"
-							:placeholder="t('contractmanager', 'API Key eingeben')"
-							class="settings-input" />
+						<label class="settings-label">{{ t('contractmanager', 'Erinnerungen für') }}</label>
+						<NcCheckboxRadioSwitch v-model="reminderMode"
+							value="all"
+							name="reminderMode"
+							type="radio"
+							@update:model-value="onReminderModeChange">
+							{{ t('contractmanager', 'Alle Verträge, die ich sehe') }}
+						</NcCheckboxRadioSwitch>
+						<NcCheckboxRadioSwitch v-model="reminderMode"
+							value="own"
+							name="reminderMode"
+							type="radio"
+							@update:model-value="onReminderModeChange">
+							{{ t('contractmanager', 'Nur meine eigenen Verträge') }}
+						</NcCheckboxRadioSwitch>
+						<NcCheckboxRadioSwitch v-model="reminderMode"
+							value="none"
+							name="reminderMode"
+							type="radio"
+							@update:model-value="onReminderModeChange">
+							{{ t('contractmanager', 'Keine Erinnerungen') }}
+						</NcCheckboxRadioSwitch>
 					</div>
 
+					<template v-if="reminderMode !== 'none'">
+						<!-- Channel: e-mail -->
+						<div class="settings-item">
+							<NcCheckboxRadioSwitch v-model="emailReminder" @update:model-value="onEmailReminderChange">
+								{{ t('contractmanager', 'Per E-Mail benachrichtigen') }}
+							</NcCheckboxRadioSwitch>
+							<p class="settings-description">
+								{{ t('contractmanager', 'E-Mails gehen an Ihre in Nextcloud hinterlegte Adresse.') }}
+							</p>
+						</div>
+
+						<!-- Channel: personal Talk chat -->
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Eigener Nextcloud Talk Chat (optional)') }}</label>
+							<p class="settings-description">
+								{{ t('contractmanager', 'Token eines Chats, in dem Sie Erinnerungen erhalten möchten (aus der Chat-URL). Leer lassen, um Talk nicht zu nutzen.') }}
+							</p>
+							<NcTextField v-model="userReminders.talkChatToken"
+								:placeholder="t('contractmanager', 'z.B. abc123xyz')"
+								class="settings-input" />
+						</div>
+
+						<!-- Personal lead time -->
+						<div class="settings-item reminder-days">
+							<label class="settings-label">{{ t('contractmanager', 'Eigene Vorlaufzeit (Tage vor der Frist)') }}</label>
+							<p class="settings-description">
+								{{ t('contractmanager', 'Leer lassen, um die Standardwerte des Administrators zu verwenden.') }}
+							</p>
+							<div class="reminder-inputs">
+								<div class="reminder-input-group">
+									<label>{{ t('contractmanager', 'Erste Erinnerung') }}</label>
+									<NcTextField v-model="userReminders.reminderDays1Personal"
+										type="number"
+										:min="1"
+										:placeholder="String(reminderDefaults.days1)"
+										class="number-input" />
+									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
+								</div>
+								<div class="reminder-input-group">
+									<label>{{ t('contractmanager', 'Letzte Erinnerung') }}</label>
+									<NcTextField v-model="userReminders.reminderDays2Personal"
+										type="number"
+										:min="1"
+										:placeholder="String(reminderDefaults.days2)"
+										class="number-input" />
+									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
+								</div>
+							</div>
+						</div>
+
+						<div class="settings-actions">
+							<NcButton variant="primary" :disabled="savingUserReminders" @click="saveUserReminderSettings">
+								<template #icon>
+									<NcLoadingIcon v-if="savingUserReminders" :size="20" />
+								</template>
+								{{ t('contractmanager', 'Speichern') }}
+							</NcButton>
+						</div>
+					</template>
+				</div>
+
+				<div v-show="activeSection === 'amount'" class="settings-section">
+					<h3>{{ t('contractmanager', 'Betragsangabe') }}</h3>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Standard für neue Verträge. Pro Vertrag kann davon abgewichen werden.') }}
+					</p>
 					<div class="settings-item">
-						<label class="settings-label">{{ t('contractmanager', 'API URL') }}</label>
+						<NcCheckboxRadioSwitch v-model="defaultAmountType"
+							value="netto"
+							name="defaultAmountType"
+							type="radio"
+							@update:model-value="onDefaultAmountTypeChange">
+							{{ t('contractmanager', 'Netto') }}
+						</NcCheckboxRadioSwitch>
+						<NcCheckboxRadioSwitch v-model="defaultAmountType"
+							value="brutto"
+							name="defaultAmountType"
+							type="radio"
+							@update:model-value="onDefaultAmountTypeChange">
+							{{ t('contractmanager', 'Brutto') }}
+						</NcCheckboxRadioSwitch>
+					</div>
+				</div>
+
+				<!-- Admin Settings -->
+				<template v-if="$isAdmin">
+					<!-- Permission Settings -->
+					<div v-show="activeSection === 'permissions'" class="settings-section admin-section">
+						<h3>
+							<ShieldIcon :size="20" class="admin-icon" />
+							{{ t('contractmanager', 'Berechtigungen') }}
+						</h3>
+
+						<!-- Editor Permission -->
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Editor-Berechtigung') }}</label>
+							<p class="settings-description">
+								{{ t('contractmanager', 'Benutzer und Gruppen mit Editor-Rechten können alle sichtbaren Verträge erstellen und bearbeiten.') }}
+							</p>
+							<NcSelect v-model="permissionSettings.editors"
+								:options="searchResults"
+								:loading="searching"
+								:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
+								:multiple="true"
+								label="displayName"
+								track-by="id"
+								class="permission-select"
+								@update:model-value="onEditorsChange">
+								<template #option="option">
+									<div class="permission-option">
+										<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
+										<AccountIcon v-else :size="20" />
+										<span>{{ option.displayName }}</span>
+										<span class="permission-option-type">
+											{{ option.type === 'group' ? t('contractmanager', 'Gruppe') : t('contractmanager', 'Benutzer') }}
+										</span>
+									</div>
+								</template>
+								<template #selected-option="option">
+									<div class="permission-tag">
+										<AccountGroupIcon v-if="option.type === 'group'" :size="16" />
+										<AccountIcon v-else :size="16" />
+										<span>{{ option.displayName }}</span>
+									</div>
+								</template>
+							</NcSelect>
+						</div>
+
+						<!-- Viewer Permission -->
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Viewer-Berechtigung') }}</label>
+							<p class="settings-description">
+								{{ t('contractmanager', 'Benutzer und Gruppen mit Viewer-Rechten können alle Verträge nur ansehen.') }}
+							</p>
+							<NcSelect v-model="permissionSettings.viewers"
+								:options="searchResults"
+								:loading="searching"
+								:placeholder="t('contractmanager', 'Benutzer oder Gruppen suchen...')"
+								:multiple="true"
+								label="displayName"
+								track-by="id"
+								class="permission-select"
+								@update:model-value="onViewersChange">
+								<template #option="option">
+									<div class="permission-option">
+										<AccountGroupIcon v-if="option.type === 'group'" :size="20" />
+										<AccountIcon v-else :size="20" />
+										<span>{{ option.displayName }}</span>
+										<span class="permission-option-type">
+											{{ option.type === 'group' ? t('contractmanager', 'Gruppe') : t('contractmanager', 'Benutzer') }}
+										</span>
+									</div>
+								</template>
+								<template #selected-option="option">
+									<div class="permission-tag">
+										<AccountGroupIcon v-if="option.type === 'group'" :size="16" />
+										<AccountIcon v-else :size="16" />
+										<span>{{ option.displayName }}</span>
+									</div>
+								</template>
+							</NcSelect>
+						</div>
+					</div>
+
+					<!-- Verträge übertragen -->
+					<div v-show="activeSection === 'transfer'" class="settings-section admin-section">
+						<h3>
+							<ShieldIcon :size="20" class="admin-icon" />
+							{{ t('contractmanager', 'Verträge übertragen') }}
+						</h3>
 						<p class="settings-description">
-							{{ t('contractmanager', 'Standard-URL wird automatisch gesetzt. Für Ollama z.B. http://localhost:11434/v1') }}
+							{{ t('contractmanager', 'Überträgt die Zuständigkeit für alle Verträge einer Person auf eine andere, zum Beispiel bei einem Mitarbeiterwechsel. „Erstellt von" bleibt unverändert.') }}
 						</p>
-						<NcTextField v-model="adminSettings.aiApiUrl"
-							:placeholder="aiDefaultUrl"
-							class="settings-input" />
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Von') }}</label>
+							<NcSelect v-model="transferFrom"
+								:options="transferUserResults"
+								:loading="transferSearching"
+								:placeholder="t('contractmanager', 'Benutzer suchen...')"
+								label="displayName"
+								track-by="id"
+								:clearable="true"
+								@search="onTransferSearch"
+								@update:model-value="onTransferFromChange" />
+							<p v-if="transferCount !== null" class="settings-description">
+								{{ t('contractmanager', 'Betrifft {count} Verträge', { count: transferCount }) }}
+							</p>
+						</div>
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Auf') }}</label>
+							<NcSelect v-model="transferTo"
+								:options="transferUserResults"
+								:loading="transferSearching"
+								:placeholder="t('contractmanager', 'Benutzer suchen...')"
+								label="displayName"
+								track-by="id"
+								:clearable="true"
+								@search="onTransferSearch" />
+						</div>
+						<div class="settings-actions">
+							<NcButton variant="primary" :disabled="!canTransfer || transferring" @click="showTransferDialog = true">
+								<template #icon>
+									<NcLoadingIcon v-if="transferring" :size="20" />
+								</template>
+								{{ t('contractmanager', 'Übertragen') }}
+							</NcButton>
+						</div>
+						<NcDialog v-if="showTransferDialog"
+							:name="t('contractmanager', 'Verträge übertragen')"
+							:message="t('contractmanager', '{count} Verträge von {from} auf {to} übertragen?', { count: transferCount || 0, from: transferFrom ? transferFrom.displayName : '', to: transferTo ? transferTo.displayName : '' })"
+							@update:open="showTransferDialog = $event">
+							<template #actions>
+								<NcButton @click="showTransferDialog = false">
+									{{ t('contractmanager', 'Abbrechen') }}
+								</NcButton>
+								<NcButton variant="primary" @click="doTransfer">
+									{{ t('contractmanager', 'Übertragen') }}
+								</NcButton>
+							</template>
+						</NcDialog>
 					</div>
 
-					<div class="settings-item">
-						<label class="settings-label">{{ t('contractmanager', 'Modell') }}</label>
-						<NcTextField v-model="adminSettings.aiModel"
-							:placeholder="aiDefaultModel"
-							class="settings-input" />
+					<div v-show="activeSection === 'admin'" class="settings-section admin-section">
+						<h3>
+							<ShieldIcon :size="20" class="admin-icon" />
+							{{ t('contractmanager', 'Administrator-Einstellungen') }}
+						</h3>
+
+						<!-- Reminder link health (overwrite.cli.url) -->
+						<div v-if="showReminderLinkWarning" class="reminder-link-note">
+							<button type="button"
+								class="reminder-link-summary"
+								:aria-expanded="reminderLinkExpanded ? 'true' : 'false'"
+								@click="reminderLinkExpanded = !reminderLinkExpanded">
+								<InformationOutlineIcon :size="18" class="reminder-link-summary__icon" />
+								<span>{{ t('contractmanager', 'Hinweis') }}</span>
+								<ChevronUpIcon v-if="reminderLinkExpanded" :size="18" />
+								<ChevronDownIcon v-else :size="18" />
+							</button>
+							<div v-if="reminderLinkExpanded" class="reminder-link-details">
+								<p class="reminder-link-intro">
+									{{ t('contractmanager', 'Links in Erinnerungs-E-Mails führen eventuell zur falschen Adresse:') }}
+								</p>
+								<dl class="reminder-link-values">
+									<div>
+										<dt>{{ t('contractmanager', 'Hinterlegt') }}</dt>
+										<dd>{{ reminderLink.cliUrl || '—' }}</dd>
+									</div>
+									<div>
+										<dt>{{ t('contractmanager', 'Du nutzt') }}</dt>
+										<dd>{{ safeAccessHost }}</dd>
+									</div>
+								</dl>
+								<p class="reminder-link-fix">
+									{{ t('contractmanager', 'So korrigierst du das: bei verwaltetem Hosting im Verwaltungs-Panel deines Anbieters, auf einem eigenen Server per Kommandozeile:') }}
+								</p>
+								<code class="reminder-link-command">{{ reminderLinkCommand }}</code>
+							</div>
+						</div>
+
+						<!-- Default reminder lead time -->
+						<div class="settings-item reminder-days">
+							<label class="settings-label">{{ t('contractmanager', 'Standard-Vorlaufzeit (Tage vor Kündigungsfrist)') }}</label>
+							<p class="settings-description">
+								{{ t('contractmanager', 'Gilt für alle Benutzer, die keine eigene Vorlaufzeit eingestellt haben.') }}
+							</p>
+
+							<div class="reminder-inputs">
+								<div class="reminder-input-group">
+									<label>{{ t('contractmanager', 'Erste Erinnerung') }}</label>
+									<NcTextField v-model="adminSettings.reminderDays1"
+										type="number"
+										:min="1"
+										class="number-input" />
+									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
+								</div>
+
+								<div class="reminder-input-group">
+									<label>{{ t('contractmanager', 'Letzte Erinnerung') }}</label>
+									<NcTextField v-model="adminSettings.reminderDays2"
+										type="number"
+										:min="1"
+										class="number-input" />
+									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Custom Fields Settings -->
+					<div v-show="activeSection === 'admin'" class="settings-section admin-section">
+						<h3>
+							<ShieldIcon :size="20" class="admin-icon" />
+							{{ t('contractmanager', 'Zusatzfelder') }}
+						</h3>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Aktivieren Sie bis zu 3 optionale Zusatzfelder für Verträge.') }}
+						</p>
+
+						<div v-for="n in 3" :key="'cf' + n" class="settings-item custom-field-item">
+							<NcCheckboxRadioSwitch :model-value="customFieldEnabled(n)"
+								@update:model-value="toggleCustomField(n, $event)">
+								{{ t('contractmanager', 'Zusatzfeld {n}', { n }) }}
+							</NcCheckboxRadioSwitch>
+							<NcTextField v-if="customFieldEnabled(n)"
+								v-model="adminSettings['customFieldLabel' + n]"
+								:placeholder="customFieldPlaceholders[n - 1]"
+								class="settings-input custom-field-label" />
+						</div>
+					</div>
+
+					<!-- AI Extraction Settings -->
+					<div v-show="activeSection === 'admin'" class="settings-section admin-section">
+						<h3>
+							<ShieldIcon :size="20" class="admin-icon" />
+							{{ t('contractmanager', 'KI-Vertragsanalyse') }}
+						</h3>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Automatische Erkennung von Vertragsdaten aus PDF-Dokumenten.') }}
+						</p>
+
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'KI-Provider') }}</label>
+							<NcSelect v-model="adminSettings.aiProvider"
+								:options="aiProviderOptions"
+								:placeholder="t('contractmanager', 'Deaktiviert')"
+								label="label"
+								track-by="value"
+								:reduce="option => option.value"
+								:clearable="true"
+								class="settings-input" />
+						</div>
+
+						<template v-if="adminSettings.aiProvider">
+							<div class="settings-item">
+								<label class="settings-label">{{ t('contractmanager', 'API Key') }}</label>
+								<NcTextField v-model="adminSettings.aiApiKey"
+									type="password"
+									:placeholder="t('contractmanager', 'API Key eingeben')"
+									class="settings-input" />
+							</div>
+
+							<div class="settings-item">
+								<label class="settings-label">{{ t('contractmanager', 'API URL') }}</label>
+								<p class="settings-description">
+									{{ t('contractmanager', 'Standard-URL wird automatisch gesetzt. Für Ollama z.B. http://localhost:11434/v1') }}
+								</p>
+								<NcTextField v-model="adminSettings.aiApiUrl"
+									:placeholder="aiDefaultUrl"
+									class="settings-input" />
+							</div>
+
+							<div class="settings-item">
+								<label class="settings-label">{{ t('contractmanager', 'Modell') }}</label>
+								<NcTextField v-model="adminSettings.aiModel"
+									:placeholder="aiDefaultModel"
+									class="settings-input" />
+							</div>
+						</template>
+					</div>
+
+					<div v-show="activeSection === 'admin'" class="settings-actions">
+						<NcButton variant="primary" :disabled="savingAdmin" @click="saveAdminSettings">
+							<template #icon>
+								<NcLoadingIcon v-if="savingAdmin" :size="20" />
+							</template>
+							{{ t('contractmanager', 'Admin-Einstellungen speichern') }}
+						</NcButton>
+					</div>
+
+					<!-- Category Management (Admin only) -->
+					<div v-show="activeSection === 'categories'" class="settings-section">
+						<h3>{{ t('contractmanager', 'Kategorien verwalten') }}</h3>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Kategorien für die Vertragsorganisation hinzufügen, bearbeiten oder löschen.') }}
+						</p>
+
+						<div class="category-management">
+							<!-- Add new category -->
+							<div class="category-add">
+								<NcTextField v-model="newCategoryName"
+									:placeholder="t('contractmanager', 'Neue Kategorie...')"
+									class="category-input"
+									@keyup.enter="addCategory" />
+								<NcButton variant="primary"
+									:disabled="!newCategoryName.trim() || addingCategory"
+									@click="addCategory">
+									<template #icon>
+										<PlusIcon :size="20" />
+									</template>
+									{{ t('contractmanager', 'Hinzufügen') }}
+								</NcButton>
+							</div>
+
+							<!-- Category list -->
+							<div class="category-list-edit">
+								<div v-for="category in categories"
+									:key="category.id"
+									class="category-edit-item">
+									<template v-if="editingCategoryId === category.id">
+										<NcTextField v-model="editingCategoryName"
+											class="category-input"
+											@keyup.enter="saveCategory(category)"
+											@keyup.esc="cancelEdit" />
+										<NcButton variant="primary" @click="saveCategory(category)">
+											<template #icon>
+												<CheckIcon :size="20" />
+											</template>
+										</NcButton>
+										<NcButton variant="tertiary" @click="cancelEdit">
+											<template #icon>
+												<CloseIcon :size="20" />
+											</template>
+										</NcButton>
+									</template>
+									<template v-else>
+										<span class="category-name">{{ category.name }}</span>
+										<div class="category-actions">
+											<NcButton variant="tertiary" @click="startEdit(category)">
+												<template #icon>
+													<PencilIcon :size="20" />
+												</template>
+											</NcButton>
+											<NcButton variant="tertiary"
+												@click="confirmDeleteCategory(category)">
+												<template #icon>
+													<DeleteIcon :size="20" />
+												</template>
+											</NcButton>
+										</div>
+									</template>
+								</div>
+							</div>
+						</div>
 					</div>
 				</template>
-			</div>
 
-			<div class="settings-actions">
-				<NcButton variant="primary" :disabled="savingAdmin" @click="saveAdminSettings">
-					<template #icon>
-						<NcLoadingIcon v-if="savingAdmin" :size="20" />
-					</template>
-					{{ t('contractmanager', 'Admin-Einstellungen speichern') }}
-				</NcButton>
-			</div>
+				<!-- Categories (read-only for non-admins) -->
+				<div v-if="!$isAdmin" v-show="activeSection === 'categories'" class="settings-section">
+					<h3>{{ t('contractmanager', 'Kategorien') }}</h3>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Kategorien können nur von Administratoren verwaltet werden.') }}
+					</p>
 
-			<!-- Category Management (Admin only) -->
-			<div class="settings-section">
-				<h3>{{ t('contractmanager', 'Kategorien verwalten') }}</h3>
-				<p class="settings-description">
-					{{ t('contractmanager', 'Kategorien für die Vertragsorganisation hinzufügen, bearbeiten oder löschen.') }}
-				</p>
-
-				<div class="category-management">
-					<!-- Add new category -->
-					<div class="category-add">
-						<NcTextField v-model="newCategoryName"
-							:placeholder="t('contractmanager', 'Neue Kategorie...')"
-							class="category-input"
-							@keyup.enter="addCategory" />
-						<NcButton variant="primary"
-							:disabled="!newCategoryName.trim() || addingCategory"
-							@click="addCategory">
-							<template #icon>
-								<PlusIcon :size="20" />
-							</template>
-							{{ t('contractmanager', 'Hinzufügen') }}
-						</NcButton>
-					</div>
-
-					<!-- Category list -->
-					<div class="category-list-edit">
+					<div class="category-list">
 						<div v-for="category in categories"
 							:key="category.id"
-							class="category-edit-item">
-							<template v-if="editingCategoryId === category.id">
-								<NcTextField v-model="editingCategoryName"
-									class="category-input"
-									@keyup.enter="saveCategory(category)"
-									@keyup.esc="cancelEdit" />
-								<NcButton variant="primary" @click="saveCategory(category)">
-									<template #icon>
-										<CheckIcon :size="20" />
-									</template>
-								</NcButton>
-								<NcButton variant="tertiary" @click="cancelEdit">
-									<template #icon>
-										<CloseIcon :size="20" />
-									</template>
-								</NcButton>
-							</template>
-							<template v-else>
-								<span class="category-name">{{ category.name }}</span>
-								<div class="category-actions">
-									<NcButton variant="tertiary" @click="startEdit(category)">
-										<template #icon>
-											<PencilIcon :size="20" />
-										</template>
-									</NcButton>
-									<NcButton variant="tertiary"
-										@click="confirmDeleteCategory(category)">
-										<template #icon>
-											<DeleteIcon :size="20" />
-										</template>
-									</NcButton>
-								</div>
-							</template>
+							class="category-item">
+							<span class="category-name">{{ category.name }}</span>
 						</div>
 					</div>
-				</div>
-			</div>
-		</template>
-
-		<!-- Categories (read-only for non-admins) -->
-		<div v-if="!$isAdmin" class="settings-section">
-			<h3>{{ t('contractmanager', 'Kategorien') }}</h3>
-			<p class="settings-description">
-				{{ t('contractmanager', 'Kategorien können nur von Administratoren verwaltet werden.') }}
-			</p>
-
-			<div class="category-list">
-				<div v-for="category in categories"
-					:key="category.id"
-					class="category-item">
-					<span class="category-name">{{ category.name }}</span>
 				</div>
 			</div>
 		</div>
@@ -526,6 +584,11 @@ import AccountGroupIcon from 'vue-material-design-icons/AccountGroup.vue'
 import ChevronDownIcon from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronUpIcon from 'vue-material-design-icons/ChevronUp.vue'
 import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline.vue'
+import BellIcon from 'vue-material-design-icons/Bell.vue'
+import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
+import SwapHorizontalIcon from 'vue-material-design-icons/SwapHorizontal.vue'
+import CogIcon from 'vue-material-design-icons/Cog.vue'
+import TagIcon from 'vue-material-design-icons/Tag.vue'
 import SettingsService from '../services/SettingsService'
 import ContractService from '../services/ContractService'
 import { showSuccess, showError } from '@nextcloud/dialogs'
@@ -551,9 +614,15 @@ export default {
 		ChevronDownIcon,
 		ChevronUpIcon,
 		InformationOutlineIcon,
+		BellIcon,
+		CashMultipleIcon,
+		SwapHorizontalIcon,
+		CogIcon,
+		TagIcon,
 	},
 	data() {
 		return {
+			activeSection: 'notifications',
 			showDeleteCategoryDialog: false,
 			deletingCategory: null,
 			emailReminder: false,
@@ -977,7 +1046,7 @@ export default {
 .settings-view {
 	padding: 20px;
 	padding-left: 50px;
-	max-width: 800px;
+	max-width: 1100px;
 
 	&__header {
 		display: flex;
@@ -1021,6 +1090,84 @@ export default {
 
 .admin-icon {
 	color: var(--color-primary);
+}
+
+/* WorkTime-style 2-column settings: sticky section nav + content panel. */
+.settings-layout {
+	display: grid;
+	grid-template-columns: 240px 1fr;
+	gap: 24px;
+	align-items: start;
+}
+
+.settings-nav {
+	position: sticky;
+	top: 0;
+	display: flex;
+	flex-direction: column;
+	padding-right: 16px;
+	border-right: 1px solid var(--color-border);
+}
+
+.settings-nav-group {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	color: var(--color-text-maxcontrast);
+	padding: 14px 12px 6px;
+
+	&:first-child { padding-top: 0; }
+}
+
+.settings-nav-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 9px 12px;
+	border: none;
+	background: none;
+	color: var(--color-main-text);
+	font: inherit;
+	font-weight: 500;
+	text-align: left;
+	border-radius: var(--border-radius, 8px);
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+
+	&:hover { background: var(--color-background-hover); }
+
+	&.active {
+		background: var(--color-primary-element-light);
+		color: var(--color-primary-element);
+		font-weight: 600;
+	}
+}
+
+/* In the nav layout each section shows on its own — drop the divider styling. */
+.settings-content {
+	.settings-section {
+		border-bottom: none;
+		margin-bottom: 16px;
+		padding-bottom: 0;
+	}
+
+	.admin-section { margin-top: 0; }
+}
+
+@media (max-width: 900px) {
+	.settings-layout { grid-template-columns: 1fr; }
+
+	.settings-nav {
+		flex-direction: row;
+		flex-wrap: wrap;
+		border-right: none;
+		border-bottom: 1px solid var(--color-border);
+		padding: 0 0 8px;
+	}
+
+	.settings-nav-group { width: 100%; padding: 8px 12px 4px; }
 }
 
 .reminder-link-note {
