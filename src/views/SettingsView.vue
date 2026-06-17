@@ -890,6 +890,9 @@ export default {
 					aiApiUrl: result.aiApiUrl || '',
 					aiModel: result.aiModel || '',
 				}
+				if (result.reminderLink) {
+					this.reminderLink = result.reminderLink
+				}
 				showSuccess(t('contractmanager', 'Admin-Einstellungen gespeichert'))
 			} catch (error) {
 				console.error('Failed to save admin settings:', error)
