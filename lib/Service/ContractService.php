@@ -123,6 +123,9 @@ class ContractService {
 				$errors['cancelledTo'] = $this->l()->t('Invalid date format');
 			}
 		}
+		if (!empty($data['cancelledTo']) && empty($data['cancelledOn'])) {
+			$errors['cancelledTo'] = $this->l()->t('"Gekündigt zum" requires "Gekündigt am" to be set');
+		}
 		if (!empty($data['cancelledOn']) && !empty($data['cancelledTo']) && empty($errors['cancelledOn']) && empty($errors['cancelledTo'])) {
 			$cancelledOn = new DateTime($data['cancelledOn']);
 			$cancelledTo = new DateTime($data['cancelledTo']);
