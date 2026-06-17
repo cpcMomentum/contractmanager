@@ -5,6 +5,39 @@
 		@close="$emit('close')">
 		<div class="contract-form" :class="{ 'contract-form--readonly': readOnly }">
 			<form @submit.prevent="handleSubmit">
+				<!-- Summary header (existing contracts): key facts at a glance -->
+				<div v-if="isEdit || readOnly" class="form-summary">
+					<div class="form-summary__top">
+						<div class="form-summary__id">
+							<div class="form-summary__title">
+								{{ form.name || t('contractmanager', 'Vertrag') }}
+							</div>
+							<div v-if="form.vendor" class="form-summary__sub">
+								{{ form.vendor }}
+							</div>
+						</div>
+						<span class="cm-chip" :class="'cm-chip--' + summaryChip.cls">{{ summaryChip.label }}</span>
+					</div>
+					<div class="form-summary__facts">
+						<div class="fact">
+							<span>{{ t('contractmanager', 'Vertragstyp') }}</span>
+							<b>{{ summaryTypeLabel }}</b>
+						</div>
+						<div v-if="form.endDate" class="fact">
+							<span>{{ form.contractType === 'auto_renewal' ? t('contractmanager', 'Endet') : t('contractmanager', 'Läuft aus') }}</span>
+							<b>{{ formatDateDisplay(form.endDate) }}</b>
+						</div>
+						<div v-if="showCancellationDeadline" class="fact">
+							<span>{{ t('contractmanager', 'Kündigen bis') }}</span>
+							<b>{{ calculatedCancellationDeadline }}</b>
+						</div>
+						<div v-if="form.cost" class="fact">
+							<span>{{ t('contractmanager', 'Kosten') }}</span>
+							<b>{{ summaryCostLabel }}</b>
+						</div>
+					</div>
+				</div>
+
 				<!-- AI Extraction -->
 				<div v-if="aiAvailable && !isEdit && !readOnly" class="form-section ai-section">
 					<div class="ai-extract-row">
@@ -675,6 +708,25 @@ export default {
 			}
 			return null
 		},
+		// --- Summary-Header (Eckdaten oben im Modal) ---
+		summaryChip() {
+			if (this.form.contractStatus === 'cancelled') {
+				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt') }
+			}
+			if (this.form.contractStatus === 'ended') {
+				return { cls: 'ended', label: t('contractmanager', 'Beendet') }
+			}
+			return { cls: 'active', label: t('contractmanager', 'Laufend') }
+		},
+		summaryTypeLabel() {
+			const opt = this.contractTypeOptions.find(o => o.value === this.form.contractType)
+			return opt ? opt.label : '—'
+		},
+		summaryCostLabel() {
+			const amount = parseFloat(this.form.cost)
+			if (!Number.isFinite(amount)) return '—'
+			return new Intl.NumberFormat('de-DE', { style: 'currency', currency: this.form.currency || 'EUR' }).format(amount)
+		},
 		categoryOptions() {
 			return [
 				{ value: null, label: t('contractmanager', 'Keine Kategorie') },
@@ -1155,9 +1207,11 @@ export default {
 
 <style scoped lang="scss">
 .contract-form {
-	padding: 20px 20px 0;
+	padding: 18px 18px 0;
 	max-height: min(90vh, calc(100vh - 120px));
 	overflow-y: auto;
+	/* Light grey canvas so the white section cards stand out (Variante B). */
+	background: var(--color-background-hover);
 }
 
 /*
@@ -1181,16 +1235,81 @@ export default {
 }
 
 .form-section {
-	margin-bottom: 20px;
+	margin-bottom: 14px;
+	background: var(--color-main-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large, 12px);
+	padding: 16px 18px;
 
 	h3 {
-		margin-bottom: 8px;
-		font-size: 14px;
-		font-weight: 600;
+		margin: 0 0 12px;
+		font-size: 12px;
+		font-weight: 700;
 		color: var(--color-text-maxcontrast);
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 	}
+}
+
+/* Summary header with the key facts (existing contracts). */
+.form-summary {
+	background: var(--color-main-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large, 12px);
+	padding: 16px 18px;
+	margin-bottom: 14px;
+
+	&__top {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	&__id { flex: 1; min-width: 0; }
+
+	&__title { font-size: 18px; font-weight: 700; line-height: 1.2; }
+
+	&__sub { font-size: 13px; color: var(--color-text-maxcontrast); margin-top: 2px; }
+
+	&__facts {
+		display: flex;
+		gap: 22px;
+		flex-wrap: wrap;
+		margin-top: 12px;
+
+		.fact { font-size: 12px; color: var(--color-text-maxcontrast); }
+
+		.fact b {
+			display: block;
+			font-size: 14px;
+			color: var(--color-main-text);
+			font-variant-numeric: tabular-nums;
+			margin-top: 2px;
+		}
+	}
+}
+
+.cm-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 10px;
+	border-radius: var(--border-radius, 8px);
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+
+	&--active { background: #eaf5ee; color: #2f7d49; }
+	&--cancelled { background: #fef3c7; color: #92400e; }
+	&--ended { background: #efefef; color: #5a5a5a; }
+}
+
+@media (max-width: 720px) {
+	.form-row--triple { grid-template-columns: 1fr; gap: 12px; }
+	.form-row--dates,
+	.form-row--dates-extended,
+	.form-row--cancellation,
+	.form-row--periods { grid-template-columns: 1fr 1fr; }
 }
 
 .form-row {
