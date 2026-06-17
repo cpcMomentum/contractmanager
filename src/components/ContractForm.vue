@@ -413,27 +413,38 @@
 						{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
 					</NcNoteCard>
 					<template v-else>
-						<NcCheckboxRadioSwitch v-model="form.reminderEnabled" :disabled="readOnly">
+						<NcCheckboxRadioSwitch v-model="form.reminderEnabled" type="switch" :disabled="readOnly">
 							{{ t('contractmanager', 'Erinnerung aktivieren') }}
 						</NcCheckboxRadioSwitch>
-						<label v-if="form.reminderEnabled" class="cm-field reminder-days">
-							<span>{{ t('contractmanager', 'X Tage vorher') }}</span>
-							<input v-model="form.reminderDays"
-								type="number"
-								class="cm-input cm-input--num"
-								:disabled="readOnly"
-								:placeholder="t('contractmanager', 'Standard')">
-						</label>
-						<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
-						<div v-if="isEdit && form.reminderEnabled" class="reminder-optout">
-							<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
-								:disabled="optOutSaving"
-								@update:model-value="onReminderOptOutChange">
-								{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
-							</NcCheckboxRadioSwitch>
-							<p class="cm-hint">
-								{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
-							</p>
+						<div v-if="form.reminderEnabled" class="reminder-body">
+							<label class="cm-field reminder-lead">
+								<span>{{ t('contractmanager', 'Vorlaufzeit') }}</span>
+								<div class="reminder-lead__row">
+									<input v-model="form.reminderDays"
+										type="number"
+										min="0"
+										class="cm-input cm-input--num"
+										:disabled="readOnly"
+										:placeholder="String(defaultReminderDays)">
+									<span class="reminder-lead__suffix">{{ t('contractmanager', 'Tage vor Ablauf') }}</span>
+								</div>
+								<p class="cm-hint">
+									{{ t('contractmanager', 'Leer lassen = Standard ({days} Tage).', { days: defaultReminderDays }) }}
+								</p>
+							</label>
+							<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
+							<div v-if="isEdit" class="reminder-optout">
+								<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
+									type="switch"
+									:disabled="optOutSaving"
+									@update:model-value="onReminderOptOutChange">
+									{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
+								</NcCheckboxRadioSwitch>
+								<p class="reminder-optout__hint">
+									<InformationOutlineIcon :size="16" />
+									{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
+								</p>
+							</div>
 						</div>
 					</template>
 				</div>
@@ -457,13 +468,11 @@
 						rows="4" />
 				</div>
 
-				<!-- Zuständig -->
+				<!-- Zugriff & Zuständigkeit (Meta) -->
 				<div class="form-section">
+					<h3>{{ t('contractmanager', 'Zugriff & Zuständigkeit') }}</h3>
 					<div class="cm-field">
 						<span>{{ t('contractmanager', 'Zuständig') }}</span>
-						<p v-if="!readOnly" class="cm-hint cm-hint--top">
-							{{ t('contractmanager', 'Wer diesen Vertrag betreut. Leer lassen, dann bleibt der Ersteller zuständig.') }}
-						</p>
 						<NcSelect v-if="!readOnly"
 							v-model="form.responsiblePrincipal"
 							:options="responsibleSearchResults"
@@ -474,20 +483,21 @@
 							:clearable="true"
 							@search="onResponsibleSearch" />
 						<span v-else>{{ form.responsiblePrincipal ? form.responsiblePrincipal.displayName : t('contractmanager', 'Ersteller') }}</span>
+						<p v-if="!readOnly" class="cm-hint">
+							{{ t('contractmanager', 'Wer diesen Vertrag betreut. Leer lassen, dann bleibt der Ersteller zuständig.') }}
+						</p>
 					</div>
-				</div>
-
-				<!-- Privacy -->
-				<div class="form-section">
-					<NcCheckboxRadioSwitch v-model="form.isPrivate" :disabled="readOnly">
-						<template #icon>
-							<LockIcon v-if="form.isPrivate" :size="20" />
-							<LockOpenVariantIcon v-else :size="20" />
-						</template>
-						{{ form.isPrivate
-							? t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')
-							: t('contractmanager', 'Öffentlicher Vertrag (für alle Berechtigten sichtbar)') }}
-					</NcCheckboxRadioSwitch>
+					<div class="cm-field cm-field--switch">
+						<NcCheckboxRadioSwitch v-model="form.isPrivate" :disabled="readOnly">
+							<template #icon>
+								<LockIcon v-if="form.isPrivate" :size="20" />
+								<LockOpenVariantIcon v-else :size="20" />
+							</template>
+							{{ form.isPrivate
+								? t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')
+								: t('contractmanager', 'Öffentlicher Vertrag (für alle Berechtigten sichtbar)') }}
+						</NcCheckboxRadioSwitch>
+					</div>
 				</div>
 
 				<!-- Actions -->
@@ -529,6 +539,7 @@ import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
 import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
+import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
@@ -558,6 +569,7 @@ export default {
 		LockIcon,
 		LockOpenVariantIcon,
 		FileSearchIcon,
+		InformationOutlineIcon,
 	},
 	props: {
 		show: {
@@ -597,6 +609,7 @@ export default {
 			vendorOptions: [],
 			reminderOptedOut: false,
 			optOutSaving: false,
+			defaultReminderDays: 14,
 			responsibleSearchResults: [],
 			responsibleSearching: false,
 		}
@@ -792,6 +805,12 @@ export default {
 			const settings = await SettingsService.getUserSettings()
 			if (settings.customFieldLabels) {
 				this.customFieldLabels = settings.customFieldLabels
+			}
+			// Resolved default lead time (personal override or global), shown as the
+			// placeholder so users see what "leave empty" actually means.
+			const days = Number(settings.reminderDays1)
+			if (Number.isFinite(days) && days > 0) {
+				this.defaultReminderDays = days
 			}
 		} catch (e) {
 			console.debug('Failed to load custom field labels:', e)
@@ -1397,13 +1416,48 @@ textarea.cm-input {
 	margin-right: 2px;
 }
 
-.reminder-days {
-	margin-top: 12px;
-	max-width: 220px;
+.reminder-body {
+	margin-top: 14px;
+}
+
+.reminder-lead {
+	max-width: 340px;
+
+	&__row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	&__suffix {
+		color: var(--color-text-maxcontrast);
+		font-size: 14px;
+		white-space: nowrap;
+	}
 }
 
 .reminder-optout {
-	margin-top: 12px;
+	margin-top: 16px;
+	padding: 12px 14px;
+	background: var(--color-background-hover);
+	border-radius: var(--border-radius, 8px);
+
+	&__hint {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin: 6px 0 0;
+		color: var(--color-text-maxcontrast);
+		font-size: 13px;
+
+		:deep(.material-design-icon) {
+			flex-shrink: 0;
+		}
+	}
+}
+
+.cm-field--switch {
+	margin-top: 4px;
 }
 
 .ai-section {
