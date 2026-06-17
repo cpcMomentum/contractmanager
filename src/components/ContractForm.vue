@@ -413,39 +413,43 @@
 						{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
 					</NcNoteCard>
 					<template v-else>
-						<NcCheckboxRadioSwitch v-model="form.reminderEnabled" type="switch" :disabled="readOnly">
-							{{ t('contractmanager', 'Erinnerung aktivieren') }}
-						</NcCheckboxRadioSwitch>
-						<div v-if="form.reminderEnabled" class="reminder-body">
-							<label class="cm-field reminder-lead">
-								<span>{{ t('contractmanager', 'Vorlaufzeit') }}</span>
-								<div class="reminder-lead__row">
-									<input v-model="form.reminderDays"
-										type="number"
-										min="0"
-										class="cm-input cm-input--num"
-										:disabled="readOnly"
-										:placeholder="String(defaultReminderDays)">
-									<span class="reminder-lead__suffix">{{ t('contractmanager', 'Tage vor Ablauf') }}</span>
-								</div>
-								<p class="cm-hint">
-									{{ t('contractmanager', 'Leer lassen = Standard ({days} Tage).', { days: defaultReminderDays }) }}
+						<div class="reminder-switches">
+							<div class="reminder-switch">
+								<NcCheckboxRadioSwitch v-model="form.reminderEnabled" type="switch" :disabled="readOnly">
+									{{ t('contractmanager', 'Erinnerung global aktivieren') }}
+								</NcCheckboxRadioSwitch>
+								<p class="reminder-switch__hint">
+									{{ t('contractmanager', 'Gilt für alle Berechtigten dieses Vertrags.') }}
 								</p>
-							</label>
+							</div>
 							<!-- Per-user opt-out: only for existing contracts, applies to the current user only -->
-							<div v-if="isEdit" class="reminder-optout">
+							<div v-if="isEdit && form.reminderEnabled" class="reminder-switch">
 								<NcCheckboxRadioSwitch :model-value="reminderOptedOut"
 									type="switch"
 									:disabled="optOutSaving"
 									@update:model-value="onReminderOptOutChange">
 									{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
 								</NcCheckboxRadioSwitch>
-								<p class="reminder-optout__hint">
-									<InformationOutlineIcon :size="16" />
-									{{ t('contractmanager', 'Betrifft nur Ihre eigenen Erinnerungen, nicht die anderer Benutzer.') }}
+								<p class="reminder-switch__hint">
+									{{ t('contractmanager', 'Betrifft nur Ihre eigene Erinnerung, andere Berechtigte bleiben informiert.') }}
 								</p>
 							</div>
 						</div>
+						<label v-if="form.reminderEnabled" class="cm-field reminder-lead">
+							<span>{{ t('contractmanager', 'Vorlaufzeit') }}</span>
+							<div class="reminder-lead__row">
+								<input v-model="form.reminderDays"
+									type="number"
+									min="0"
+									class="cm-input cm-input--num"
+									:disabled="readOnly"
+									:placeholder="String(defaultReminderDays)">
+								<span class="reminder-lead__suffix">{{ t('contractmanager', 'Tage vor Ablauf') }}</span>
+							</div>
+							<p class="cm-hint">
+								{{ t('contractmanager', 'Leer lassen = Standard ({days} Tage).', { days: defaultReminderDays }) }}
+							</p>
+						</label>
 					</template>
 				</div>
 
@@ -475,6 +479,7 @@
 						<span>{{ t('contractmanager', 'Zuständig') }}</span>
 						<NcSelect v-if="!readOnly"
 							v-model="form.responsiblePrincipal"
+							class="cm-select"
 							:options="responsibleSearchResults"
 							:loading="responsibleSearching"
 							:placeholder="t('contractmanager', 'Benutzer suchen...')"
@@ -539,7 +544,6 @@ import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 import LockIcon from 'vue-material-design-icons/Lock.vue'
 import LockOpenVariantIcon from 'vue-material-design-icons/LockOpenVariant.vue'
 import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
-import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
@@ -569,7 +573,6 @@ export default {
 		LockIcon,
 		LockOpenVariantIcon,
 		FileSearchIcon,
-		InformationOutlineIcon,
 	},
 	props: {
 		show: {
@@ -1416,11 +1419,21 @@ textarea.cm-input {
 	margin-right: 2px;
 }
 
-.reminder-body {
-	margin-top: 14px;
+.reminder-switches {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.reminder-switch__hint {
+	margin: 2px 0 0;
+	padding-left: 48px;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 }
 
 .reminder-lead {
+	margin-top: 18px;
 	max-width: 340px;
 
 	&__row {
@@ -1436,28 +1449,30 @@ textarea.cm-input {
 	}
 }
 
-.reminder-optout {
-	margin-top: 16px;
-	padding: 12px 14px;
-	background: var(--color-background-hover);
-	border-radius: var(--border-radius, 8px);
-
-	&__hint {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		margin: 6px 0 0;
-		color: var(--color-text-maxcontrast);
-		font-size: 13px;
-
-		:deep(.material-design-icon) {
-			flex-shrink: 0;
-		}
-	}
-}
-
 .cm-field--switch {
 	margin-top: 4px;
+}
+
+/*
+ * NcSelect (only used for the async user search) styled to match the flat
+ * .cm-input frame so it does not read as a leftover pill among the native fields.
+ */
+.cm-select {
+	:deep(.vs__dropdown-toggle) {
+		min-height: 36px;
+		padding-bottom: 0;
+		border: 1px solid var(--color-border-dark, var(--color-border));
+		border-radius: var(--border-radius, 8px);
+		background-color: var(--color-main-background);
+	}
+
+	&:hover :deep(.vs__dropdown-toggle) {
+		border-color: var(--color-border-maxcontrast, var(--color-border-dark));
+	}
+
+	:deep(.vs__selected-options) {
+		padding: 0 4px;
+	}
 }
 
 .ai-section {
