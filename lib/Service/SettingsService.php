@@ -82,6 +82,21 @@ class SettingsService {
 	}
 
 	// ========================================
+	// System-Diagnose
+	// ========================================
+
+	/**
+	 * Base URL used by background (cron) jobs to build absolute links.
+	 *
+	 * Reminder mails are sent from cron, where there is no request context, so
+	 * Nextcloud builds links from this system value (see URLGenerator, CLI branch).
+	 * If it is empty or stale, reminder links point at the wrong host.
+	 */
+	public function getCliUrl(): string {
+		return $this->config->getSystemValueString('overwrite.cli.url', '');
+	}
+
+	// ========================================
 	// Admin-Settings
 	// ========================================
 

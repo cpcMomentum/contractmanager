@@ -263,10 +263,14 @@ class ReminderService {
 		// Normalize unit to singular
 		$unit = rtrim($unit, 's');
 
-		$deadline = $this->subtractPeriodFromDate(clone $endDate, $value, $unit);
+		$deadlineType = $contract->getCancellationDeadlineType();
+		$deadline = $this->applyDeadlineType($this->subtractPeriodFromDate(clone $endDate, $value, $unit), $deadlineType);
 
 		// For auto_renewal: if cancellation deadline is past, the contract will
 		// renew — advance to the next period where the deadline is in the future.
+		// The deadline-type transform is applied to each candidate BEFORE the
+		// past-check, so a "month_end" deadline that is still upcoming this period
+		// is not skipped to the next year.
 		$contractType = $contract->getContractType();
 		$renewalPeriod = $contract->getRenewalPeriod();
 		if ($contractType === 'auto_renewal' && !empty($renewalPeriod)) {
@@ -276,10 +280,24 @@ class ReminderService {
 				if ($endDate === null) {
 					break;
 				}
-				$deadline = $this->subtractPeriodFromDate(clone $endDate, $value, $unit);
+				$deadline = $this->applyDeadlineType($this->subtractPeriodFromDate(clone $endDate, $value, $unit), $deadlineType);
 			}
 		}
 
+		return $deadline;
+	}
+
+	/**
+	 * Apply the cancellation-deadline-type transform.
+	 *
+	 * 'month_end' moves the deadline to the last calendar day of its month
+	 * (regardless of weekend/holiday, #159). 'normal' (and anything else) leaves
+	 * the deadline untouched.
+	 */
+	private function applyDeadlineType(DateTime $deadline, string $deadlineType): DateTime {
+		if ($deadlineType === Contract::DEADLINE_TYPE_MONTH_END) {
+			$deadline = (clone $deadline)->modify('last day of this month');
+		}
 		return $deadline;
 	}
 
@@ -320,7 +338,18 @@ class ReminderService {
 		$val = (int) $matches[1];
 		$u = rtrim(strtolower($matches[2]), 's');
 		$result = clone $date;
-		$result->modify("+{$val} {$u}");
+		if ($u === 'month') {
+			// Month-end overflow: Jan 31 + 1 month → Feb 31 doesn't exist → PHP gives
+			// Mar 3, not Feb 28. Clamp back to the last day of the intended month to
+			// keep the anchor consistent across renewal cycles (mirrors JS addPeriod).
+			$originalDay = (int) $result->format('d');
+			$result->modify("+{$val} month");
+			if ((int) $result->format('d') !== $originalDay) {
+				$result->modify('last day of previous month');
+			}
+		} else {
+			$result->modify("+{$val} {$u}");
+		}
 		return $result;
 	}
 

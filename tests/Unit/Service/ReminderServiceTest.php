@@ -144,6 +144,114 @@ class ReminderServiceTest extends TestCase {
 		$this->assertEquals('2026-05-30', $result->format('Y-m-d'));
 	}
 
+	// --- Charakterisierung vor #159 „Kündigen zum" (Ist-Verhalten festschreiben) ---
+
+	/**
+	 * Backend clamps a leap-day year subtraction to Feb 28 (29 Feb 2024 - 1 year
+	 * → 2023-02-28). NOTE: the JS frontend does NOT clamp this and yields
+	 * 2023-03-01 — a known FE/BE divergence documented for #159, pinned here so
+	 * any future change is a conscious decision.
+	 */
+	public function testCalculateCancellationDeadlineYearLeapClampsToFeb28(): void {
+		$contract = $this->createContract(new DateTime('2024-02-29'), '1 year');
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2023-02-28', $result->format('Y-m-d'));
+	}
+
+	/**
+	 * Volker's case (#159): a 1-month notice anchors the deadline to the same
+	 * day-of-month (the 21st), one month earlier. The "Kündigen zum: zum
+	 * Monatsende" feature will later turn this into 2026-10-31 WITHOUT changing
+	 * this default ('normal') result. Uses a fixed contract for determinism;
+	 * the month arithmetic is identical for auto_renewal.
+	 */
+	public function testCalculateCancellationDeadlineAnchorsToDayOfMonth(): void {
+		$contract = $this->createContract(new DateTime('2026-11-21'), '1 month');
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2026-10-21', $result->format('Y-m-d'));
+	}
+
+	/**
+	 * auto_renewal rolls a long-past deadline forward until it is in the future,
+	 * preserving the anchor day-of-month. Asserted via invariants (not an
+	 * absolute date) because the backend reads the real current time.
+	 */
+	public function testCalculateCancellationDeadlineAutoRenewalRollsIntoFuture(): void {
+		$contract = $this->createContract(new DateTime('2018-11-21'), '1 month', 'auto_renewal', '12 months');
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$todayMidnight = (new DateTime('today'))->getTimestamp();
+		$this->assertGreaterThanOrEqual($todayMidnight, $result->getTimestamp(), 'rolled deadline must not be in the past');
+		$this->assertSame('21', $result->format('d'), 'anchor day-of-month is preserved');
+	}
+
+	/**
+	 * Fixed contracts simply expire and do NOT roll: a past deadline is returned
+	 * as-is (mirrors the frontend behavior).
+	 */
+	public function testCalculateCancellationDeadlineFixedDoesNotRoll(): void {
+		$contract = $this->createContract(new DateTime('2020-06-30'), '90 days', 'fixed');
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2020-04-01', $result->format('Y-m-d'));
+	}
+
+	// --- #159 „Kündigen zum: zum Monatsende" ---
+
+	/**
+	 * month_end snaps the deadline to the last calendar day of its month
+	 * (Volker: 21.10 → 31.10). Default 'normal' stays 21.10 (covered above).
+	 * Fixed contract for determinism — the snap is identical for auto_renewal.
+	 */
+	public function testCalculateCancellationDeadlineMonthEndSnapsToLastDay(): void {
+		$contract = $this->createContract(new DateTime('2026-11-21'), '1 month');
+		$contract->setCancellationDeadlineType(Contract::DEADLINE_TYPE_MONTH_END);
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2026-10-31', $result->format('Y-m-d'));
+	}
+
+	/**
+	 * month_end on a leap February: 2026-03-10 − 1 month = 2026-02-10 → snap to
+	 * 2026-02-28 (non-leap).
+	 */
+	public function testCalculateCancellationDeadlineMonthEndFebruary(): void {
+		$contract = $this->createContract(new DateTime('2026-03-10'), '1 month');
+		$contract->setCancellationDeadlineType(Contract::DEADLINE_TYPE_MONTH_END);
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertEquals('2026-02-28', $result->format('Y-m-d'));
+	}
+
+	/**
+	 * month_end with auto_renewal rolls into the future and always lands on the
+	 * last day of the month. Invariants (backend reads the real current time).
+	 */
+	public function testCalculateCancellationDeadlineMonthEndAutoRenewalRolls(): void {
+		$contract = $this->createContract(new DateTime('2018-11-21'), '1 month', 'auto_renewal', '12 months');
+		$contract->setCancellationDeadlineType(Contract::DEADLINE_TYPE_MONTH_END);
+
+		$result = $this->service->calculateCancellationDeadline($contract);
+
+		$this->assertInstanceOf(DateTime::class, $result);
+		$this->assertGreaterThanOrEqual((new DateTime('today'))->getTimestamp(), $result->getTimestamp());
+		$this->assertSame($result->format('t'), $result->format('d'), 'deadline must be the last day of its month');
+	}
+
 	// ========================================
 	// shouldSendFirstReminder Tests
 	// ========================================
@@ -342,9 +450,12 @@ class ReminderServiceTest extends TestCase {
 	}
 
 	public function testCalculateCancellationDeadlineAutoRenewal(): void {
-		// End date in the past, auto_renewal with 12 months, cancellation 3 months
-		// Use dynamic past date so the test stays date-independent
-		$endDate = new DateTime('-2 years');
+		// End date in the past, auto_renewal with 12 months, cancellation 3 months.
+		// Use the 1st of the month to avoid month-end overflow: the assertion below
+		// relies on PHP-native modify('-3 month'), which has no overflow guard, so
+		// it must agree with the service's subtractPeriodFromDate (which does clamp).
+		// Day=1 never overflows for any 3-month subtraction.
+		$endDate = (new DateTime('first day of this month'))->modify('-2 years');
 		$contract = $this->createContract($endDate, '3 months', 'auto_renewal', '12 months');
 
 		$result = $this->service->calculateCancellationDeadline($contract);

@@ -5,6 +5,7 @@ import ContractService, { type Permissions } from '../services/ContractService'
 export type ContractStatus = 'active' | 'cancelled' | 'ended'
 export type ContractType = 'fixed' | 'auto_renewal'
 export type AmountType = 'netto' | 'brutto'
+export type CancellationDeadlineType = 'normal' | 'month_end'
 
 /**
  * Shape mirrors what the backend serializes in `Contract::jsonSerialize()`
@@ -27,6 +28,7 @@ export interface Contract {
 	cancellationPeriod?: string | null
 	contractType?: ContractType
 	renewalPeriod?: string | null
+	cancellationDeadlineType?: CancellationDeadlineType
 	cost?: string | null
 	amountType?: AmountType
 	currency?: string | null

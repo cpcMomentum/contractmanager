@@ -123,6 +123,9 @@ class ContractService {
 				$errors['cancelledTo'] = $this->l()->t('Invalid date format');
 			}
 		}
+		if (!empty($data['cancelledTo']) && empty($data['cancelledOn'])) {
+			$errors['cancelledTo'] = $this->l()->t('"Gekündigt zum" requires "Gekündigt am" to be set');
+		}
 		if (!empty($data['cancelledOn']) && !empty($data['cancelledTo']) && empty($errors['cancelledOn']) && empty($errors['cancelledTo'])) {
 			$cancelledOn = new DateTime($data['cancelledOn']);
 			$cancelledTo = new DateTime($data['cancelledTo']);
@@ -338,6 +341,7 @@ class ContractService {
         ?string $cancelledOn = null,
         ?string $cancelledTo = null,
         ?string $responsibleUser = null,
+        string $cancellationDeadlineType = Contract::DEADLINE_TYPE_NORMAL,
     ): Contract {
         $contract = new Contract();
         $contract->setName($name);
@@ -352,6 +356,7 @@ class ContractService {
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
+        $contract->setCancellationDeadlineType($this->normalizeDeadlineType($cancellationDeadlineType));
         $contract->setCost($cost);
         $contract->setCurrency($currency ?? 'EUR');
         $contract->setCostInterval($costInterval);
@@ -408,6 +413,7 @@ class ContractService {
         ?string $cancelledOn = null,
         ?string $cancelledTo = null,
         ?string $responsibleUser = null,
+        string $cancellationDeadlineType = Contract::DEADLINE_TYPE_NORMAL,
     ): Contract {
         try {
             $contract = $this->mapper->find($id);
@@ -432,6 +438,7 @@ class ContractService {
         $contract->setCancellationPeriod($cancellationPeriod ?? '');
         $contract->setContractType($contractType);
         $contract->setRenewalPeriod($renewalPeriod);
+        $contract->setCancellationDeadlineType($this->normalizeDeadlineType($cancellationDeadlineType));
         $contract->setCost($cost);
         $contract->setCurrency($currency ?? 'EUR');
         $contract->setCostInterval($costInterval);
@@ -452,6 +459,16 @@ class ContractService {
         $contract->setUpdatedAt(new DateTime());
 
         return $this->mapper->update($contract);
+    }
+
+    /**
+     * Validate the cancellation-deadline type, falling back to 'normal' for any
+     * unknown value so a malformed payload never stores garbage.
+     */
+    private function normalizeDeadlineType(string $deadlineType): string {
+        return in_array($deadlineType, [Contract::DEADLINE_TYPE_NORMAL, Contract::DEADLINE_TYPE_MONTH_END], true)
+            ? $deadlineType
+            : Contract::DEADLINE_TYPE_NORMAL;
     }
 
     /**

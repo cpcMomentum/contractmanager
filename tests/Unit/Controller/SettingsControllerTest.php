@@ -98,4 +98,56 @@ class SettingsControllerTest extends TestCase {
 		// would break the unchanged-key detection.
 		$this->assertSame('••••••••', SettingsService::API_KEY_MASK);
 	}
+
+	// ========================================
+	// Reminder Link Diagnostics (Issue #194)
+	// ========================================
+
+	public function testGetAdminReminderLinkStatusOkWhenHostsMatch(): void {
+		$this->settingsService->method('getCliUrl')->willReturn('https://cloud.example.com');
+		$this->request->method('getServerHost')->willReturn('cloud.example.com');
+
+		$data = $this->controller->getAdmin()->getData();
+
+		$this->assertSame('ok', $data['reminderLink']['status']);
+		$this->assertSame('https://cloud.example.com', $data['reminderLink']['cliUrl']);
+		$this->assertSame('cloud.example.com', $data['reminderLink']['accessHost']);
+	}
+
+	public function testGetAdminReminderLinkStatusMissingWhenCliUrlEmpty(): void {
+		$this->settingsService->method('getCliUrl')->willReturn('');
+		$this->request->method('getServerHost')->willReturn('cloud.example.com');
+
+		$data = $this->controller->getAdmin()->getData();
+
+		$this->assertSame('missing', $data['reminderLink']['status']);
+		$this->assertSame('', $data['reminderLink']['cliUrl']);
+	}
+
+	public function testGetAdminReminderLinkStatusMismatchWhenHostsDiffer(): void {
+		$this->settingsService->method('getCliUrl')->willReturn('https://old.example.com');
+		$this->request->method('getServerHost')->willReturn('cloud.example.com');
+
+		$data = $this->controller->getAdmin()->getData();
+
+		$this->assertSame('mismatch', $data['reminderLink']['status']);
+	}
+
+	public function testGetAdminReminderLinkHostComparisonIsCaseInsensitive(): void {
+		$this->settingsService->method('getCliUrl')->willReturn('https://Cloud.Example.COM');
+		$this->request->method('getServerHost')->willReturn('cloud.example.com');
+
+		$data = $this->controller->getAdmin()->getData();
+
+		$this->assertSame('ok', $data['reminderLink']['status']);
+	}
+
+	public function testGetAdminReminderLinkIgnoresPort(): void {
+		$this->settingsService->method('getCliUrl')->willReturn('https://cloud.example.com:8443');
+		$this->request->method('getServerHost')->willReturn('cloud.example.com');
+
+		$data = $this->controller->getAdmin()->getData();
+
+		$this->assertSame('ok', $data['reminderLink']['status']);
+	}
 }

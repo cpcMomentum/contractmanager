@@ -352,4 +352,26 @@ class SettingsServiceTest extends TestCase {
 
 		$this->service->setAiApiUrl('not a url');
 	}
+
+	// ========================================
+	// getCliUrl Tests
+	// ========================================
+
+	public function testGetCliUrlReturnsEmptyWhenNotSet(): void {
+		$this->config->expects($this->once())
+			->method('getSystemValueString')
+			->with('overwrite.cli.url', '')
+			->willReturn('');
+
+		$this->assertSame('', $this->service->getCliUrl());
+	}
+
+	public function testGetCliUrlReturnsConfiguredValue(): void {
+		$this->config->expects($this->once())
+			->method('getSystemValueString')
+			->with('overwrite.cli.url', '')
+			->willReturn('https://cloud.example.com');
+
+		$this->assertSame('https://cloud.example.com', $this->service->getCliUrl());
+	}
 }

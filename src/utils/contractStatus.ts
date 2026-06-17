@@ -28,7 +28,7 @@ export function isEndingSoon(
 		contract.cancellationPeriod,
 		contract.contractType,
 		contract.renewalPeriod ?? undefined,
-		{ status: contract.status, cancelledTo: contract.cancelledTo ?? undefined },
+		{ status: contract.status, cancelledTo: contract.cancelledTo ?? undefined, deadlineType: contract.cancellationDeadlineType ?? undefined },
 	)
 	if (!deadline) return false
 
