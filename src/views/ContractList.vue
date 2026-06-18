@@ -194,7 +194,6 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
-import SortIcon from 'vue-material-design-icons/Sort.vue'
 import SortAscendingIcon from 'vue-material-design-icons/SortAscending.vue'
 import SortDescendingIcon from 'vue-material-design-icons/SortDescending.vue'
 import CircleSmallIcon from 'vue-material-design-icons/CircleSmall.vue'
@@ -208,7 +207,7 @@ import { calculateCancellationDeadline } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
-import { showInfo } from '@nextcloud/dialogs'
+import { showInfo, showError } from '@nextcloud/dialogs'
 
 export default {
 	name: 'ContractList',
@@ -222,7 +221,6 @@ export default {
 		NcSelect,
 		PlusIcon,
 		FileDocumentIcon,
-		SortIcon,
 		SortAscendingIcon,
 		SortDescendingIcon,
 		CircleSmallIcon,
@@ -495,6 +493,7 @@ export default {
 				await this.archiveContract(this.archivingContract.id)
 			} catch (error) {
 				console.error('Failed to archive contract:', error)
+				showError(t('contractmanager', 'Fehler beim Archivieren'))
 			} finally {
 				this.showArchiveDialog = false
 				this.archivingContract = null
@@ -523,6 +522,7 @@ export default {
 				this.closeForm()
 			} catch (error) {
 				console.error('Failed to save contract:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
 			} finally {
 				this.formLoading = false
 			}
