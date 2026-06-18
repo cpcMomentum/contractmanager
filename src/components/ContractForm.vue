@@ -985,7 +985,11 @@ export default {
 				renewalPeriod: this.form.contractType === 'auto_renewal'
 					? this.formatPeriod(this.form.renewalPeriodValue, this.form.renewalPeriodUnit)
 					: null,
-				cost: this.form.cost || null,
+				// Native <input type="number"> makes Vue store a Number; the API
+				// declares cost as ?string, so coerce back (empty -> null).
+				cost: (this.form.cost === '' || this.form.cost === null || this.form.cost === undefined)
+					? null
+					: String(this.form.cost),
 				currency: this.form.currency,
 				costInterval: this.form.costInterval || null,
 				contractFolder: this.form.contractFolder.trim() || null,
