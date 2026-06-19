@@ -213,6 +213,10 @@ import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 import { showInfo, showError } from '@nextcloud/dialogs'
 
+// Teiler je Zahlweise, um einen Betrag auf einen Monatswert zu normalisieren.
+// Einmalzahlungen und unbekannte Intervalle haben bewusst keinen Eintrag.
+const COST_INTERVAL_DIVISOR = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
+
 export default {
 	name: 'ContractList',
 	components: {
@@ -360,12 +364,11 @@ export default {
 		// gekündigte, deren Laufzeit noch nicht abgelaufen ist. Einmalzahlungen,
 		// beendete und archivierte zählen nicht.
 		kpiCostContracts() {
-			const divisor = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
 			const today = new Date()
 			today.setHours(0, 0, 0, 0)
 			return this.kpiBaseContracts.filter(c => {
 				if (c.status === 'ended' || c.status === 'archived') return false
-				if (!divisor[c.costInterval]) return false
+				if (!COST_INTERVAL_DIVISOR[c.costInterval]) return false
 				if (!Number.isFinite(parseFloat(c.cost))) return false
 				const effectiveEnd = c.cancelledTo || c.endDate
 				if (effectiveEnd) {
@@ -379,11 +382,10 @@ export default {
 			return 'EUR'
 		},
 		kpiMonthlyTotal() {
-			const divisor = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
 			let sum = 0
 			this.kpiCostContracts.forEach(c => {
 				if ((c.currency || 'EUR') !== this.kpiLeadCurrency) return
-				sum += parseFloat(c.cost) / divisor[c.costInterval]
+				sum += parseFloat(c.cost) / COST_INTERVAL_DIVISOR[c.costInterval]
 			})
 			return sum
 		},
