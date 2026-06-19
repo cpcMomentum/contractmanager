@@ -275,6 +275,7 @@
 								label="displayName"
 								track-by="id"
 								:clearable="true"
+								@open="onTransferOpen"
 								@search="onTransferSearch"
 								@update:model-value="onTransferFromChange" />
 							<p v-if="transferCount !== null" class="settings-description">
@@ -290,6 +291,7 @@
 								label="displayName"
 								track-by="id"
 								:clearable="true"
+								@open="onTransferOpen"
 								@search="onTransferSearch" />
 						</div>
 						<div class="settings-actions">
@@ -663,6 +665,7 @@ export default {
 			transferCount: null,
 			transferUserResults: [],
 			transferSearching: false,
+			transferInitialLoaded: false,
 			transferring: false,
 			showTransferDialog: false,
 			newCategoryName: '',
@@ -866,14 +869,21 @@ export default {
 			return principal.uid || String(principal.id || '').replace('user:', '')
 		},
 
+		// Lazy-load a first batch of users when a transfer picker is first opened,
+		// so the dropdown is not empty before typing (same behaviour as the
+		// "responsible" picker in the contract form).
+		async onTransferOpen() {
+			if (this.transferInitialLoaded) return
+			this.transferInitialLoaded = true
+			await this.fetchTransferUsers('')
+		},
 		async onTransferSearch(query) {
-			if (!query || query.trim().length < 1) {
-				this.transferUserResults = []
-				return
-			}
+			await this.fetchTransferUsers(query)
+		},
+		async fetchTransferUsers(query) {
 			try {
 				this.transferSearching = true
-				this.transferUserResults = await ContractService.searchUsers(query)
+				this.transferUserResults = await ContractService.searchUsers(query || '')
 			} catch (e) {
 				this.transferUserResults = []
 			} finally {

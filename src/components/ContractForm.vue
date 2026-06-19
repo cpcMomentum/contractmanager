@@ -486,6 +486,7 @@
 							label="displayName"
 							track-by="id"
 							:clearable="true"
+							@open="onResponsibleOpen"
 							@search="onResponsibleSearch" />
 						<span v-else>{{ form.responsiblePrincipal ? form.responsiblePrincipal.displayName : t('contractmanager', 'Ersteller') }}</span>
 						<p v-if="!readOnly" class="cm-hint">
@@ -615,6 +616,7 @@ export default {
 			defaultReminderDays: 14,
 			responsibleSearchResults: [],
 			responsibleSearching: false,
+			responsibleInitialLoaded: false,
 		}
 	},
 	computed: {
@@ -781,6 +783,8 @@ export default {
 		show(newVal) {
 			if (newVal) {
 				this.form = this.getInitialForm(this.defaultAmountType)
+				this.responsibleInitialLoaded = false
+				this.responsibleSearchResults = []
 			}
 		},
 		contract: {
@@ -830,15 +834,22 @@ export default {
 		this.loadVendorOptions()
 	},
 	methods: {
+		// Lazy-load a first batch of users when the picker is first opened, so the
+		// dropdown is not empty before typing. The backend returns up to 25 users
+		// for an empty query; typing then narrows it server-side.
+		async onResponsibleOpen() {
+			if (this.responsibleInitialLoaded) return
+			this.responsibleInitialLoaded = true
+			await this.fetchResponsibleUsers('')
+		},
 		async onResponsibleSearch(query) {
-			if (!query || query.trim().length < 1) {
-				this.responsibleSearchResults = []
-				return
-			}
+			await this.fetchResponsibleUsers(query)
+		},
+		async fetchResponsibleUsers(query) {
 			try {
 				this.responsibleSearching = true
 				// Editor-zugänglicher User-Such-Endpunkt (nicht der admin-only Principal-Search)
-				this.responsibleSearchResults = await ContractService.searchUsers(query)
+				this.responsibleSearchResults = await ContractService.searchUsers(query || '')
 			} catch (e) {
 				this.responsibleSearchResults = []
 			} finally {
