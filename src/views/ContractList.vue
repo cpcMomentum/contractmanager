@@ -35,6 +35,9 @@
 			</div>
 		</div>
 
+		<div v-if="!loading && allContracts.length && kpiScopeActive" class="kpi-scope">
+			<FilterIcon :size="14" /> {{ kpiScopeLabel }}
+		</div>
 		<div v-if="!loading && allContracts.length" class="contract-kpis">
 			<div class="kpi">
 				<div class="kpi__lab">
@@ -55,7 +58,7 @@
 					{{ kpiMonthlyLabel }}
 				</div>
 				<div class="kpi__sub">
-					{{ t('contractmanager', 'Aktive Verträge, auf den Monat umgerechnet') }}
+					{{ kpiMonthlySub }}
 				</div>
 			</div>
 			<div class="kpi" :class="{ 'kpi--warn': kpiEndingSoon > 0 }">
@@ -204,6 +207,7 @@ import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { parseLocalDate } from '../utils/dateUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
@@ -295,6 +299,7 @@ export default {
 			loading: 'isLoading',
 			canEdit: 'canEdit',
 		}),
+		...mapState(useCategoriesStore, ['allCategories']),
 		vendorOptions() {
 			const vendors = this.allContracts
 				.map(c => c.vendor)
@@ -318,36 +323,91 @@ export default {
 			if (this.filterResponsible) return true
 			return false
 		},
-		// --- KPI-Kennzahlen über das gesamte Portfolio (nicht die gefilterte Ansicht) ---
-		nonArchivedContracts() {
-			return this.allContracts.filter(c => c.status !== 'archived')
+		// --- KPI-Kennzahlen: beziehen sich auf die aktuell ANGEZEIGTE (gefilterte)
+		// Menge, damit Kategorie-Auswahl, Filter und Suche durchschlagen. ---
+		kpiBaseContracts() {
+			return this.contracts
+		},
+		kpiScopeActive() {
+			return this.hasActiveFilters
+				|| this.categoryFilter !== null
+				|| this.searchQuery.trim() !== ''
+		},
+		kpiScopeLabel() {
+			if (this.categoryFilter === 'uncategorized') {
+				return t('contractmanager', 'Kennzahlen für Verträge ohne Kategorie')
+			}
+			if (this.categoryFilter !== null) {
+				const cat = this.allCategories.find(c => c.id === this.categoryFilter)
+				if (cat) {
+					return t('contractmanager', 'Kennzahlen für Kategorie „{name}“', { name: cat.name })
+				}
+			}
+			return t('contractmanager', 'Kennzahlen für die gefilterte Ansicht')
 		},
 		kpiActiveCount() {
-			return this.nonArchivedContracts.filter(c => c.status === 'active').length
+			return this.kpiBaseContracts.filter(c => c.status === 'active').length
 		},
 		kpiTypeSub() {
-			const auto = this.nonArchivedContracts.filter(c => c.status === 'active' && c.contractType === 'auto_renewal').length
+			const auto = this.kpiBaseContracts.filter(c => c.status === 'active' && c.contractType === 'auto_renewal').length
 			const rest = this.kpiActiveCount - auto
 			return t('contractmanager', '{auto} mit autom. Verlängerung · {rest} weitere', { auto, rest })
 		},
 		kpiEndingSoon() {
-			return this.nonArchivedContracts.filter(c => isEndingSoon(c, this.defaultReminderDays)).length
+			return this.kpiBaseContracts.filter(c => isEndingSoon(c, this.defaultReminderDays)).length
+		},
+		// Verträge der Ansicht, die noch laufende Kosten verursachen: aktive UND
+		// gekündigte, deren Laufzeit noch nicht abgelaufen ist. Einmalzahlungen,
+		// beendete und archivierte zählen nicht.
+		kpiCostContracts() {
+			const divisor = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
+			const today = new Date()
+			today.setHours(0, 0, 0, 0)
+			return this.kpiBaseContracts.filter(c => {
+				if (c.status === 'ended' || c.status === 'archived') return false
+				if (!divisor[c.costInterval]) return false
+				if (!Number.isFinite(parseFloat(c.cost))) return false
+				const effectiveEnd = c.cancelledTo || c.endDate
+				if (effectiveEnd) {
+					const end = parseLocalDate(effectiveEnd)
+					if (end && end < today) return false
+				}
+				return true
+			})
+		},
+		kpiLeadCurrency() {
+			return 'EUR'
 		},
 		kpiMonthlyTotal() {
 			const divisor = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
 			let sum = 0
-			this.nonArchivedContracts.forEach(c => {
-				if (c.status !== 'active') return
-				const cost = parseFloat(c.cost)
-				const d = divisor[c.costInterval]
-				// Einmalzahlungen und unbekannte Intervalle fließen nicht in die Monatssumme ein.
-				if (!Number.isFinite(cost) || !d) return
-				sum += cost / d
+			this.kpiCostContracts.forEach(c => {
+				if ((c.currency || 'EUR') !== this.kpiLeadCurrency) return
+				sum += parseFloat(c.cost) / divisor[c.costInterval]
 			})
 			return sum
 		},
+		kpiForeignCurrencyCount() {
+			return this.kpiCostContracts.filter(c => (c.currency || 'EUR') !== this.kpiLeadCurrency).length
+		},
+		kpiAmountTypeMixed() {
+			const inLeadCurrency = this.kpiCostContracts.filter(c => (c.currency || 'EUR') === this.kpiLeadCurrency)
+			const hasNetto = inLeadCurrency.some(c => (c.amountType || 'netto') === 'netto')
+			const hasBrutto = inLeadCurrency.some(c => (c.amountType || 'netto') === 'brutto')
+			return hasNetto && hasBrutto
+		},
 		kpiMonthlyLabel() {
-			return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(this.kpiMonthlyTotal)
+			return new Intl.NumberFormat('de-DE', { style: 'currency', currency: this.kpiLeadCurrency }).format(this.kpiMonthlyTotal)
+		},
+		kpiMonthlySub() {
+			const parts = [t('contractmanager', 'Laufende Verträge, auf den Monat')]
+			if (this.kpiAmountTypeMixed) {
+				parts.push(t('contractmanager', 'netto und brutto gemischt'))
+			}
+			if (this.kpiForeignCurrencyCount > 0) {
+				parts.push(t('contractmanager', '+ {n} in anderer Währung', { n: this.kpiForeignCurrencyCount }))
+			}
+			return parts.join(' · ')
 		},
 		contracts() {
 			let filtered = this.allContracts.filter(c => c.status !== 'archived')
@@ -701,6 +761,16 @@ export default {
 	&__items {
 		display: block;
 	}
+}
+
+.kpi-scope {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	max-width: 920px;
+	margin: 0 0 8px;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
 }
 
 .contract-kpis {
