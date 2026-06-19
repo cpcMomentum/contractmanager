@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-19
+
+### Added
+- Übersichts-Kennzahlen über der Vertragsliste: Anzahl aktiver Verträge, monatliche Gesamtkosten und anstehende Kündigungen auf einen Blick. Die Kennzahlen beziehen sich auf die aktuell gewählte Ansicht und passen sich Kategorie-Auswahl, Filtern und Suche an. Monatliche Kosten werden je Zahlweise auf den Monat umgerechnet; bei Fremdwährungen und gemischten Netto/Brutto-Beträgen wird das transparent ausgewiesen (#112, #170)
+
+### Changed
+- Überarbeitetes Oberflächen-Design: Vertragsliste als übersichtliche Tabelle, Vertrags-Dialog mit einheitlichen Eingabefeldern und der Detail-Übersicht oben, Einstellungen mit klarer zweispaltiger Navigation (#170, #198)
+- Erinnerungs-Einstellungen im Vertrag verständlicher: ein globaler Schalter (gilt für alle Berechtigten) und ein persönlicher „nicht erinnern"-Schalter, jeweils mit kurzer Erklärung; die persönliche Vorlaufzeit zeigt den geltenden Standardwert (#198)
+- Benutzer-Auswahlfelder (Zuständig, Verträge übertragen) zeigen Vorschläge bereits beim Öffnen, ohne dass man erst tippen muss (#205)
+
+### Fixed
+- Genauere Erkennung der Server-Adresse für Erinnerungs-Links (Normalisierung), dadurch weniger falsche Hinweise zu `overwrite.cli.url`; zusätzlich robustere Berechnung des Kündigungsdatums (#201)
+
 ## [1.0.4] - 2026-06-17
 
 ### Added
@@ -312,7 +325,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.4...v1.1.0
+[1.0.4]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.0...v1.0.1
