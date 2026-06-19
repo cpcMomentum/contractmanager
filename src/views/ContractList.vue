@@ -35,6 +35,45 @@
 			</div>
 		</div>
 
+		<div v-if="!loading && allContracts.length && kpiScopeActive" class="kpi-scope">
+			<FilterIcon :size="14" /> {{ kpiScopeLabel }}
+		</div>
+		<div v-if="!loading && allContracts.length" class="contract-kpis">
+			<div class="kpi">
+				<div class="kpi__lab">
+					<FileDocumentIcon :size="15" /> {{ t('contractmanager', 'Aktive Verträge') }}
+				</div>
+				<div class="kpi__num">
+					{{ kpiActiveCount }}
+				</div>
+				<div class="kpi__sub">
+					{{ kpiTypeSub }}
+				</div>
+			</div>
+			<div class="kpi">
+				<div class="kpi__lab">
+					<CashMultipleIcon :size="15" /> {{ t('contractmanager', 'Monatliche Kosten') }}
+				</div>
+				<div class="kpi__num">
+					{{ kpiMonthlyLabel }}
+				</div>
+				<div class="kpi__sub">
+					{{ kpiMonthlySub }}
+				</div>
+			</div>
+			<div class="kpi" :class="{ 'kpi--warn': kpiEndingSoon > 0 }">
+				<div class="kpi__lab">
+					<BellRingIcon :size="15" /> {{ t('contractmanager', 'Kündigung fällig') }}
+				</div>
+				<div class="kpi__num">
+					{{ kpiEndingSoon }}
+				</div>
+				<div class="kpi__sub">
+					{{ t('contractmanager', 'innerhalb der Vorlaufzeit') }}
+				</div>
+			</div>
+		</div>
+
 		<div v-show="showFilters" class="contract-list__filters">
 			<NcSelect v-model="filterVendor"
 				:options="vendorOptions"
@@ -97,15 +136,24 @@
 			</template>
 		</NcEmptyContent>
 
-		<div v-else class="contract-list__items">
-			<ContractListItem v-for="contract in contracts"
-				:key="contract.id"
-				:contract="contract"
-				:default-reminder-days="defaultReminderDays"
-				@edit="handleEdit"
-				@duplicate="handleDuplicate"
-				@view="handleView"
-				@archive="handleArchive" />
+		<div v-else class="contract-list__table">
+			<div class="contract-list__thead">
+				<span class="col-name">{{ t('contractmanager', 'Vertrag') }}</span>
+				<span>{{ t('contractmanager', 'Status') }}</span>
+				<span class="col-cost">{{ t('contractmanager', 'Kosten') }}</span>
+				<span>{{ t('contractmanager', 'Kündigen bis') }}</span>
+				<span aria-hidden="true" />
+			</div>
+			<div class="contract-list__items">
+				<ContractListItem v-for="contract in contracts"
+					:key="contract.id"
+					:contract="contract"
+					:default-reminder-days="defaultReminderDays"
+					@edit="handleEdit"
+					@duplicate="handleDuplicate"
+					@view="handleView"
+					@archive="handleArchive" />
+			</div>
 		</div>
 
 		<ContractForm :show="showCreateForm || showEditForm"
@@ -149,19 +197,25 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
-import SortIcon from 'vue-material-design-icons/Sort.vue'
 import SortAscendingIcon from 'vue-material-design-icons/SortAscending.vue'
 import SortDescendingIcon from 'vue-material-design-icons/SortDescending.vue'
 import CircleSmallIcon from 'vue-material-design-icons/CircleSmall.vue'
 import FilterIcon from 'vue-material-design-icons/Filter.vue'
 import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
+import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { parseLocalDate } from '../utils/dateUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
-import { showInfo } from '@nextcloud/dialogs'
+import { showInfo, showError } from '@nextcloud/dialogs'
+
+// Teiler je Zahlweise, um einen Betrag auf einen Monatswert zu normalisieren.
+// Einmalzahlungen und unbekannte Intervalle haben bewusst keinen Eintrag.
+const COST_INTERVAL_DIVISOR = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
 
 export default {
 	name: 'ContractList',
@@ -175,13 +229,14 @@ export default {
 		NcSelect,
 		PlusIcon,
 		FileDocumentIcon,
-		SortIcon,
 		SortAscendingIcon,
 		SortDescendingIcon,
 		CircleSmallIcon,
 		FilterIcon,
 		FilterOffIcon,
 		CloseIcon,
+		CashMultipleIcon,
+		BellRingIcon,
 		ContractListItem,
 		ContractForm,
 	},
@@ -248,6 +303,7 @@ export default {
 			loading: 'isLoading',
 			canEdit: 'canEdit',
 		}),
+		...mapState(useCategoriesStore, ['allCategories']),
 		vendorOptions() {
 			const vendors = this.allContracts
 				.map(c => c.vendor)
@@ -270,6 +326,90 @@ export default {
 			if (this.filterContractType) return true
 			if (this.filterResponsible) return true
 			return false
+		},
+		// --- KPI-Kennzahlen: beziehen sich auf die aktuell ANGEZEIGTE (gefilterte)
+		// Menge, damit Kategorie-Auswahl, Filter und Suche durchschlagen. ---
+		kpiBaseContracts() {
+			return this.contracts
+		},
+		kpiScopeActive() {
+			return this.hasActiveFilters
+				|| this.categoryFilter !== null
+				|| this.searchQuery.trim() !== ''
+		},
+		kpiScopeLabel() {
+			if (this.categoryFilter === 'uncategorized') {
+				return t('contractmanager', 'Kennzahlen für Verträge ohne Kategorie')
+			}
+			if (this.categoryFilter !== null) {
+				const cat = this.allCategories.find(c => c.id === this.categoryFilter)
+				if (cat) {
+					return t('contractmanager', 'Kennzahlen für Kategorie „{name}“', { name: cat.name })
+				}
+			}
+			return t('contractmanager', 'Kennzahlen für die gefilterte Ansicht')
+		},
+		kpiActiveCount() {
+			return this.kpiBaseContracts.filter(c => c.status === 'active').length
+		},
+		kpiTypeSub() {
+			const auto = this.kpiBaseContracts.filter(c => c.status === 'active' && c.contractType === 'auto_renewal').length
+			const rest = this.kpiActiveCount - auto
+			return t('contractmanager', '{auto} mit autom. Verlängerung · {rest} weitere', { auto, rest })
+		},
+		kpiEndingSoon() {
+			return this.kpiBaseContracts.filter(c => isEndingSoon(c, this.defaultReminderDays)).length
+		},
+		// Verträge der Ansicht, die noch laufende Kosten verursachen: aktive UND
+		// gekündigte, deren Laufzeit noch nicht abgelaufen ist. Einmalzahlungen,
+		// beendete und archivierte zählen nicht.
+		kpiCostContracts() {
+			const today = new Date()
+			today.setHours(0, 0, 0, 0)
+			return this.kpiBaseContracts.filter(c => {
+				if (c.status === 'ended' || c.status === 'archived') return false
+				if (!COST_INTERVAL_DIVISOR[c.costInterval]) return false
+				if (!Number.isFinite(parseFloat(c.cost))) return false
+				const effectiveEnd = c.cancelledTo || c.endDate
+				if (effectiveEnd) {
+					const end = parseLocalDate(effectiveEnd)
+					if (end && end < today) return false
+				}
+				return true
+			})
+		},
+		kpiLeadCurrency() {
+			return 'EUR'
+		},
+		kpiMonthlyTotal() {
+			let sum = 0
+			this.kpiCostContracts.forEach(c => {
+				if ((c.currency || 'EUR') !== this.kpiLeadCurrency) return
+				sum += parseFloat(c.cost) / COST_INTERVAL_DIVISOR[c.costInterval]
+			})
+			return sum
+		},
+		kpiForeignCurrencyCount() {
+			return this.kpiCostContracts.filter(c => (c.currency || 'EUR') !== this.kpiLeadCurrency).length
+		},
+		kpiAmountTypeMixed() {
+			const inLeadCurrency = this.kpiCostContracts.filter(c => (c.currency || 'EUR') === this.kpiLeadCurrency)
+			const hasNetto = inLeadCurrency.some(c => (c.amountType || 'netto') === 'netto')
+			const hasBrutto = inLeadCurrency.some(c => (c.amountType || 'netto') === 'brutto')
+			return hasNetto && hasBrutto
+		},
+		kpiMonthlyLabel() {
+			return new Intl.NumberFormat('de-DE', { style: 'currency', currency: this.kpiLeadCurrency }).format(this.kpiMonthlyTotal)
+		},
+		kpiMonthlySub() {
+			const parts = [t('contractmanager', 'Laufende Verträge, auf den Monat')]
+			if (this.kpiAmountTypeMixed) {
+				parts.push(t('contractmanager', 'netto und brutto gemischt'))
+			}
+			if (this.kpiForeignCurrencyCount > 0) {
+				parts.push(t('contractmanager', '+ {n} in anderer Währung', { n: this.kpiForeignCurrencyCount }))
+			}
+			return parts.join(' · ')
 		},
 		contracts() {
 			let filtered = this.allContracts.filter(c => c.status !== 'archived')
@@ -415,6 +555,7 @@ export default {
 				await this.archiveContract(this.archivingContract.id)
 			} catch (error) {
 				console.error('Failed to archive contract:', error)
+				showError(t('contractmanager', 'Fehler beim Archivieren'))
 			} finally {
 				this.showArchiveDialog = false
 				this.archivingContract = null
@@ -443,6 +584,7 @@ export default {
 				this.closeForm()
 			} catch (error) {
 				console.error('Failed to save contract:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
 			} finally {
 				this.formLoading = false
 			}
@@ -596,10 +738,84 @@ export default {
 		height: 200px;
 	}
 
-	&__items {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
+	&__table {
+		background: var(--color-main-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large, 12px);
+		overflow: hidden;
 	}
+
+	&__thead {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 150px 110px 120px 116px;
+		gap: 14px;
+		align-items: center;
+		padding: 11px 0;
+		border-bottom: 1px solid var(--color-border);
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--color-text-maxcontrast);
+
+		.col-name { padding-left: 18px; }
+		.col-cost { text-align: right; }
+	}
+
+	&__items {
+		display: block;
+	}
+}
+
+.kpi-scope {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	max-width: 920px;
+	margin: 0 0 8px;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.contract-kpis {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin-bottom: 18px;
+	max-width: 920px;
+
+	.kpi {
+		background: var(--color-main-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large, 12px);
+		padding: 14px 16px;
+	}
+
+	.kpi__lab {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--color-text-maxcontrast);
+	}
+
+	.kpi__num {
+		font-size: 26px;
+		font-weight: 700;
+		line-height: 1;
+		margin-top: 8px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.kpi--warn .kpi__num { color: #9a6c25; }
+
+	.kpi__sub {
+		font-size: 12.5px;
+		color: var(--color-text-maxcontrast);
+		margin-top: 5px;
+	}
+}
+
+@media (max-width: 768px) {
+	.contract-kpis { grid-template-columns: 1fr; }
 }
 </style>
