@@ -783,6 +783,8 @@ export default {
 		show(newVal) {
 			if (newVal) {
 				this.form = this.getInitialForm(this.defaultAmountType)
+				this.responsibleInitialLoaded = false
+				this.responsibleSearchResults = []
 			}
 		},
 		contract: {
