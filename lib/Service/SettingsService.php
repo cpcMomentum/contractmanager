@@ -494,6 +494,9 @@ class SettingsService {
 			return false;
 		}
 		$host = strtolower((string)parse_url($url, PHP_URL_HOST));
+		// parse_url liefert IPv6-Hosts geklammert zurueck (z.B. "[::1]") — Klammern
+		// fuer den Loopback-Vergleich normalisieren.
+		$host = trim($host, '[]');
 		if ($host === '') {
 			return false;
 		}
