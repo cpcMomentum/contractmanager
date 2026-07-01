@@ -215,7 +215,7 @@ export default {
 				return { cls: 'expired', label: t('contractmanager', 'Abgelaufen'), title: t('contractmanager', 'Das Enddatum ist überschritten.') }
 			}
 			if (this.endingSoon) {
-				return { cls: 'soon', label: t('contractmanager', 'Kündigung fällig'), title: t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.') }
+				return { cls: 'soon', label: t('contractmanager', 'Kündigungsfrist endet'), title: t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.') }
 			}
 			if (this.contract.status === 'cancelled') {
 				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt'), title: '' }

@@ -63,7 +63,7 @@
 			</div>
 			<div class="kpi" :class="{ 'kpi--warn': kpiEndingSoon > 0 }">
 				<div class="kpi__lab">
-					<BellRingIcon :size="15" /> {{ t('contractmanager', 'Kündigung fällig') }}
+					<BellRingIcon :size="15" /> {{ t('contractmanager', 'Kündigungsfrist endet') }}
 				</div>
 				<div class="kpi__num">
 					{{ kpiEndingSoon }}
