@@ -206,7 +206,7 @@ import CloseIcon from 'vue-material-design-icons/Close.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
-import { calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { parseLocalDate } from '../utils/dateUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
@@ -590,6 +590,20 @@ export default {
 			}
 		},
 
+		// Date used to sort the "Kündigen bis" column. Mirrors
+		// ContractListItem.deadlineDisplay so the sort order matches what the
+		// column shows: cancellation deadline for auto_renewal (when it has one),
+		// otherwise the effective end date, otherwise the raw end date.
+		cancellationSortValue(c) {
+			if (c.contractType === 'auto_renewal') {
+				const deadline = calculateCancellationDeadline(c.endDate, c.cancellationPeriod, c.contractType, c.renewalPeriod, { status: c.status, cancelledTo: c.cancelledTo, deadlineType: c.cancellationDeadlineType })
+				if (deadline) return deadline
+			}
+			const end = getEffectiveEndDate(c.endDate, c.contractType, c.renewalPeriod, { status: c.status, cancelledTo: c.cancelledTo })
+			if (end) return end
+			return c.endDate ? new Date(c.endDate) : null
+		},
+
 		sortContracts(contracts) {
 			const sorted = [...contracts]
 			const dir = this.sortDirection === 'asc' ? 1 : -1
@@ -617,8 +631,14 @@ export default {
 					cmp = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0)
 					break
 				case 'cancellationDeadline': {
-					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod, { status: a.status, cancelledTo: a.cancelledTo, deadlineType: a.cancellationDeadlineType })
-					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod, { status: b.status, cancelledTo: b.cancelledTo, deadlineType: b.cancellationDeadlineType })
+					// Sort by the SAME value the "Kündigen bis" column displays
+					// (see ContractListItem.deadlineDisplay): the cancellation
+					// deadline for auto_renewal, otherwise the effective end date.
+					// Using calculateCancellationDeadline alone dropped fixed
+					// contracts (no cancellationPeriod → null) to the bottom even
+					// though their end date is shown in the column (#217).
+					const deadlineA = this.cancellationSortValue(a)
+					const deadlineB = this.cancellationSortValue(b)
 					if (!deadlineA && !deadlineB) { cmp = 0; break }
 					if (!deadlineA) { cmp = 1; break }
 					if (!deadlineB) { cmp = -1; break }
