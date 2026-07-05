@@ -550,7 +550,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUtils.js'
-import { parsePeriod, calculateCancellationDeadline } from '../utils/periodUtils.js'
+import { parsePeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
 import { reminderEnabledForEndDate } from '../utils/reminderForm'
@@ -1028,6 +1028,20 @@ export default {
 				// Cancellation removed — revert auto-set status back to active
 				if (this.form.contractStatus === 'cancelled') {
 					this.form.contractStatus = 'active'
+				}
+				return
+			}
+			// Prefill "Gekündigt zum" with the contract's effective end date so the
+			// user doesn't have to type it twice — it already follows from the
+			// contract data. Only when empty, so a deliberately entered date (e.g.
+			// a special termination) is never overwritten. Stays editable. (#213)
+			if (!this.form.cancelledTo) {
+				const renewalPeriod = this.form.renewalPeriodValue && this.form.renewalPeriodUnit
+					? `${this.form.renewalPeriodValue} ${this.form.renewalPeriodUnit}`
+					: null
+				const effectiveEnd = getEffectiveEndDate(this.form.endDate, this.form.contractType, renewalPeriod)
+				if (effectiveEnd) {
+					this.form.cancelledTo = effectiveEnd
 				}
 			}
 		},
