@@ -63,7 +63,7 @@
 			</div>
 			<div class="kpi" :class="{ 'kpi--warn': kpiEndingSoon > 0 }">
 				<div class="kpi__lab">
-					<BellRingIcon :size="15" /> {{ t('contractmanager', 'Kündigung fällig') }}
+					<BellRingIcon :size="15" /> {{ t('contractmanager', 'Kündigungsfrist endet') }}
 				</div>
 				<div class="kpi__num">
 					{{ kpiEndingSoon }}
@@ -206,8 +206,7 @@ import CloseIcon from 'vue-material-design-icons/Close.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
-import { calculateCancellationDeadline } from '../utils/periodUtils.js'
-import { parseLocalDate } from '../utils/dateUtils.js'
+import { calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
@@ -370,10 +369,14 @@ export default {
 				if (c.status === 'ended' || c.status === 'archived') return false
 				if (!COST_INTERVAL_DIVISOR[c.costInterval]) return false
 				if (!Number.isFinite(parseFloat(c.cost))) return false
-				const effectiveEnd = c.cancelledTo || c.endDate
-				if (effectiveEnd) {
-					const end = parseLocalDate(effectiveEnd)
-					if (end && end < today) return false
+				// Use the EFFECTIVE end date: getEffectiveEndDate rolls auto_renewal
+				// contracts forward and respects cancelledTo. The old code used the
+				// raw endDate, which silently dropped renewing contracts entered with
+				// a past original end date from the cost sum (#215).
+				const end = getEffectiveEndDate(c.endDate, c.contractType, c.renewalPeriod, { status: c.status, cancelledTo: c.cancelledTo })
+				if (end) {
+					end.setHours(0, 0, 0, 0)
+					if (end < today) return false
 				}
 				return true
 			})
@@ -399,10 +402,13 @@ export default {
 			return hasNetto && hasBrutto
 		},
 		kpiMonthlyLabel() {
-			return new Intl.NumberFormat('de-DE', { style: 'currency', currency: this.kpiLeadCurrency }).format(this.kpiMonthlyTotal)
+			// "ca." signals deliberately that this is a rough monthly estimate, not
+			// a cent-exact figure (netto/brutto mixing, part-month expiry, etc. — #215).
+			const formatted = new Intl.NumberFormat('de-DE', { style: 'currency', currency: this.kpiLeadCurrency }).format(this.kpiMonthlyTotal)
+			return t('contractmanager', 'ca. {amount}', { amount: formatted })
 		},
 		kpiMonthlySub() {
-			const parts = [t('contractmanager', 'Laufende Verträge, auf den Monat')]
+			const parts = [t('contractmanager', 'Grobe Orientierung · laufende Verträge auf den Monat')]
 			if (this.kpiAmountTypeMixed) {
 				parts.push(t('contractmanager', 'netto und brutto gemischt'))
 			}
@@ -590,6 +596,20 @@ export default {
 			}
 		},
 
+		// Date used to sort the "Kündigen bis" column. Mirrors
+		// ContractListItem.deadlineDisplay so the sort order matches what the
+		// column shows: cancellation deadline for auto_renewal (when it has one),
+		// otherwise the effective end date, otherwise the raw end date.
+		cancellationSortValue(c) {
+			if (c.contractType === 'auto_renewal') {
+				const deadline = calculateCancellationDeadline(c.endDate, c.cancellationPeriod, c.contractType, c.renewalPeriod, { status: c.status, cancelledTo: c.cancelledTo, deadlineType: c.cancellationDeadlineType })
+				if (deadline) return deadline
+			}
+			const end = getEffectiveEndDate(c.endDate, c.contractType, c.renewalPeriod, { status: c.status, cancelledTo: c.cancelledTo })
+			if (end) return end
+			return c.endDate ? new Date(c.endDate) : null
+		},
+
 		sortContracts(contracts) {
 			const sorted = [...contracts]
 			const dir = this.sortDirection === 'asc' ? 1 : -1
@@ -617,8 +637,14 @@ export default {
 					cmp = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0)
 					break
 				case 'cancellationDeadline': {
-					const deadlineA = calculateCancellationDeadline(a.endDate, a.cancellationPeriod, a.contractType, a.renewalPeriod, { status: a.status, cancelledTo: a.cancelledTo, deadlineType: a.cancellationDeadlineType })
-					const deadlineB = calculateCancellationDeadline(b.endDate, b.cancellationPeriod, b.contractType, b.renewalPeriod, { status: b.status, cancelledTo: b.cancelledTo, deadlineType: b.cancellationDeadlineType })
+					// Sort by the SAME value the "Kündigen bis" column displays
+					// (see ContractListItem.deadlineDisplay): the cancellation
+					// deadline for auto_renewal, otherwise the effective end date.
+					// Using calculateCancellationDeadline alone dropped fixed
+					// contracts (no cancellationPeriod → null) to the bottom even
+					// though their end date is shown in the column (#217).
+					const deadlineA = this.cancellationSortValue(a)
+					const deadlineB = this.cancellationSortValue(b)
 					if (!deadlineA && !deadlineB) { cmp = 0; break }
 					if (!deadlineA) { cmp = 1; break }
 					if (!deadlineB) { cmp = -1; break }

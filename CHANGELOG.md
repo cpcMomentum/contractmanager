@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-06
+
+### Added
+- „Gekündigt zum" wird beim Eintragen von „Gekündigt am" automatisch mit dem Enddatum des Vertrags vorbelegt und bleibt änderbar – das Datum muss nicht doppelt eingegeben werden (#213)
+
+### Fixed
+- Sortierung nach „Kündigen bis" berücksichtigt jetzt auch befristete Verträge: sie landeten zuvor am Listenende, obwohl die Spalte ihr Enddatum anzeigte (#217)
+- Monatliche Kosten: Verträge mit automatischer Verlängerung, die mit ihrem ursprünglichen (abgelaufenen) Enddatum eingetragen sind, werden wieder eingerechnet (#215)
+
+### Changed
+- Status „Kündigung fällig" heißt jetzt einheitlich „Kündigungsfrist endet", passend zum gleichnamigen Filter (#216)
+- Die Kennzahl „Monatliche Kosten" ist als grobe Orientierung gekennzeichnet („ca.", Untertitel „Grobe Orientierung"), da sie Netto/Brutto und unterjährige Effekte nur näherungsweise abbilden kann (#215)
+
 ## [1.1.0] - 2026-06-19
 
 ### Added
