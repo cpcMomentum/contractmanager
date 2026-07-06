@@ -3,8 +3,8 @@ node_modules/
 vendor/
 
 # Build output (js/ UND das kompilierte css/ werden committet für einfache Installation
-# und robuste Releases — siehe docs/rca/issue-245.md. Ein Release ohne dieses CSS-Bundle
-# liefert eine komplett ungestylte UI aus.)
+# und robuste Releases: git-basiertes Packen liesse ungetrackte Dateien aus, ein
+# Release ohne dieses CSS-Bundle liefert eine komplett ungestylte UI aus (#245).
 # js/
 css/*.css
 !css/contractmanager-main.css
