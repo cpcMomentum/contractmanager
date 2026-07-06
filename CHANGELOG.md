@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Oberfläche seit 1.2.0 komplett ohne Styling (kaputtes Layout, Nextcloud-Hintergrund scheint durch): das kompilierte CSS-Bundle fehlte im Release-Paket. Das CSS wird jetzt wie das JavaScript mit ausgeliefert (#245)
+
 ## [1.2.0] - 2026-07-06
 
 ### Added
