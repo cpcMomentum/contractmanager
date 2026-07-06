@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-06
+
 ### Added
 - „Gekündigt zum" wird beim Eintragen von „Gekündigt am" automatisch mit dem Enddatum des Vertrags vorbelegt und bleibt änderbar – das Datum muss nicht doppelt eingegeben werden (#213)
 
