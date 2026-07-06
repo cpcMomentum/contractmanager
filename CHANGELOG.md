@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-07-06
+
 ### Fixed
 - Oberfläche seit 1.2.0 komplett ohne Styling (kaputtes Layout, Nextcloud-Hintergrund scheint durch): das kompilierte CSS-Bundle fehlte im Release-Paket. Das CSS wird jetzt wie das JavaScript mit ausgeliefert (#245)
 
@@ -341,7 +343,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.2...v1.0.3
