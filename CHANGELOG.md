@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Release-Härtung: Die Composer-Runtime-Abhängigkeiten (`vendor/`, u.a. der PDF-Parser) werden jetzt wie das kompilierte CSS mit ausgeliefert und sind über einen Packaging-Guard gegen versehentliches Weglassen im Release-Paket abgesichert. Verhindert eine Wiederholung der 1.2.0-Regression (#249, Follow-up zu #245)
+
 ## [1.2.1] - 2026-07-06
 
 ### Fixed

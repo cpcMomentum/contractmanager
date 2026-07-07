@@ -42,3 +42,11 @@ jobs:
 
       - name: Produktions-Build
         run: npm run build
+
+      # Ein Build-Artefakt-Drift-Check (git diff js/ css/) ist hier bewusst NICHT
+      # aktiv: Er braucht einen reproduzierbaren Build, aber dieser Job wirft den
+      # Lock weg (rm -f package-lock.json, npm/cli#4828) und floatet damit die
+      # Dependency-Versionen -> Byte-Diff schlaegt immer an. Als Hard-Gate erst
+      # sinnvoll nach Umstieg auf reproduzierbare Installs. Siehe #251.
+      # Die eigentliche Absicherung gegen fehlende Build-Artefakte ist der
+      # Packaging-Guard (Check 15) im Release-Skill.

@@ -1,6 +1,18 @@
 # Dependencies
 node_modules/
-vendor/
+
+# Composer: vendor/ ist per Default ignoriert, aber die REINEN Runtime-Pakete
+# (composer install --no-dev) werden getrackt und ausgeliefert — genau wie das
+# kompilierte css/. Grund: git-basiertes Packen (git archive) liesse ein
+# ungetracktes vendor/ ausfallen, und dann ist die PDF-Textextraktion
+# (smalot/pdfparser) im Release kaputt (#245 / #249). Dev-Deps (phpunit,
+# nextcloud/ocp) bleiben ignoriert — sie tauchen nur bei `composer install`
+# OHNE --no-dev auf und duerfen nicht in Git/Tarball landen.
+vendor/*
+!vendor/autoload.php
+!vendor/composer
+!vendor/smalot
+!vendor/symfony
 
 # Build output (js/ UND das kompilierte css/ werden committet für einfache Installation
 # und robuste Releases: git-basiertes Packen liesse ungetrackte Dateien aus, ein

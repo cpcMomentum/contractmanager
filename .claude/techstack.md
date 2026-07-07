@@ -104,7 +104,11 @@
 ├── js/                     # KOMPILIERTES JS (commit Pflicht!)
 │   ├── contractmanager-main.js
 │   └── contractmanager-main.js.map
-├── css/                    # Optional
+├── css/                    # KOMPILIERTES CSS-Bundle — getrackt + ausgeliefert (#246)
+│   └── contractmanager-main.css
+├── vendor/                 # Composer RUNTIME-Deps (--no-dev) — getrackt + ausgeliefert (#249)
+│   ├── autoload.php        #   smalot/pdfparser (PDF-Textextraktion) + composer/ + symfony/
+│   └── ...                 #   Dev-Deps (phpunit) bleiben gitignored!
 ├── templates/              # PHP-Templates (main.php als Vue-Mount-Point)
 ├── l10n/                   # Uebersetzungen (Transifex)
 ├── tests/                  # PHPUnit
@@ -198,16 +202,31 @@ Diese Skills sind fuer NC-Apps **nicht relevant** und sollten uebersprungen werd
 | Post-Release | Bei korrektem Workflow (Release von develop) ist main=develop → kein Sync noetig |
 | Rollback | Defekte Version im App Store loeschen: `curl -X DELETE .../releases/<version>` |
 
+#### Build-Artefakt-Asymmetrie (Lehre #245/#249 — WICHTIG)
+
+Nicht alles, was Git ignoriert, darf aus dem Release fallen. Drei Klassen von Artefakten, die **ausgeliefert werden muessen**, aber unterschiedlich in Git liegen:
+
+| Artefakt | In Git? | Muss in den Tarball? | Warum diese Regelung |
+|----------|---------|----------------------|----------------------|
+| `js/contractmanager-main.js` | **getrackt** | Ja | War schon immer getrackt |
+| `css/contractmanager-main.css` | **getrackt** (`!css/…-main.css`) | Ja | #245: git-basiertes Packen liess die gitignorierte CSS fallen → ungestylte UI. Seit #246 getrackt |
+| `vendor/` **Runtime** (smalot/pdfparser, symfony, composer/) | **getrackt** (Whitelist in `.gitignore`) | Ja | #245/#249: gitignoriertes vendor fiel aus dem Release → PDF-Textextraktion kaputt. Seit #249 Runtime-Pfade getrackt |
+| `vendor/` **Dev** (phpunit, nextcloud/ocp) | **gitignored** | **Nein** | Blaeht signature.json + Tarball auf. Taucht nur bei `composer install` OHNE `--no-dev` auf |
+
+**Kernregel:** `js/`, das kompilierte `css/`-Bundle und die `vendor/`-Runtime-Deps sind getrackt und liegen damit in `git archive HEAD` — der Release haengt nicht mehr an manuellen Worktree-Kopien. Der **Packaging-Guard (Check 15)** im geteilten Release-Skill bricht zusaetzlich hart ab, falls CSS oder `vendor/autoload.php` im finalen Tarball fehlen.
+
+**Gefahr bei vendor:** Ein `composer install` ohne `--no-dev` zieht phpunit & Co. in `vendor/`. Die `.gitignore`-Whitelist (`!vendor/autoload.php`, `!vendor/composer`, `!vendor/smalot`, `!vendor/symfony`) faengt das ab — Dev-Deps landen in keinem dieser Pfade und bleiben ignoriert. Vor dem Committen von vendor-Aenderungen: `composer install --no-dev` sicherstellen.
+
 #### Tarball-Whitelist (HART — alles andere = Abbruch)
 
 **Erlaubte Top-Level-Eintraege:**
-`appinfo/`, `lib/`, `js/`, `css/`, `img/`, `templates/`, `l10n/`, `CHANGELOG.md`, `README.md`, `LICENSE`
+`appinfo/`, `lib/`, `js/`, `css/`, `vendor/` (nur Runtime-Deps), `img/`, `templates/`, `l10n/`, `CHANGELOG.md`, `README.md`, `LICENSE`
 
 **appinfo/ darf nur enthalten:**
 `info.xml`, `routes.php`, `signature.json`
 
 **Verboten im Tarball (haeufige Fehler):**
-`node_modules/`, `src/`, `tests/`, `.git/`, `.github/`, `.claude/`, `docs/`, `vendor/` (dev-deps), `package.json`, `package-lock.json`, `webpack.config.js`, `composer.json`, `composer.lock`, `phpunit.xml`, `*.crt`, `*.csr`, `*.key`, `.htaccess`, `.user.ini`
+`node_modules/`, `src/`, `tests/`, `.git/`, `.github/`, `.claude/`, `docs/`, `vendor/`-**Dev-Deps** (phpunit/ocp — Runtime-Deps sind dagegen PFLICHT), `package.json`, `package-lock.json`, `webpack.config.js`, `vite.config.js`, `composer.json`, `composer.lock`, `phpunit.xml`, `*.crt`, `*.csr`, `*.key`, `.htaccess`, `.user.ini`
 
 #### Schritt-fuer-Schritt Release-Workflow
 
