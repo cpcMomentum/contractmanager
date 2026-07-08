@@ -3,6 +3,7 @@ import {
 	addPeriod,
 	applyDeadlineType,
 	calculateCancellationDeadline,
+	getDeadlineInfo,
 	getEffectiveEndDate,
 	parsePeriod,
 	subtractPeriod,
@@ -224,5 +225,93 @@ describe('calculateCancellationDeadline — "zum Monatsende" (#159)', () => {
 	// loop" would yield 2027-06-30 here.
 	it('does not skip a month-end deadline that is still upcoming this period', () => {
 		expect(ymd(calculateCancellationDeadline(new Date(2026, 6, 10), '1 month', 'auto_renewal', '12 months', { deadlineType: 'month_end' }))).toBe('2026-06-30')
+	})
+})
+
+describe('getDeadlineInfo (#252)', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+	})
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it('labels the cancellation deadline of an active auto_renewal contract as "cancelBy"', () => {
+		const info = getDeadlineInfo({
+			status: 'active',
+			contractType: 'auto_renewal',
+			endDate: '2026-12-31',
+			renewalPeriod: '12 months',
+			cancellationPeriod: '3 months',
+		})
+		expect(info.labelKey).toBe('cancelBy')
+		expect(ymd(info.date)).toBe('2026-09-30')
+	})
+
+	it('labels the cancelledTo date of a cancelled contract as "cancelledTo"', () => {
+		const info = getDeadlineInfo({
+			status: 'cancelled',
+			contractType: 'auto_renewal',
+			endDate: '2026-12-31',
+			renewalPeriod: '12 months',
+			cancellationPeriod: '3 months',
+			cancelledTo: '2027-03-31',
+		})
+		expect(info.labelKey).toBe('cancelledTo')
+		expect(ymd(info.date)).toBe('2027-03-31')
+	})
+
+	it('falls back to the end date for a cancelled contract without cancelledTo', () => {
+		const info = getDeadlineInfo({
+			status: 'cancelled',
+			contractType: 'auto_renewal',
+			endDate: '2026-12-31',
+			renewalPeriod: '12 months',
+		})
+		expect(info.labelKey).toBe('cancelledTo')
+		expect(ymd(info.date)).toBe('2026-12-31')
+	})
+
+	it('labels an ended contract as "cancelledTo"', () => {
+		const info = getDeadlineInfo({
+			status: 'ended',
+			contractType: 'fixed',
+			endDate: '2026-03-31',
+			cancelledTo: '2026-03-31',
+		})
+		expect(info.labelKey).toBe('cancelledTo')
+		expect(ymd(info.date)).toBe('2026-03-31')
+	})
+
+	it('labels the end date of an active fixed contract as "runsUntil"', () => {
+		const info = getDeadlineInfo({
+			status: 'active',
+			contractType: 'fixed',
+			endDate: '2027-06-30',
+		})
+		expect(info.labelKey).toBe('runsUntil')
+		expect(ymd(info.date)).toBe('2027-06-30')
+	})
+
+	it('labels the rolled effective end date of an active auto_renewal contract WITHOUT cancellation period as "runsUntil"', () => {
+		const info = getDeadlineInfo({
+			status: 'active',
+			contractType: 'auto_renewal',
+			endDate: '2026-01-31', // past → rolls forward by renewal period
+			renewalPeriod: '12 months',
+		})
+		expect(info.labelKey).toBe('runsUntil')
+		expect(ymd(info.date)).toBe('2027-01-31')
+	})
+
+	it('returns no date and no label when the contract has no end date', () => {
+		const info = getDeadlineInfo({
+			status: 'active',
+			contractType: 'fixed',
+			endDate: null,
+		})
+		expect(info.date).toBeNull()
+		expect(info.labelKey).toBeNull()
 	})
 })
