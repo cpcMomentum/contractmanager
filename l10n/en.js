@@ -249,6 +249,8 @@ OC.L10N.register(
     "Dokument analysieren" : "Analyze document",
     "Einmalig" : "One-time",
     "Enddatum muss nach dem Startdatum liegen" : "End date must be after start date",
+    "Enddatum muss nach dem Startdatum liegen. Zum Entfernen des Enddatums das ×-Symbol neben dem Feld nutzen." : "End date must be after start date. Use the × symbol next to the field to remove the end date.",
+    "Unbefristete Verträge haben kein Enddatum." : "Unlimited contracts have no end date.",
     "Enddatum: Bitte gültiges Datum im Format TT.MM.JJJJ eingeben" : "End date: Please enter a valid date in DD.MM.YYYY format",
     "Erinnerungen sind nur mit gesetztem Enddatum möglich." : "Reminders are only available when an end date is set.",
     "Externer Link" : "External link",
