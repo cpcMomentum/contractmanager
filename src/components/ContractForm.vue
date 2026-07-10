@@ -23,7 +23,7 @@
 							<span>{{ t('contractmanager', 'Vertragstyp') }}</span>
 							<b>{{ summaryTypeLabel }}</b>
 						</div>
-						<div v-if="form.endDate" class="fact">
+						<div v-if="endDateApplicable && form.endDate" class="fact">
 							<span>{{ form.contractType === 'auto_renewal' ? t('contractmanager', 'Endet') : t('contractmanager', 'Läuft aus') }}</span>
 							<b>{{ formatDateDisplay(form.endDate) }}</b>
 						</div>
@@ -144,8 +144,8 @@
 								<input v-model="endDateStr"
 									type="date"
 									class="cm-input"
-									:disabled="readOnly">
-								<NcButton v-if="form.endDate && !readOnly"
+									:disabled="readOnly || !endDateApplicable">
+								<NcButton v-if="endDateApplicable && form.endDate && !readOnly"
 									variant="tertiary"
 									:title="t('contractmanager', 'Enddatum entfernen (unbefristet)')"
 									@click="form.endDate = null">
@@ -154,6 +154,9 @@
 									</template>
 								</NcButton>
 							</div>
+							<p v-if="!endDateApplicable" class="cm-hint">
+								{{ t('contractmanager', 'Unbefristete Verträge haben kein Enddatum.') }}
+							</p>
 						</div>
 					</div>
 
@@ -409,7 +412,7 @@
 				<!-- Erinnerung -->
 				<div class="form-section">
 					<h3>{{ t('contractmanager', 'Erinnerung') }}</h3>
-					<NcNoteCard v-if="!form.endDate" type="warning">
+					<NcNoteCard v-if="!endDateApplicable || !form.endDate" type="warning">
 						{{ t('contractmanager', 'Erinnerungen sind nur mit gesetztem Enddatum möglich.') }}
 					</NcNoteCard>
 					<template v-else>
@@ -554,6 +557,7 @@ import { parsePeriod, calculateCancellationDeadline, getEffectiveEndDate } from 
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
 import { reminderEnabledForEndDate } from '../utils/reminderForm'
+import { isEndDateApplicable, endDateForSave } from '../utils/contractFormRules'
 import ContractService from '../services/ContractService'
 import ExtractionService from '../services/ExtractionService'
 import SettingsService from '../services/SettingsService'
@@ -642,6 +646,7 @@ export default {
 		},
 		endDateStr: {
 			get() {
+				if (!this.endDateApplicable) return ''
 				return this.form.endDate ? formatDateForInput(this.form.endDate) : ''
 			},
 			set(value) {
@@ -680,9 +685,14 @@ export default {
 				))
 			)
 		},
+		// Unbefristete Vertraege haben kein Enddatum (#257): Feld deaktiviert,
+		// ein in-memory gehaltener Wert wird ignoriert und nie gespeichert.
+		endDateApplicable() {
+			return isEndDateApplicable(this.form.contractType)
+		},
 		dateError() {
-			if (this.form.startDate && this.form.endDate && this.form.startDate >= this.form.endDate) {
-				return t('contractmanager', 'Enddatum muss nach dem Startdatum liegen')
+			if (this.endDateApplicable && this.form.startDate && this.form.endDate && this.form.startDate >= this.form.endDate) {
+				return t('contractmanager', 'Enddatum muss nach dem Startdatum liegen. Zum Entfernen des Enddatums das ×-Symbol neben dem Feld nutzen.')
 			}
 			return null
 		},
@@ -976,7 +986,7 @@ export default {
 		},
 		formToPayload() {
 			const startDate = this.form.startDate
-			const endDate = this.form.endDate
+			const endDate = endDateForSave(this.form.contractType, this.form.endDate)
 			return {
 				name: this.form.name.trim(),
 				vendor: this.form.vendor.trim(),

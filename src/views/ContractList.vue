@@ -141,7 +141,7 @@
 				<span class="col-name">{{ t('contractmanager', 'Vertrag') }}</span>
 				<span>{{ t('contractmanager', 'Status') }}</span>
 				<span class="col-cost">{{ t('contractmanager', 'Kosten') }}</span>
-				<span>{{ t('contractmanager', 'Kündigen bis') }}</span>
+				<span>{{ t('contractmanager', 'Frist / Ende') }}</span>
 				<span aria-hidden="true" />
 			</div>
 			<div class="contract-list__items">
@@ -206,7 +206,7 @@ import CloseIcon from 'vue-material-design-icons/Close.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
-import { calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
+import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
@@ -273,7 +273,7 @@ export default {
 				{ key: 'name', label: t('contractmanager', 'Name'), defaultDirection: 'asc' },
 				{ key: 'updatedAt', label: t('contractmanager', 'Zuletzt geändert'), defaultDirection: 'desc' },
 				{ key: 'cost', label: t('contractmanager', 'Kosten'), defaultDirection: 'desc' },
-				{ key: 'cancellationDeadline', label: t('contractmanager', 'Kündigen bis'), defaultDirection: 'asc' },
+				{ key: 'cancellationDeadline', label: t('contractmanager', 'Frist / Ende'), defaultDirection: 'asc' },
 			],
 			showFilters: false,
 			filterVendor: filters.vendor || null,
@@ -596,18 +596,11 @@ export default {
 			}
 		},
 
-		// Date used to sort the "Kündigen bis" column. Mirrors
-		// ContractListItem.deadlineDisplay so the sort order matches what the
-		// column shows: cancellation deadline for auto_renewal (when it has one),
-		// otherwise the effective end date, otherwise the raw end date.
+		// Date used to sort the "Frist / Ende" column. Uses the SAME helper the
+		// column display uses (ContractListItem.deadlineInfo) so the sort order
+		// always matches what the column shows.
 		cancellationSortValue(c) {
-			if (c.contractType === 'auto_renewal') {
-				const deadline = calculateCancellationDeadline(c.endDate, c.cancellationPeriod, c.contractType, c.renewalPeriod, { status: c.status, cancelledTo: c.cancelledTo, deadlineType: c.cancellationDeadlineType })
-				if (deadline) return deadline
-			}
-			const end = getEffectiveEndDate(c.endDate, c.contractType, c.renewalPeriod, { status: c.status, cancelledTo: c.cancelledTo })
-			if (end) return end
-			return c.endDate ? new Date(c.endDate) : null
+			return getDeadlineInfo(c).date
 		},
 
 		sortContracts(contracts) {
@@ -637,12 +630,11 @@ export default {
 					cmp = (parseFloat(a.cost) || 0) - (parseFloat(b.cost) || 0)
 					break
 				case 'cancellationDeadline': {
-					// Sort by the SAME value the "Kündigen bis" column displays
-					// (see ContractListItem.deadlineDisplay): the cancellation
-					// deadline for auto_renewal, otherwise the effective end date.
-					// Using calculateCancellationDeadline alone dropped fixed
-					// contracts (no cancellationPeriod → null) to the bottom even
-					// though their end date is shown in the column (#217).
+					// Sort by the SAME value the "Frist / Ende" column displays:
+					// the cancellation deadline for auto_renewal, otherwise the
+					// effective end date. Using calculateCancellationDeadline alone
+					// dropped fixed contracts (no cancellationPeriod → null) to the
+					// bottom even though their end date is shown in the column (#217).
 					const deadlineA = this.cancellationSortValue(a)
 					const deadlineB = this.cancellationSortValue(b)
 					if (!deadlineA && !deadlineB) { cmp = 0; break }

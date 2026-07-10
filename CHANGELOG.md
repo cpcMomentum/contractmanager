@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-07-10
+
+### Fixed
+- Gekündigte Verträge zeigten ihr „gekündigt zum"-Datum unter dem irreführenden Spaltenkopf „Kündigen bis". Jede Zeile der Vertragsliste trägt jetzt ein kleines Label, das benennt, welches Datum gezeigt wird („Gekündigt zum" / „Kündigen bis" / „Läuft bis"); der Spaltenkopf heißt neutral „Frist / Ende" (#252)
+- Unbefristete Verträge ließen sich nicht anlegen, wenn (z.B. durch eine fehlerhafte Jahres-Eingabe) ein Enddatum im Feld stand: Bei Vertragstyp „Unbefristet" ist das Enddatum-Feld jetzt deaktiviert und wird nie gespeichert — ein versehentliches Enddatum kann das Anlegen nicht mehr blockieren. Bei befristeten Verträgen nennt die Fehlermeldung jetzt den Ausweg (Enddatum per ×-Symbol entfernen) (#257)
+
+### Changed
+- Release-Härtung: Die Composer-Runtime-Abhängigkeiten (`vendor/`, u.a. der PDF-Parser) werden jetzt wie das kompilierte CSS mit ausgeliefert und sind über einen Packaging-Guard gegen versehentliches Weglassen im Release-Paket abgesichert. Verhindert eine Wiederholung der 1.2.0-Regression (#249, Follow-up zu #245)
+- Intern: Der automatische PR-Review-Workflow wurde gehärtet (Diff-Beschaffung, Berechtigungen, Abbruch-Verhalten) — keine Auswirkung auf die App selbst
+
 ## [1.2.1] - 2026-07-06
 
 ### Fixed
@@ -343,7 +353,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.0.4...v1.1.0

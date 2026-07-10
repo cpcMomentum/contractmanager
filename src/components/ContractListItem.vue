@@ -39,7 +39,8 @@
 			{{ contract.cost ? formatCost(contract.cost, contract.currency) : '—' }}
 		</div>
 		<div class="contract-list-item__deadline">
-			{{ deadlineDisplay }}
+			<span v-if="deadlineLabel" class="contract-list-item__deadline-label">{{ deadlineLabel }}</span>
+			<span>{{ deadlineDisplay }}</span>
 		</div>
 		<div class="contract-list-item__actions">
 			<NcButton v-if="contract.contractFolder"
@@ -139,7 +140,7 @@ import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
-import { formatPeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
+import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
 import { isEndingSoon, isExpiredFixed } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
@@ -190,18 +191,6 @@ export default {
 	},
 	computed: {
 		...mapState(useContractsStore, ['isAdmin', 'canEdit']),
-		cancellationDeadline() {
-			if (this.contract.status !== 'active') {
-				return null
-			}
-			return calculateCancellationDeadline(this.contract.endDate, this.contract.cancellationPeriod, this.contract.contractType, this.contract.renewalPeriod, { deadlineType: this.contract.cancellationDeadlineType })
-		},
-		effectiveEndDate() {
-			return getEffectiveEndDate(this.contract.endDate, this.contract.contractType, this.contract.renewalPeriod, {
-				status: this.contract.status,
-				cancelledTo: this.contract.cancelledTo,
-			})
-		},
 		endingSoon() {
 			return isEndingSoon(this.contract, this.defaultReminderDays)
 		},
@@ -225,14 +214,21 @@ export default {
 			}
 			return { cls: 'active', label: t('contractmanager', 'Laufend'), title: '' }
 		},
-		// Value for the "Kündigen bis" column: cancellation deadline for
-		// auto_renewal, otherwise the (effective) end date; em dash if neither.
+		// Value + semantics of the "Frist / Ende" column (#252): the shown date
+		// means different things per contract, so each row carries its own label.
+		deadlineInfo() {
+			return getDeadlineInfo(this.contract)
+		},
 		deadlineDisplay() {
-			if (this.contract.contractType === 'auto_renewal' && this.cancellationDeadline) {
-				return this.formatDate(this.cancellationDeadline)
+			return this.deadlineInfo.date ? this.formatDate(this.deadlineInfo.date) : '—'
+		},
+		deadlineLabel() {
+			const labels = {
+				cancelBy: t('contractmanager', 'Kündigen bis'),
+				cancelledTo: t('contractmanager', 'Gekündigt zum'),
+				runsUntil: t('contractmanager', 'Läuft bis'),
 			}
-			const end = this.effectiveEndDate || this.contract.endDate
-			return end ? this.formatDate(end) : '—'
+			return labels[this.deadlineInfo.labelKey] || null
 		},
 		deleteDialogButtons() {
 			return [
@@ -401,9 +397,17 @@ $st: (
 	}
 
 	&__deadline {
+		display: flex;
+		flex-direction: column;
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 		color: var(--color-main-text);
+	}
+
+	&__deadline-label {
+		font-size: 11px;
+		line-height: 1.3;
+		color: var(--color-text-maxcontrast);
 	}
 
 	&__actions {

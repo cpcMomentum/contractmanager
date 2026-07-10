@@ -193,6 +193,49 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod, option
 }
 
 /**
+ * Derive the value and semantics of the list's date column ("Frist / Ende")
+ * for one contract. The returned labelKey names WHICH date is shown, because
+ * the column mixes three cases (#252):
+ * - 'cancelBy':    active auto_renewal → upcoming cancellation deadline
+ * - 'cancelledTo': cancelled/ended → the date the contract was cancelled to
+ * - 'runsUntil':   everything else → (effective) end date
+ *
+ * @param {object} contract - Contract with endDate, contractType, status,
+ *   renewalPeriod, cancellationPeriod, cancellationDeadlineType, cancelledTo
+ * @returns {{ date: Date|null, labelKey: string|null }}
+ */
+export function getDeadlineInfo(contract) {
+	const options = {
+		status: contract.status,
+		cancelledTo: contract.cancelledTo,
+	}
+
+	if (contract.contractType === 'auto_renewal' && contract.status === 'active') {
+		const deadline = calculateCancellationDeadline(
+			contract.endDate,
+			contract.cancellationPeriod,
+			contract.contractType,
+			contract.renewalPeriod,
+			{ ...options, deadlineType: contract.cancellationDeadlineType },
+		)
+		if (deadline) {
+			return { date: deadline, labelKey: 'cancelBy' }
+		}
+	}
+
+	let end = getEffectiveEndDate(contract.endDate, contract.contractType, contract.renewalPeriod, options)
+	if (!end && contract.endDate) {
+		const parsed = new Date(contract.endDate)
+		if (!isNaN(parsed.getTime())) end = parsed
+	}
+	if (!end) {
+		return { date: null, labelKey: null }
+	}
+
+	return { date: end, labelKey: isCancelled(contract.status) ? 'cancelledTo' : 'runsUntil' }
+}
+
+/**
  * Move a date to the last calendar day of its month (e.g. the 21st → the 31st).
  * @param {Date} date
  * @returns {Date}
