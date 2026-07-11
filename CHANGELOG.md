@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-07-11
+
+### Fixed
+- Tab-Taste funktionierte in der gesamten App nicht mehr (seit 1.2.0): Die dauerhaft gemounteten, unsichtbaren Formular-Modals aktivierten ihre Fokus-Fallen schon beim Seitenladen und verschluckten jeden Tab-Druck. Die Modals werden jetzt erst beim Öffnen erzeugt; Esc schließt das Formular außerdem auch dann, wenn der Fokus in einem Eingabefeld steht (#266)
+- Datumseingabe: Beim Ziffer-für-Ziffer-Eintippen wurde das Jahr auf 19XX umgeschrieben (z.B. 1906 statt 2026) und die laufende Eingabe zerstört. Das Jahr lässt sich jetzt normal eintippen (#258)
+
 ## [1.2.2] - 2026-07-10
 
 ### Fixed
@@ -353,7 +359,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.2...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.3...HEAD
+[1.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.1.0...v1.2.0
