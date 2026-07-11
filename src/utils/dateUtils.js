@@ -36,7 +36,12 @@ export function parseLocalDate(dateString) {
 	const month = parseInt(parts[1], 10) - 1
 	const day = parseInt(parts[2], 10)
 	if (isNaN(year) || isNaN(month) || isNaN(day)) return null
-	return new Date(year, month, day)
+	// setFullYear statt Konstruktor: new Date(year, ...) mappt Jahre 0-99 auf
+	// 1900-1999 und macht damit Tipp-Zwischenstaende wie "0002" zu 1902 (#258)
+	const date = new Date(0)
+	date.setFullYear(year, month, day)
+	date.setHours(0, 0, 0, 0)
+	return date
 }
 
 /**
@@ -53,7 +58,9 @@ export function formatDateForInput(dateInput) {
 
 	// Use local date parts to avoid timezone conversion issues
 	// (toISOString() converts to UTC which can shift the date by -1 day)
-	const year = date.getFullYear()
+	// Jahr auf 4 Stellen padden: <input type="date"> verlangt YYYY-MM-DD,
+	// sonst zerstoert der v-model-Writeback Tipp-Zwischenstaende (#258)
+	const year = String(date.getFullYear()).padStart(4, '0')
 	const month = String(date.getMonth() + 1).padStart(2, '0')
 	const day = String(date.getDate()).padStart(2, '0')
 	return `${year}-${month}-${day}`

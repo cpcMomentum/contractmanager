@@ -1,9 +1,16 @@
 <template>
-	<NcModal :show="show"
+	<!-- v-if: NcModal darf erst beim Oeffnen gemountet werden, sonst aktiviert
+	     sein Focus-Trap schon beim Seitenladen und verschluckt Tab app-weit (#266) -->
+	<NcModal v-if="show"
+		:show="show"
 		:name="readOnly ? t('contractmanager', 'Vertragsdetails') : (isEdit ? t('contractmanager', 'Vertrag bearbeiten') : t('contractmanager', 'Neuer Vertrag'))"
 		size="large"
 		@close="$emit('close')">
-		<div class="contract-form" :class="{ 'contract-form--readonly': readOnly }">
+		<!-- Esc schliesst auch mit Fokus in einem Eingabefeld. NcModals eigener
+		     Esc-Handler (useHotKey) ignoriert Events aus Inputs. -->
+		<div class="contract-form"
+			:class="{ 'contract-form--readonly': readOnly }"
+			@keydown.esc="onEscape">
 			<form @submit.prevent="handleSubmit">
 				<!-- Summary header (existing contracts): key facts at a glance -->
 				<div v-if="isEdit || readOnly" class="form-summary">
@@ -844,6 +851,14 @@ export default {
 		this.loadVendorOptions()
 	},
 	methods: {
+		onEscape(event) {
+			// Esc in einem offenen Dropdown (NcSelect) soll nur das Dropdown
+			// schliessen, nicht das ganze Modal
+			if (event.target.closest('.v-select.vs--open')) {
+				return
+			}
+			this.$emit('close')
+		},
 		// Lazy-load a first batch of users when the picker is first opened, so the
 		// dropdown is not empty before typing. The backend returns up to 25 users
 		// for an empty query; typing then narrows it server-side.
