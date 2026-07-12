@@ -35,7 +35,7 @@
 							<b>{{ formatDateDisplay(form.endDate) }}</b>
 						</div>
 						<div v-if="showCancellationDeadline" class="fact">
-							<span>{{ t('contractmanager', 'Kündigen bis') }}</span>
+							<span>{{ t('contractmanager', 'Kündbar bis') }}</span>
 							<b>{{ calculatedCancellationDeadline }}</b>
 						</div>
 						<div v-if="form.cost" class="fact">
@@ -217,7 +217,7 @@
 							</p>
 						</div>
 						<label v-if="showCancellationDeadline" class="cm-field">
-							<span>{{ t('contractmanager', 'Kündigen bis (berechnet)') }}</span>
+							<span>{{ t('contractmanager', 'Kündbar bis (berechnet)') }}</span>
 							<input :value="calculatedCancellationDeadline" class="cm-input" disabled>
 						</label>
 					</div>
