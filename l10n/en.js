@@ -74,6 +74,7 @@ OC.L10N.register(
     "Duplizieren" : "Duplicate",
     "Kopie" : "Copy",
     "Laufend" : "Active",
+    "Befristeter Vertrag, endet automatisch zum Enddatum." : "Fixed-term contract, ends automatically on the end date.",
     "Gekündigt" : "Cancelled",
     "Beendet" : "Ended",
     "Vertrag bearbeiten" : "Edit contract",
