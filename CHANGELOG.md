@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-07-12
+
+### Added
+- Befristete Verträge sind in der Vertragsliste und im Formular jetzt auf einen Blick erkennbar: Der Status-Chip „Laufend" und der farbige Akzentbalken erscheinen bei ihnen in einem dunkleren Grün, ein Tooltip erklärt die Befristung (#277)
+
+### Changed
+- Das Datums-Label „Kündigen bis" heißt jetzt „Kündbar bis" — es beschreibt neutral, bis wann gekündigt werden kann, statt wie eine Aufforderung zu klingen. Gilt für die Vertragsliste und das Formular (dort auch „Kündbar bis (berechnet)") (#275)
+
 ## [1.2.3] - 2026-07-11
 
 ### Fixed
@@ -359,7 +367,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...HEAD
+[1.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.0...v1.2.1

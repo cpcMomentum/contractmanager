@@ -35,7 +35,7 @@
 							<b>{{ formatDateDisplay(form.endDate) }}</b>
 						</div>
 						<div v-if="showCancellationDeadline" class="fact">
-							<span>{{ t('contractmanager', 'Kündigen bis') }}</span>
+							<span>{{ t('contractmanager', 'Kündbar bis') }}</span>
 							<b>{{ calculatedCancellationDeadline }}</b>
 						</div>
 						<div v-if="form.cost" class="fact">
@@ -217,7 +217,7 @@
 							</p>
 						</div>
 						<label v-if="showCancellationDeadline" class="cm-field">
-							<span>{{ t('contractmanager', 'Kündigen bis (berechnet)') }}</span>
+							<span>{{ t('contractmanager', 'Kündbar bis (berechnet)') }}</span>
 							<input :value="calculatedCancellationDeadline" class="cm-input" disabled>
 						</label>
 					</div>
@@ -710,6 +710,9 @@ export default {
 			}
 			if (this.form.contractStatus === 'ended') {
 				return { cls: 'ended', label: t('contractmanager', 'Beendet') }
+			}
+			if (this.form.contractType === 'fixed') {
+				return { cls: 'active-fixed', label: t('contractmanager', 'Laufend') }
 			}
 			return { cls: 'active', label: t('contractmanager', 'Laufend') }
 		},
@@ -1326,6 +1329,7 @@ export default {
 	white-space: nowrap;
 
 	&--active { background: #eaf5ee; color: #2f7d49; }
+	&--active-fixed { background: #dcefe3; color: #1d5c33; }
 	&--cancelled { background: #fef3c7; color: #92400e; }
 	&--ended { background: #efefef; color: #5a5a5a; }
 }
