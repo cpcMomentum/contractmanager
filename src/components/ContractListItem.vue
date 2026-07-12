@@ -224,7 +224,7 @@ export default {
 		},
 		deadlineLabel() {
 			const labels = {
-				cancelBy: t('contractmanager', 'Kündigen bis'),
+				cancelBy: t('contractmanager', 'Kündbar bis'),
 				cancelledTo: t('contractmanager', 'Gekündigt zum'),
 				runsUntil: t('contractmanager', 'Läuft bis'),
 			}
