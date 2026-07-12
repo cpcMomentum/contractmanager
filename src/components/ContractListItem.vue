@@ -212,6 +212,9 @@ export default {
 			if (this.contract.status === 'ended') {
 				return { cls: 'ended', label: t('contractmanager', 'Beendet'), title: '' }
 			}
+			if (this.contract.contractType === 'fixed') {
+				return { cls: 'active-fixed', label: t('contractmanager', 'Laufend'), title: t('contractmanager', 'Befristeter Vertrag, endet automatisch zum Enddatum.') }
+			}
 			return { cls: 'active', label: t('contractmanager', 'Laufend'), title: '' }
 		},
 		// Value + semantics of the "Frist / Ende" column (#252): the shown date
@@ -331,6 +334,7 @@ export default {
 /* Status-Farbpalette (aus WorkTime/Vinarium übernommen) */
 $st: (
 	active:    (#eaf5ee, #2f7d49),
+	active-fixed: (#dcefe3, #1d5c33),
 	soon:      (#fbf3e6, #9a6c25),
 	cancelled: (#fef3c7, #92400e),
 	ended:     (#efefef, #5a5a5a),
