@@ -27,7 +27,6 @@
 		</div>
 		<div class="contract-list-item__status">
 			<span class="cm-chip" :class="'cm-chip--' + statusChip.cls" :title="statusChip.title">
-				<BellRingIcon v-if="statusChip.cls === 'soon'" :size="14" />
 				{{ statusChip.label }}
 			</span>
 			<span v-if="contract.isPrivate" class="cm-chip cm-chip--lock" :title="t('contractmanager', 'Privater Vertrag (nur für mich sichtbar)')">
@@ -137,11 +136,10 @@ import LockIcon from 'vue-material-design-icons/Lock.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import FolderOpenIcon from 'vue-material-design-icons/FolderOpen.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
-import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import { generateUrl } from '@nextcloud/router'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
-import { isEndingSoon, isExpiredFixed } from '../utils/contractStatus'
+import { isEndingSoon, isEndingSoonFixed, isExpiredFixed } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
@@ -161,7 +159,6 @@ export default {
 		FileDocumentIcon,
 		FolderOpenIcon,
 		ContentDuplicate,
-		BellRingIcon,
 	},
 	props: {
 		contract: {
@@ -194,6 +191,9 @@ export default {
 		endingSoon() {
 			return isEndingSoon(this.contract, this.defaultReminderDays)
 		},
+		endingSoonFixed() {
+			return isEndingSoonFixed(this.contract, this.defaultReminderDays)
+		},
 		expiredFixed() {
 			return isExpiredFixed(this.contract)
 		},
@@ -205,6 +205,9 @@ export default {
 			}
 			if (this.endingSoon) {
 				return { cls: 'soon', label: t('contractmanager', 'Kündigungsfrist endet'), title: t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.') }
+			}
+			if (this.endingSoonFixed) {
+				return { cls: 'soon', label: t('contractmanager', 'endet'), title: t('contractmanager', 'Der befristete Vertrag läuft in Kürze aus.') }
 			}
 			if (this.contract.status === 'cancelled') {
 				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt'), title: '' }

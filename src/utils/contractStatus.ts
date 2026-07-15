@@ -47,6 +47,37 @@ export function isEndingSoon(
 }
 
 /**
+ * "Ending soon" (fixed) — a fixed-term contract whose end date is approaching
+ * (today ≤ endDate ≤ today + N days) but not yet passed. Fixed contracts have
+ * no cancellation deadline, so the warning is measured against the end date
+ * itself (#238).
+ *
+ * The auto_renewal counterpart `isEndingSoon` warns before the cancellation
+ * deadline; this one warns before the contract simply expires. UI-only derived
+ * state — the underlying status stays `active`.
+ */
+export function isEndingSoonFixed(
+	contract: Contract,
+	defaultReminderDays: number = DEFAULT_REMINDER_DAYS_1,
+): boolean {
+	if (contract.status !== 'active') return false
+	if (contract.contractType !== 'fixed') return false
+	if (!contract.endDate) return false
+
+	const reminderDays = contract.reminderDays ?? defaultReminderDays
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+
+	const end = new Date(contract.endDate)
+	end.setHours(0, 0, 0, 0)
+
+	const windowStart = new Date(end)
+	windowStart.setDate(windowStart.getDate() - reminderDays)
+
+	return today >= windowStart && today <= end
+}
+
+/**
  * "Expired" — a fixed contract whose end date is in the past but whose status
  * has not yet been flipped to `ended` by the background job. The job runs on
  * a schedule (every 6h), so there is a window where this can happen.
