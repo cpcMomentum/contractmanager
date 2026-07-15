@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Befristete Verträge zeigen jetzt einen eigenen Frühwarn-Chip „endet", wenn ihr Enddatum ins Erinnerungsfenster fällt — bisher gab es diesen Hinweis nur bei Verträgen mit Kündigungsfrist (#238)
+
 ## [1.2.4] - 2026-07-12
 
 ### Added
