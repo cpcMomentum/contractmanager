@@ -24,6 +24,8 @@ OC.L10N.register(
     "{count} Verträge übertragen" : "{count} Verträge übertragen",
     "Übertragung fehlgeschlagen" : "Übertragung fehlgeschlagen",
     "Kündigungsfrist endet" : "Kündigungsfrist endet",
+    "endet" : "endet",
+    "Der befristete Vertrag läuft in Kürze aus." : "Der befristete Vertrag läuft in Kürze aus.",
     "Cancellation reminder" : "Kündigungserinnerung",
     "The contract \"%1$s\" must be cancelled by **%2$s**." : "Der Vertrag „%1$s\" muss bis zum **%2$s** gekündigt werden.",
     "This is the first reminder." : "Dies ist die erste Erinnerung.",

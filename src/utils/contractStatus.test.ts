@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isExpiredFixed } from './contractStatus'
+import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isEndingSoonFixed, isExpiredFixed } from './contractStatus'
 import type { Contract } from '../store/contracts'
 
 /**
@@ -101,6 +101,62 @@ describe('isEndingSoon', () => {
 		// so the window predicate returns false.
 		const contract = autoRenewal({ endDate: daysFromNow(60), cancellationPeriod: '90 days' })
 		expect(isEndingSoon(contract)).toBe(false)
+	})
+})
+
+describe('isEndingSoonFixed', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+	})
+
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it('is true when the end date is inside the default 14-day window', () => {
+		expect(isEndingSoonFixed(fixed({ endDate: daysFromNow(10) }))).toBe(true)
+	})
+
+	it('is true on the exact end date (still running, but warning)', () => {
+		expect(isEndingSoonFixed(fixed({ endDate: daysFromNow(0) }))).toBe(true)
+	})
+
+	it('is false when the end date is beyond the reminder window', () => {
+		// Default fixed() end date is 30 days out → outside the 14-day window.
+		expect(isEndingSoonFixed(fixed())).toBe(false)
+	})
+
+	it('is false once the end date has passed (expired takes over)', () => {
+		expect(isEndingSoonFixed(fixed({ endDate: daysFromNow(-1) }))).toBe(false)
+	})
+
+	it('respects a per-contract reminderDays override', () => {
+		// End date 30 days out, override window to 45 days → inside the window.
+		expect(isEndingSoonFixed(fixed({ reminderDays: 45 }))).toBe(true)
+	})
+
+	it('uses the supplied default reminder days when no override is set', () => {
+		const contract = fixed({ endDate: daysFromNow(25) })
+		expect(isEndingSoonFixed(contract, DEFAULT_REMINDER_DAYS_1)).toBe(false)
+		expect(isEndingSoonFixed(contract, 30)).toBe(true)
+	})
+
+	it('is false for auto_renewal contracts (they use the cancellation-deadline warning)', () => {
+		const contract = autoRenewal({ endDate: daysFromNow(10) })
+		expect(isEndingSoonFixed(contract)).toBe(false)
+	})
+
+	it('is false for cancelled contracts', () => {
+		expect(isEndingSoonFixed(fixed({ status: 'cancelled', endDate: daysFromNow(10) }))).toBe(false)
+	})
+
+	it('is false once the status has already flipped to "ended"', () => {
+		expect(isEndingSoonFixed(fixed({ status: 'ended', endDate: daysFromNow(10) }))).toBe(false)
+	})
+
+	it('is false when the end date is missing', () => {
+		expect(isEndingSoonFixed(fixed({ endDate: null }))).toBe(false)
 	})
 })
 
