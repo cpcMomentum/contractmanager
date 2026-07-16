@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Befristete Verträge zeigen jetzt einen eigenen Frühwarn-Chip „endet", wenn ihr Enddatum ins Erinnerungsfenster fällt — bisher gab es diesen Hinweis nur bei Verträgen mit Kündigungsfrist (#238)
+- Status-Chips und Akzentbalken haben jetzt eigene Dark-Mode-Farben und bleiben im dunklen Nextcloud-Theme gut lesbar (#204)
+
+### Changed
+- Währungsbeträge werden jetzt in der Sprache/Region der Nextcloud-Oberfläche formatiert statt fest in deutschem Format (#204)
 
 ## [1.2.4] - 2026-07-12
 

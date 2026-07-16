@@ -558,6 +558,7 @@ import FileSearchIcon from 'vue-material-design-icons/FileSearch.vue'
 import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import { loadState } from '@nextcloud/initial-state'
 import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
@@ -723,7 +724,7 @@ export default {
 		summaryCostLabel() {
 			const amount = parseFloat(this.form.cost)
 			if (!Number.isFinite(amount)) return '—'
-			return new Intl.NumberFormat('de-DE', { style: 'currency', currency: this.form.currency || 'EUR' }).format(amount)
+			return new Intl.NumberFormat(getCanonicalLocale(), { style: 'currency', currency: this.form.currency || 'EUR' }).format(amount)
 		},
 		categoryOptions() {
 			return [
@@ -1332,6 +1333,24 @@ export default {
 	&--active-fixed { background: #dcefe3; color: #1d5c33; }
 	&--cancelled { background: #fef3c7; color: #92400e; }
 	&--ended { background: #efefef; color: #5a5a5a; }
+
+	// Dark-Mode: gleiche Farbtöne wie in der Liste (#204), dunkler Grund + heller
+	// Text. Explizit gewähltes NC-Theme oder System-Präferenz.
+	@mixin chip-dark {
+		&--active { background: #17301f; color: #6fbf87; }
+		&--active-fixed { background: #16281c; color: #63c081; }
+		&--cancelled { background: #3a2713; color: #e08a4a; }
+		&--ended { background: #2b2b2b; color: #a8a8a8; }
+	}
+	body[data-theme-dark] &,
+	body[data-theme-dark-highcontrast] & {
+		@include chip-dark;
+	}
+	@media (prefers-color-scheme: dark) {
+		body[data-theme-default] & {
+			@include chip-dark;
+		}
+	}
 }
 
 /*
