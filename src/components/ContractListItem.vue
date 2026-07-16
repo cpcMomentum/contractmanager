@@ -137,6 +137,7 @@ import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import FolderOpenIcon from 'vue-material-design-icons/FolderOpen.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import { generateUrl } from '@nextcloud/router'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
 import { isEndingSoon, isEndingSoonFixed, isExpiredFixed } from '../utils/contractStatus'
@@ -276,7 +277,7 @@ export default {
 		formatCost(cost, currency) {
 			if (!cost) return ''
 			const amount = parseFloat(cost)
-			return new Intl.NumberFormat('de-DE', {
+			return new Intl.NumberFormat(getCanonicalLocale(), {
 				style: 'currency',
 				currency: currency || 'EUR',
 			}).format(amount)
