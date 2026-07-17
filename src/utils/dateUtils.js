@@ -2,8 +2,11 @@
  * Date utility functions for ContractManager
  */
 
+import { getCanonicalLocale } from '@nextcloud/l10n'
+
 /**
- * Formats a date string or Date object as DD.MM.YYYY
+ * Formats a date string or Date object for display, following the Nextcloud
+ * interface locale (e.g. DD.MM.YYYY for German, MM/DD/YYYY for US English).
  * @param {string|Date|null} dateInput - ISO date string or Date object
  * @returns {string} Formatted date or empty string if invalid
  */
@@ -14,7 +17,7 @@ export function formatDate(dateInput) {
 
 	if (isNaN(date.getTime())) return ''
 
-	return date.toLocaleDateString('de-DE', {
+	return date.toLocaleDateString(getCanonicalLocale(), {
 		day: '2-digit',
 		month: '2-digit',
 		year: 'numeric',

@@ -23,6 +23,8 @@
 		"{count} Verträge übertragen": "{count} contracts transferred",
 		"Übertragung fehlgeschlagen": "Transfer failed",
 		"Kündigungsfrist endet": "Cancellation deadline approaching",
+		"endet": "Ending soon",
+		"Der befristete Vertrag läuft in Kürze aus.": "The fixed-term contract is ending soon.",
 		"Cancellation reminder": "Cancellation reminder",
 		"The contract \"%1$s\" must be cancelled by **%2$s**.": "The contract \"%1$s\" must be cancelled by **%2$s**.",
 		"This is the first reminder.": "This is the first reminder.",
