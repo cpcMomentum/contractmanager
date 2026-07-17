@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-07-17
+
 ### Added
 - Befristete Verträge zeigen jetzt einen eigenen Frühwarn-Chip „endet", wenn ihr Enddatum ins Erinnerungsfenster fällt — bisher gab es diesen Hinweis nur bei Verträgen mit Kündigungsfrist (#238)
 - Status-Chips und Akzentbalken haben jetzt eigene Dark-Mode-Farben und bleiben im dunklen Nextcloud-Theme gut lesbar (#204)
@@ -378,7 +380,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.5...HEAD
+[1.2.5]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.1...v1.2.2
