@@ -137,6 +137,7 @@ import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import FolderOpenIcon from 'vue-material-design-icons/FolderOpen.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import { generateUrl } from '@nextcloud/router'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
 import { isEndingSoon, isEndingSoonFixed, isExpiredFixed } from '../utils/contractStatus'
@@ -276,7 +277,7 @@ export default {
 		formatCost(cost, currency) {
 			if (!cost) return ''
 			const amount = parseFloat(cost)
-			return new Intl.NumberFormat('de-DE', {
+			return new Intl.NumberFormat(getCanonicalLocale(), {
 				style: 'currency',
 				currency: currency || 'EUR',
 			}).format(amount)
@@ -344,6 +345,32 @@ $st: (
 	expired:   (#fbecea, #b03b33),
 );
 
+/* Dark-Mode-Entsprechung (#204): gleiche Farbtöne, dunkler Grund + hellerer
+   Text, damit die Chips auf dunklem Hintergrund lesbar bleiben. Bewusst eigene
+   Werte statt NC-Variablen, um die kräftige Signalwirkung zu erhalten. */
+$st-dark: (
+	active:    (#17301f, #6fbf87),
+	active-fixed: (#16281c, #63c081),
+	soon:      (#33291a, #e0b15a),
+	cancelled: (#3a2713, #e08a4a),
+	ended:     (#2b2b2b, #a8a8a8),
+	expired:   (#3a201d, #ef8177),
+);
+
+/* Chip-Hintergrund/Text im Dark-Mode. */
+@mixin chip-dark {
+	@each $name, $colors in $st-dark {
+		&--#{$name} { background: nth($colors, 1); color: nth($colors, 2); }
+	}
+}
+
+/* Akzentbalken der Listenzeile im Dark-Mode (heller Textton). */
+@mixin accent-dark {
+	@each $name, $colors in $st-dark {
+		&--#{$name} .contract-list-item__accent { background: nth($colors, 2); }
+	}
+}
+
 /* Shared column layout — MUST match .contract-list__thead in ContractList.vue */
 .contract-list-item {
 	display: grid;
@@ -371,6 +398,17 @@ $st: (
 
 	@each $name, $colors in $st {
 		&--#{$name} .contract-list-item__accent { background: nth($colors, 2); }
+	}
+
+	// Dark-Mode: explizit gewähltes NC-Theme oder System-Präferenz (#204).
+	body[data-theme-dark] &,
+	body[data-theme-dark-highcontrast] & {
+		@include accent-dark;
+	}
+	@media (prefers-color-scheme: dark) {
+		body[data-theme-default] & {
+			@include accent-dark;
+		}
 	}
 
 	&__name {
@@ -451,6 +489,19 @@ $st: (
 	}
 
 	&--lock { background: #fbf3e6; color: #9a6c25; }
+
+	// Dark-Mode: explizit gewähltes NC-Theme oder System-Präferenz (#204).
+	body[data-theme-dark] &,
+	body[data-theme-dark-highcontrast] & {
+		@include chip-dark;
+		&--lock { background: #33291a; color: #e0b15a; }
+	}
+	@media (prefers-color-scheme: dark) {
+		body[data-theme-default] & {
+			@include chip-dark;
+			&--lock { background: #33291a; color: #e0b15a; }
+		}
+	}
 }
 
 .delete-action {

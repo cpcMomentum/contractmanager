@@ -188,6 +188,7 @@ import { mapState, mapActions } from 'pinia'
 import { useContractsStore } from '../store/contracts'
 import { useCategoriesStore } from '../store/categories'
 import { loadState } from '@nextcloud/initial-state'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -404,7 +405,7 @@ export default {
 		kpiMonthlyLabel() {
 			// "ca." signals deliberately that this is a rough monthly estimate, not
 			// a cent-exact figure (netto/brutto mixing, part-month expiry, etc. — #215).
-			const formatted = new Intl.NumberFormat('de-DE', { style: 'currency', currency: this.kpiLeadCurrency }).format(this.kpiMonthlyTotal)
+			const formatted = new Intl.NumberFormat(getCanonicalLocale(), { style: 'currency', currency: this.kpiLeadCurrency }).format(this.kpiMonthlyTotal)
 			return t('contractmanager', 'ca. {amount}', { amount: formatted })
 		},
 		kpiMonthlySub() {
