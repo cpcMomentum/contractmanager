@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Währungsbeträge werden jetzt in der Sprache/Region der Nextcloud-Oberfläche formatiert statt fest in deutschem Format (#204)
 - Datumsangaben folgen jetzt ebenfalls der Sprache/Region der Nextcloud-Oberfläche statt fest im deutschen Format (Nachgang zu #204)
 
+### Security
+- Abhängigkeiten aktualisiert und alle offenen Sicherheitswarnungen behoben (u.a. dompurify, form-data, vite, esbuild, js-yaml, fast-xml-parser); `npm audit` meldet keine Schwachstellen mehr
+
 ## [1.2.4] - 2026-07-12
 
 ### Added
