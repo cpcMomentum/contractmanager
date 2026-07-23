@@ -559,6 +559,7 @@ import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { getCanonicalLocale } from '@nextcloud/l10n'
+import { isPlanned } from '../utils/contractStatus'
 import { loadState } from '@nextcloud/initial-state'
 import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
@@ -706,6 +707,9 @@ export default {
 		},
 		// --- Summary-Header (Eckdaten oben im Modal) ---
 		summaryChip() {
+			if (isPlanned({ status: this.form.contractStatus, startDate: this.form.startDate })) {
+				return { cls: 'planned', label: t('contractmanager', 'Geplant') }
+			}
 			if (this.form.contractStatus === 'cancelled') {
 				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt') }
 			}
@@ -1329,6 +1333,7 @@ export default {
 	font-weight: 600;
 	white-space: nowrap;
 
+	&--planned { background: #e6eefb; color: #2f5aa8; }
 	&--active { background: #eaf5ee; color: #2f7d49; }
 	&--active-fixed { background: #dcefe3; color: #1d5c33; }
 	&--cancelled { background: #fef3c7; color: #92400e; }
@@ -1337,6 +1342,7 @@ export default {
 	// Dark-Mode: gleiche Farbtöne wie in der Liste (#204), dunkler Grund + heller
 	// Text. Explizit gewähltes NC-Theme oder System-Präferenz.
 	@mixin chip-dark {
+		&--planned { background: #182842; color: #7ba3e6; }
 		&--active { background: #17301f; color: #6fbf87; }
 		&--active-fixed { background: #16281c; color: #63c081; }
 		&--cancelled { background: #3a2713; color: #e08a4a; }

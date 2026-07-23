@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isEndingSoonFixed, isExpiredFixed } from './contractStatus'
+import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled, isPlanned } from './contractStatus'
 import type { Contract } from '../store/contracts'
 
 /**
@@ -193,5 +193,87 @@ describe('isExpiredFixed', () => {
 
 	it('is false when end date is missing', () => {
 		expect(isExpiredFixed(fixed({ endDate: null }))).toBe(false)
+	})
+})
+
+describe('isEndedCancelled', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+	})
+
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	function cancelled(overrides: Partial<Contract> = {}): Contract {
+		return {
+			id: 3,
+			status: 'cancelled',
+			contractType: 'auto_renewal',
+			endDate: daysFromNow(60),
+			cancelledOn: daysFromNow(-5),
+			cancelledTo: daysFromNow(0),
+			...overrides,
+		} as Contract
+	}
+
+	it('is true on the exact "cancelled to" date (inclusive, matches the archival job)', () => {
+		expect(isEndedCancelled(cancelled({ cancelledTo: daysFromNow(0) }))).toBe(true)
+	})
+
+	it('is true once the "cancelled to" date has passed', () => {
+		expect(isEndedCancelled(cancelled({ cancelledTo: daysFromNow(-3) }))).toBe(true)
+	})
+
+	it('is false while the "cancelled to" date is still in the future', () => {
+		expect(isEndedCancelled(cancelled({ cancelledTo: daysFromNow(5) }))).toBe(false)
+	})
+
+	it('falls back to the end date when no "cancelled to" is set', () => {
+		expect(isEndedCancelled(cancelled({ cancelledTo: null, endDate: daysFromNow(0) }))).toBe(true)
+		expect(isEndedCancelled(cancelled({ cancelledTo: null, endDate: daysFromNow(5) }))).toBe(false)
+	})
+
+	it('is false for non-cancelled contracts', () => {
+		expect(isEndedCancelled(fixed({ endDate: daysFromNow(-10) }))).toBe(false)
+		expect(isEndedCancelled(autoRenewal({ endDate: daysFromNow(-10) }))).toBe(false)
+	})
+
+	it('is false when neither "cancelled to" nor end date is set', () => {
+		expect(isEndedCancelled(cancelled({ cancelledTo: null, endDate: null }))).toBe(false)
+	})
+})
+
+describe('isPlanned', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+	})
+
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it('is true for an active contract whose start date is in the future', () => {
+		expect(isPlanned(fixed({ startDate: daysFromNow(5) }))).toBe(true)
+		expect(isPlanned(autoRenewal({ startDate: daysFromNow(30) }))).toBe(true)
+	})
+
+	it('is false on the exact start date (contract runs from its start date)', () => {
+		expect(isPlanned(fixed({ startDate: daysFromNow(0) }))).toBe(false)
+	})
+
+	it('is false once the start date is in the past', () => {
+		expect(isPlanned(fixed({ startDate: daysFromNow(-1) }))).toBe(false)
+	})
+
+	it('is false when the start date is missing', () => {
+		expect(isPlanned(fixed({ startDate: null } as Partial<Contract>))).toBe(false)
+	})
+
+	it('is false for cancelled or ended contracts even with a future start date', () => {
+		expect(isPlanned(fixed({ status: 'cancelled', startDate: daysFromNow(5) }))).toBe(false)
+		expect(isPlanned(fixed({ status: 'ended', startDate: daysFromNow(5) }))).toBe(false)
 	})
 })

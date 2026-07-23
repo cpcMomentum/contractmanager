@@ -208,7 +208,7 @@ import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
-import { DEFAULT_REMINDER_DAYS_1, isEndingSoon } from '../utils/contractStatus'
+import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isPlanned } from '../utils/contractStatus'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 import { showInfo, showError } from '@nextcloud/dialogs'
@@ -286,6 +286,7 @@ export default {
 			// setting comes back from the user-settings endpoint.
 			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
 			statusOptions: [
+				{ id: 'planned', label: t('contractmanager', 'Geplant') },
 				{ id: 'active', label: t('contractmanager', 'Aktiv') },
 				{ id: 'ending_soon', label: t('contractmanager', 'Kündigungsfrist endet') },
 				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
@@ -350,10 +351,13 @@ export default {
 			return t('contractmanager', 'Kennzahlen für die gefilterte Ansicht')
 		},
 		kpiActiveCount() {
-			return this.kpiBaseContracts.filter(c => c.status === 'active').length
+			// Planned contracts keep the stored status "active" but haven't started
+			// yet (#109) — they show as „Geplant", so they must not be counted as
+			// active here or the KPI would contradict the list.
+			return this.kpiBaseContracts.filter(c => c.status === 'active' && !isPlanned(c)).length
 		},
 		kpiTypeSub() {
-			const auto = this.kpiBaseContracts.filter(c => c.status === 'active' && c.contractType === 'auto_renewal').length
+			const auto = this.kpiBaseContracts.filter(c => c.status === 'active' && !isPlanned(c) && c.contractType === 'auto_renewal').length
 			const rest = this.kpiActiveCount - auto
 			return t('contractmanager', '{auto} mit autom. Verlängerung · {rest} weitere', { auto, rest })
 		},
@@ -368,6 +372,10 @@ export default {
 			today.setHours(0, 0, 0, 0)
 			return this.kpiBaseContracts.filter(c => {
 				if (c.status === 'ended' || c.status === 'archived') return false
+				// Planned contracts (#109) have not started yet — they show as
+				// „Geplant" and are excluded from the active count, so they must
+				// not inflate the „laufende Kosten" sum either.
+				if (isPlanned(c)) return false
 				if (!COST_INTERVAL_DIVISOR[c.costInterval]) return false
 				if (!Number.isFinite(parseFloat(c.cost))) return false
 				// Use the EFFECTIVE end date: getEffectiveEndDate rolls auto_renewal
@@ -443,15 +451,19 @@ export default {
 			}
 
 			// Status-Filter (leer = kein Filter = alle anzeigen).
-			// "ending_soon" is a virtual option: it matches active contracts whose
-			// cancellation deadline is inside the first-reminder window — see
-			// utils/contractStatus.isEndingSoon.
+			// "ending_soon" and "planned" are virtual options: they don't map to a
+			// stored status but to a derived predicate over active contracts —
+			// see utils/contractStatus.isEndingSoon / isPlanned. Planned contracts
+			// keep the stored status "active", so they also match the "active"
+			// option, mirroring how ending_soon behaves.
 			if (this.filterStatuses.length > 0) {
 				const wantsEndingSoon = this.filterStatuses.includes('ending_soon')
-				const realStatuses = this.filterStatuses.filter(id => id !== 'ending_soon')
+				const wantsPlanned = this.filterStatuses.includes('planned')
+				const realStatuses = this.filterStatuses.filter(id => id !== 'ending_soon' && id !== 'planned')
 				const reminderDays = this.defaultReminderDays
 				filtered = filtered.filter(c => {
 					if (wantsEndingSoon && isEndingSoon(c, reminderDays)) return true
+					if (wantsPlanned && isPlanned(c)) return true
 					return realStatuses.includes(c.status)
 				})
 			}

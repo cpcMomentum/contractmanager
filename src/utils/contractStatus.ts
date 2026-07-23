@@ -97,3 +97,58 @@ export function isExpiredFixed(contract: Contract): boolean {
 
 	return end < today
 }
+
+/**
+ * "Ended" (cancelled) — a cancelled contract whose effective termination date
+ * has been reached. Mirrors the backend `ContractMapper::findCancelledDue`
+ * boundary (`cancelled_to <= today`, inclusive of the termination day) so the
+ * list shows „Beendet" the moment the contract is effectively over, instead of
+ * lagging behind the once-a-day `StatusUpdateJob` that flips the stored status
+ * to `ended` and archives it (#288).
+ *
+ * The effective end is the „cancelled to" date if set (e.g. a special
+ * termination right), otherwise the regular end date — the same rule the
+ * background job uses. UI-only derived state: the stored status stays
+ * `cancelled` until the daily job runs, which keeps a typo in „cancelled to"
+ * correctable before the contract is actually archived.
+ *
+ * Note the deliberate asymmetry with `isExpiredFixed`, which uses a strict
+ * `<` (a fixed contract still runs on its end date). The cancelled boundary is
+ * inclusive because the backend termination query is.
+ */
+export function isEndedCancelled(contract: Contract): boolean {
+	if (contract.status !== 'cancelled') return false
+
+	const effectiveEnd = contract.cancelledTo ?? contract.endDate
+	if (!effectiveEnd) return false
+
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	const end = new Date(effectiveEnd)
+	end.setHours(0, 0, 0, 0)
+
+	return end <= today
+}
+
+/**
+ * "Planned" — an active contract whose start date still lies in the future. The
+ * contract has been entered but has not begun yet, so „Laufend" would be
+ * misleading (#109).
+ *
+ * UI-only derived state, the mirror image of `isExpiredFixed`: the stored
+ * status stays `active`, and the moment today reaches the start date the
+ * contract shows as running again — no background job, no lag. The boundary is
+ * strict (`start > today`), so on the start date itself the contract already
+ * counts as running.
+ */
+export function isPlanned(contract: Contract): boolean {
+	if (contract.status !== 'active') return false
+	if (!contract.startDate) return false
+
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	const start = new Date(contract.startDate)
+	start.setHours(0, 0, 0, 0)
+
+	return start > today
+}

@@ -140,7 +140,7 @@ import { generateUrl } from '@nextcloud/router'
 import { getCanonicalLocale } from '@nextcloud/l10n'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
-import { isEndingSoon, isEndingSoonFixed, isExpiredFixed } from '../utils/contractStatus'
+import { isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled, isPlanned } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
@@ -198,9 +198,18 @@ export default {
 		expiredFixed() {
 			return isExpiredFixed(this.contract)
 		},
+		endedCancelled() {
+			return isEndedCancelled(this.contract)
+		},
+		planned() {
+			return isPlanned(this.contract)
+		},
 		// Single derived status chip — replaces the former stack of badges
 		// (Status + „Kündigungsfrist endet" + „Abgelaufen") with one clear signal.
 		statusChip() {
+			if (this.planned) {
+				return { cls: 'planned', label: t('contractmanager', 'Geplant'), title: t('contractmanager', 'Der Vertrag beginnt erst zum Startdatum.') }
+			}
 			if (this.expiredFixed) {
 				return { cls: 'expired', label: t('contractmanager', 'Abgelaufen'), title: t('contractmanager', 'Das Enddatum ist überschritten.') }
 			}
@@ -209,6 +218,9 @@ export default {
 			}
 			if (this.endingSoonFixed) {
 				return { cls: 'soon', label: t('contractmanager', 'endet'), title: t('contractmanager', 'Der befristete Vertrag läuft in Kürze aus.') }
+			}
+			if (this.endedCancelled) {
+				return { cls: 'ended', label: t('contractmanager', 'Beendet'), title: '' }
 			}
 			if (this.contract.status === 'cancelled') {
 				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt'), title: '' }
@@ -337,6 +349,7 @@ export default {
 <style scoped lang="scss">
 /* Status-Farbpalette (aus WorkTime/Vinarium übernommen) */
 $st: (
+	planned:   (#e6eefb, #2f5aa8),
 	active:    (#eaf5ee, #2f7d49),
 	active-fixed: (#dcefe3, #1d5c33),
 	soon:      (#fbf3e6, #9a6c25),
@@ -349,6 +362,7 @@ $st: (
    Text, damit die Chips auf dunklem Hintergrund lesbar bleiben. Bewusst eigene
    Werte statt NC-Variablen, um die kräftige Signalwirkung zu erhalten. */
 $st-dark: (
+	planned:   (#182842, #7ba3e6),
 	active:    (#17301f, #6fbf87),
 	active-fixed: (#16281c, #63c081),
 	soon:      (#33291a, #e0b15a),
