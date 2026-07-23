@@ -140,7 +140,7 @@ import { generateUrl } from '@nextcloud/router'
 import { getCanonicalLocale } from '@nextcloud/l10n'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
-import { isEndingSoon, isEndingSoonFixed, isExpiredFixed } from '../utils/contractStatus'
+import { isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
@@ -198,6 +198,9 @@ export default {
 		expiredFixed() {
 			return isExpiredFixed(this.contract)
 		},
+		endedCancelled() {
+			return isEndedCancelled(this.contract)
+		},
 		// Single derived status chip — replaces the former stack of badges
 		// (Status + „Kündigungsfrist endet" + „Abgelaufen") with one clear signal.
 		statusChip() {
@@ -209,6 +212,9 @@ export default {
 			}
 			if (this.endingSoonFixed) {
 				return { cls: 'soon', label: t('contractmanager', 'endet'), title: t('contractmanager', 'Der befristete Vertrag läuft in Kürze aus.') }
+			}
+			if (this.endedCancelled) {
+				return { cls: 'ended', label: t('contractmanager', 'Beendet'), title: '' }
 			}
 			if (this.contract.status === 'cancelled') {
 				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt'), title: '' }
