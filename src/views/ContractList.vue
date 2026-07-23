@@ -372,6 +372,10 @@ export default {
 			today.setHours(0, 0, 0, 0)
 			return this.kpiBaseContracts.filter(c => {
 				if (c.status === 'ended' || c.status === 'archived') return false
+				// Planned contracts (#109) have not started yet — they show as
+				// „Geplant" and are excluded from the active count, so they must
+				// not inflate the „laufende Kosten" sum either.
+				if (isPlanned(c)) return false
 				if (!COST_INTERVAL_DIVISOR[c.costInterval]) return false
 				if (!Number.isFinite(parseFloat(c.cost))) return false
 				// Use the EFFECTIVE end date: getEffectiveEndDate rolls auto_renewal
