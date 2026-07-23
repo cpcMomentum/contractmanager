@@ -240,6 +240,8 @@ OC.L10N.register(
     "API Key eingeben" : "Enter API Key",
     "API URL" : "API URL",
     "Abgelaufen" : "Expired",
+    "Geplant" : "Planned",
+    "Der Vertrag beginnt erst zum Startdatum." : "The contract does not start until its start date.",
     "Aktiv" : "Active",
     "Aktivieren Sie bis zu 3 optionale Zusatzfelder für Verträge." : "Enable up to 3 optional custom fields for contracts.",
     "Analyse fehlgeschlagen" : "Analysis failed",
