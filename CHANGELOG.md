@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-07-23
+
+### Added
+- Neuer Status „Geplant" für Verträge, deren Startdatum noch in der Zukunft liegt: Sie werden in Liste und Formular als „Geplant" angezeigt statt „Laufend" und lassen sich gezielt filtern. Am Startdatum wechseln sie automatisch auf „Laufend" (#109)
+
+### Fixed
+- Ein gekündigter Vertrag wird ab seinem Wirksamkeitsdatum („Gekündigt zum") sofort als „Beendet" angezeigt, statt bis zum Folgetag noch als „Gekündigt" zu erscheinen (#288)
+
+### Security
+- Abhängigkeiten aktualisiert (axios, immutable, brace-expansion); `npm audit` meldet keine Schwachstellen mehr (#289, #290, #293)
+
 ## [1.2.5] - 2026-07-17
 
 ### Added
@@ -380,7 +391,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.5...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...HEAD
+[1.2.6]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.2...v1.2.3
