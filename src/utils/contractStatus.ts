@@ -129,3 +129,26 @@ export function isEndedCancelled(contract: Contract): boolean {
 
 	return end <= today
 }
+
+/**
+ * "Planned" — an active contract whose start date still lies in the future. The
+ * contract has been entered but has not begun yet, so „Laufend" would be
+ * misleading (#109).
+ *
+ * UI-only derived state, the mirror image of `isExpiredFixed`: the stored
+ * status stays `active`, and the moment today reaches the start date the
+ * contract shows as running again — no background job, no lag. The boundary is
+ * strict (`start > today`), so on the start date itself the contract already
+ * counts as running.
+ */
+export function isPlanned(contract: Contract): boolean {
+	if (contract.status !== 'active') return false
+	if (!contract.startDate) return false
+
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	const start = new Date(contract.startDate)
+	start.setHours(0, 0, 0, 0)
+
+	return start > today
+}
