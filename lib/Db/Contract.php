@@ -200,8 +200,11 @@ class Contract extends Entity implements JsonSerializable {
      */
     public function markAllFieldsUpdated(): void {
         foreach (array_keys(get_object_vars($this)) as $field) {
-            // Skip Entity's internal bookkeeping (_updatedFields, _fieldTypes).
-            if (str_starts_with($field, '_')) {
+            // Skip Entity's internal bookkeeping (_updatedFields, _fieldTypes)
+            // and the primary key: marking "id" dirty makes QBMapper::insert()
+            // emit an explicit "id = NULL", which fails the NOT NULL/default
+            // sequence constraint on PostgreSQL instead of auto-assigning.
+            if (str_starts_with($field, '_') || $field === 'id') {
                 continue;
             }
             $this->markFieldUpdated($field);
