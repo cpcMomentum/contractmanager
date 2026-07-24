@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\ContractManager\AppInfo;
 
 use OCA\ContractManager\Search\ContractSearchProvider;
+use OCA\ContractManager\UserMigration\ContractMigrator;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -25,6 +26,7 @@ class Application extends App implements IBootstrap {
 
     public function register(IRegistrationContext $context): void {
         $context->registerSearchProvider(ContractSearchProvider::class);
+        $context->registerUserMigrator(ContractMigrator::class);
     }
 
     public function boot(IBootContext $context): void {

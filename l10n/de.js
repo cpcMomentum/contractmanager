@@ -1,6 +1,7 @@
 OC.L10N.register(
     "contractmanager",
     {
+    "Deine Verträge samt Kategorien sowie Kündigungs- und Erinnerungseinstellungen" : "Deine Verträge samt Kategorien sowie Kündigungs- und Erinnerungseinstellungen",
     "Zuständig" : "Zuständig",
     "Kündigen zum" : "Kündigen zum",
     "Tagesgenau" : "Tagesgenau",

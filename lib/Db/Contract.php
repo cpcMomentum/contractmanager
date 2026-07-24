@@ -187,6 +187,27 @@ class Contract extends Entity implements JsonSerializable {
         return $this->deletedAt !== null;
     }
 
+    /**
+     * Force every column to be written on the next insert().
+     *
+     * Entity::setter short-circuits when a value equals the current one
+     * ($args[0] === $this->$name), so a field left at its PHP default is not
+     * marked dirty and QBMapper::insert would omit it, falling back to the DB
+     * column default. For user-migration import we persist a fully-populated
+     * entity wholesale and want the exact imported values (including nulls in
+     * columns that have a non-null DB default, e.g. currency), so we mark all
+     * data fields dirty explicitly.
+     */
+    public function markAllFieldsUpdated(): void {
+        foreach (array_keys(get_object_vars($this)) as $field) {
+            // Skip Entity's internal bookkeeping (_updatedFields, _fieldTypes).
+            if (str_starts_with($field, '_')) {
+                continue;
+            }
+            $this->markFieldUpdated($field);
+        }
+    }
+
     public function jsonSerialize(): array {
         return [
             'id' => $this->id,
