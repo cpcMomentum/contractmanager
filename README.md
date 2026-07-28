@@ -9,6 +9,19 @@ Nextcloud App zur Vertragsverwaltung mit automatischen Kündigungserinnerungen.
 - Kategorisierung von Verträgen
 - Archiv für beendete Verträge
 - Integration mit Nextcloud Files für Anhänge
+- Export/Import der eigenen Vertragsdaten über Nextcloud [user_migration](https://github.com/nextcloud/user_migration)
+
+## Datenexport und -import
+
+Die Vertragsdaten eines Nutzers (inklusive Kategorien sowie Kündigungs- und
+Erinnerungseinstellungen) lassen sich über den Standard-Mechanismus von Nextcloud
+exportieren und wieder importieren – „Persönliche Einstellungen → Daten migrieren"
+bzw. `occ user:export` / `occ user:import`. Dokument-Anhänge sind als Pfad-Referenzen
+hinterlegt und werden vom Standard-Datei-Migrator mitgenommen.
+
+**Voraussetzung:** Die offizielle App
+[user_migration](https://github.com/nextcloud/user_migration) muss installiert sein.
+Ohne sie ist der Migrator zwar registriert, wird aber nicht ausgelöst.
 
 ## Anforderungen
 

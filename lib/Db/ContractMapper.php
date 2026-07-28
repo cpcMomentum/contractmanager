@@ -193,6 +193,25 @@ class ContractMapper extends QBMapper {
     }
 
     /**
+     * All contracts strictly OWNED by the user (created_by), active and
+     * archived, excluding trash. Unlike findAllVisible() this does NOT return
+     * other users' non-private contracts — used for user-migration export so
+     * that only the user's own data leaves their account.
+     *
+     * @return Contract[]
+     */
+    public function findAllByOwner(string $userId): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
+            ->andWhere($qb->expr()->isNull('deleted_at'))
+            ->orderBy('id', 'ASC');
+
+        return $this->findEntities($qb);
+    }
+
+    /**
      * @throws DoesNotExistException
      * @throws MultipleObjectsReturnedException
      */
