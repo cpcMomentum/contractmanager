@@ -435,4 +435,31 @@ class ContractMapper extends QBMapper {
             ->andWhere($this->effectiveOwnerExpr($qb, $from));
         return $qb->executeStatement();
     }
+
+    /**
+     * Reassign responsibility after the owner's account was deleted (#299).
+     *
+     * Differs from reassignResponsible() in one point: private contracts are
+     * left alone. The user marked them private on purpose, and handing them to
+     * another non-admin would reverse that decision after the fact. They stay
+     * put and remain visible to admins, who decide what happens to them.
+     *
+     * Trash rows are excluded as well, but for a different reason: the trash
+     * view filters on createdBy, not on responsibleUser, so reassigning them
+     * would have no visible effect at all. They are instead kept from being
+     * auto-purged by TrashCleanupJob.
+     *
+     * createdBy is never touched - it documents who created the contract.
+     *
+     * @return int Number of contracts updated
+     */
+    public function reassignOnOwnerDeletion(string $from, string $to): int {
+        $qb = $this->db->getQueryBuilder();
+        $qb->update($this->getTableName())
+            ->set('responsible_user', $qb->createNamedParameter($to))
+            ->where($qb->expr()->isNull('deleted_at'))
+            ->andWhere($qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+            ->andWhere($this->effectiveOwnerExpr($qb, $from));
+        return $qb->executeStatement();
+    }
 }

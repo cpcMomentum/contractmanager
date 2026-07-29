@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Wird ein Nutzerkonto gelöscht, verlieren dessen Verträge nicht mehr stillschweigend ihren Eigentümer: Die Zuständigkeit geht an einen Nachfolger über, der per `occ config:app:set contractmanager deletion_successor --value=<Nutzer>` festgelegt wird. Ohne festgelegten Nachfolger bleibt alles unverändert. Verträge werden dabei nie gelöscht, auch nicht die im Papierkorb, und der Ersteller bleibt als Angabe erhalten. Verträge mit einem anderen Verantwortlichen sowie private Verträge bleiben unberührt (#299)
+- Verträge im Papierkorb werden nicht mehr automatisch nach 30 Tagen endgültig gelöscht, wenn ihr Ersteller kein Konto mehr hat. Endgültig löschen kann sie damit nur noch ein Administrator (#299)
+
 ## [1.2.6] - 2026-07-23
 
 ### Added

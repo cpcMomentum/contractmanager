@@ -35,6 +35,8 @@ class SettingsService {
 
 	private const KEY_CUSTOM_FIELD_LABEL_PREFIX = 'custom_field_label_';
 
+	private const KEY_DELETION_SUCCESSOR = 'deletion_successor';
+
 	private const KEY_AI_PROVIDER = 'ai_provider';
 	private const KEY_AI_API_KEY = 'ai_api_key';
 	private const KEY_AI_API_URL = 'ai_api_url';
@@ -147,6 +149,29 @@ class SettingsService {
 	// ========================================
 	// Custom Field Labels (Admin)
 	// ========================================
+
+	/**
+	 * Get the user contracts are handed over to when their owner's account is
+	 * deleted (#299). Empty means no automatic handover happens.
+	 */
+	public function getDeletionSuccessor(): string {
+		return $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_DELETION_SUCCESSOR,
+			''
+		);
+	}
+
+	/**
+	 * Set the successor for contracts of deleted users. Empty clears it.
+	 */
+	public function setDeletionSuccessor(string $userId): void {
+		$this->config->setAppValue(
+			Application::APP_ID,
+			self::KEY_DELETION_SUCCESSOR,
+			trim($userId)
+		);
+	}
 
 	/**
 	 * Get label for a custom field (1-3)
