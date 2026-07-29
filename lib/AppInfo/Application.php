@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\ContractManager\AppInfo;
 
 use OCA\ContractManager\Listener\UserDeletedListener;
+use OCA\ContractManager\Notification\Notifier;
 use OCA\ContractManager\Search\ContractSearchProvider;
 use OCA\ContractManager\UserMigration\ContractMigrator;
 use OCP\AppFramework\App;
@@ -30,6 +31,7 @@ class Application extends App implements IBootstrap {
         $context->registerSearchProvider(ContractSearchProvider::class);
         $context->registerUserMigrator(ContractMigrator::class);
         $context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
+        $context->registerNotifierService(Notifier::class);
     }
 
     public function boot(IBootContext $context): void {

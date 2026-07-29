@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Tests\Unit\Listener;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Listener\UserDeletedListener;
+use OCA\ContractManager\Notification\NotificationService;
 use OCA\ContractManager\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\IUser;
@@ -24,6 +25,7 @@ class UserDeletedListenerTest extends TestCase {
 	private ContractMapper $contractMapper;
 	private ReminderOptOutMapper $optOutMapper;
 	private SettingsService $settingsService;
+	private NotificationService $notificationService;
 	private IUserManager $userManager;
 	private UserDeletedListener $listener;
 
@@ -32,6 +34,7 @@ class UserDeletedListenerTest extends TestCase {
 		$this->contractMapper = $this->createMock(ContractMapper::class);
 		$this->optOutMapper = $this->createMock(ReminderOptOutMapper::class);
 		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->notificationService = $this->createMock(NotificationService::class);
 		$this->userManager = $this->createMock(IUserManager::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
@@ -39,6 +42,7 @@ class UserDeletedListenerTest extends TestCase {
 			$this->contractMapper,
 			$this->optOutMapper,
 			$this->settingsService,
+			$this->notificationService,
 			$this->userManager,
 			$logger
 		);
@@ -120,5 +124,48 @@ class UserDeletedListenerTest extends TestCase {
 		$this->optOutMapper->expects($this->never())->method('deleteByUser');
 
 		$this->listener->handle(new Event());
+	}
+
+	/**
+	 * #299 PR 2: the admins are told what happened, with the count of contracts
+	 * that could not be handed over (private ones, or all of them when no
+	 * successor is set). Counted after the handover.
+	 */
+	public function testAdminsAreNotifiedWithBothCounts(): void {
+		$this->settingsService->method('getDeletionSuccessor')->willReturn('bob');
+		$this->userManager->method('userExists')->willReturn(true);
+		$this->contractMapper->method('reassignOnOwnerDeletion')->willReturn(3);
+		$this->contractMapper->method('countByEffectiveOwner')->with('alice')->willReturn(2);
+
+		$this->notificationService->expects($this->once())
+			->method('notifyAdminsAboutDeletedUser')
+			->with('alice', 3, 2);
+
+		$this->listener->handle($this->deletionOf('alice'));
+	}
+
+	public function testNotificationReportsLeftoversWhenNoSuccessorIsConfigured(): void {
+		$this->settingsService->method('getDeletionSuccessor')->willReturn('');
+		$this->contractMapper->method('countByEffectiveOwner')->willReturn(4);
+
+		$this->notificationService->expects($this->once())
+			->method('notifyAdminsAboutDeletedUser')
+			->with('alice', 0, 4);
+
+		$this->listener->handle($this->deletionOf('alice'));
+	}
+
+	/**
+	 * A failing notification must not take the account deletion down with it.
+	 */
+	public function testFailingNotificationDoesNotBreakUserDeletion(): void {
+		$this->settingsService->method('getDeletionSuccessor')->willReturn('');
+		$this->contractMapper->method('countByEffectiveOwner')->willReturn(1);
+		$this->notificationService->method('notifyAdminsAboutDeletedUser')
+			->willThrowException(new \RuntimeException('notification backend gone'));
+
+		$this->listener->handle($this->deletionOf('alice'));
+
+		$this->addToAssertionCount(1);
 	}
 }

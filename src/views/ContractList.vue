@@ -106,6 +106,13 @@
 				:clearable="true"
 				input-id="filter-responsible"
 				@update:model-value="persistFilters" />
+			<NcCheckboxRadioSwitch v-if="isAdmin"
+				:model-value="filterOwnerMissing"
+				type="switch"
+				class="filter-owner-missing"
+				@update:model-value="onOwnerMissingChange">
+				{{ t('contractmanager', 'Ohne aktiven Eigentümer') }}
+			</NcCheckboxRadioSwitch>
 			<NcButton v-if="hasActiveFilters"
 				variant="tertiary"
 				@click="resetFilters">
@@ -196,6 +203,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import SortAscendingIcon from 'vue-material-design-icons/SortAscending.vue'
@@ -227,6 +235,7 @@ export default {
 		NcLoadingIcon,
 		NcEmptyContent,
 		NcSelect,
+		NcCheckboxRadioSwitch,
 		PlusIcon,
 		FileDocumentIcon,
 		SortAscendingIcon,
@@ -281,6 +290,9 @@ export default {
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
 			filterResponsible: filters.responsible || null,
+			// Admin-only (#299): contracts whose effective owner no longer has
+			// an account. The backend only sends ownerMissing to admins.
+			filterOwnerMissing: !!filters.ownerMissing,
 			// Window the badge / filter uses for "Kündigungsfrist endet". Defaults to the
 			// constant in utils/contractStatus; gets overridden once the admin
 			// setting comes back from the user-settings endpoint.
@@ -303,6 +315,7 @@ export default {
 			allContracts: 'allContracts',
 			loading: 'isLoading',
 			canEdit: 'canEdit',
+			isAdmin: 'isAdmin',
 		}),
 		...mapState(useCategoriesStore, ['allCategories']),
 		vendorOptions() {
@@ -326,6 +339,7 @@ export default {
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
 			if (this.filterResponsible) return true
+			if (this.filterOwnerMissing) return true
 			return false
 		},
 		// --- KPI-Kennzahlen: beziehen sich auf die aktuell ANGEZEIGTE (gefilterte)
@@ -481,6 +495,11 @@ export default {
 			// Zuständig-Filter
 			if (this.filterResponsible) {
 				filtered = filtered.filter(c => c.responsibleUser === this.filterResponsible)
+			}
+
+			// Verwaiste Verträge (nur Admins, #299)
+			if (this.filterOwnerMissing) {
+				filtered = filtered.filter(c => c.ownerMissing)
 			}
 
 			return this.sortContracts(filtered)
@@ -701,6 +720,12 @@ export default {
 			this.filterStatuses = []
 			this.filterContractType = null
 			this.filterResponsible = null
+			this.filterOwnerMissing = false
+			this.persistFilters()
+		},
+
+		onOwnerMissingChange(value) {
+			this.filterOwnerMissing = value
 			this.persistFilters()
 		},
 
@@ -712,6 +737,7 @@ export default {
 						statuses: this.filterStatuses,
 						contractType: this.filterContractType || '',
 						responsible: this.filterResponsible || '',
+						ownerMissing: this.filterOwnerMissing,
 					},
 				})
 			} catch (error) {
@@ -759,6 +785,12 @@ export default {
 		.v-select {
 			min-width: 180px;
 			flex: 1;
+		}
+
+		// The selects above grow (flex: 1); without this the switch would be
+		// squeezed and its label wrapped.
+		.filter-owner-missing {
+			flex: 0 0 auto;
 		}
 	}
 
