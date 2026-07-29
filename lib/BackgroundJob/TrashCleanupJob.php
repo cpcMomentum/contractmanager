@@ -10,6 +10,7 @@ use OCA\ContractManager\Db\ContractMapper;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use OCP\IGroupManager;
+use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -18,15 +19,21 @@ use Psr\Log\LoggerInterface;
  * - Runs daily
  * - Deletes contracts that have been in trash for more than 30 days
  * - Excludes contracts created by admin users (their trash is never auto-cleaned)
+ * - Excludes contracts whose creator no longer has an account (#299): purging
+ *   those for good stays a deliberate admin action
  */
 class TrashCleanupJob extends TimedJob {
 
 	private const TRASH_RETENTION_DAYS = 30;
 
+	/** @var array<string, bool> */
+	private array $userExistsCache = [];
+
 	public function __construct(
 		ITimeFactory $time,
 		private ContractMapper $contractMapper,
 		private IGroupManager $groupManager,
+		private IUserManager $userManager,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($time);
@@ -71,7 +78,17 @@ class TrashCleanupJob extends TimedJob {
 		$expiredContracts = $this->contractMapper->findExpiredDeleted($cutoffDate, $adminUserIds);
 
 		$deletedCount = 0;
+		$orphanedCount = 0;
 		foreach ($expiredContracts as $contract) {
+			// Contracts whose creator no longer has an account are left alone
+			// (#299): once the owner is gone, nobody can restore them anymore,
+			// so purging them silently would take the decision away from the
+			// admin. Deleting these for good stays a deliberate admin action.
+			if (!$this->userStillExists($contract->getCreatedBy())) {
+				$orphanedCount++;
+				continue;
+			}
+
 			try {
 				$this->contractMapper->delete($contract);
 				$deletedCount++;
@@ -92,7 +109,32 @@ class TrashCleanupJob extends TimedJob {
 			}
 		}
 
+		if ($orphanedCount > 0) {
+			$this->logger->info('Kept trashed contracts of deleted users from auto-cleanup', [
+				'app' => Application::APP_ID,
+				'keptCount' => $orphanedCount,
+			]);
+		}
+
 		return $deletedCount;
+	}
+
+	/**
+	 * Whether the given user id still resolves to an account.
+	 *
+	 * Cached per run: a single user can easily own many expired contracts, and
+	 * this cannot be decided in SQL.
+	 */
+	private function userStillExists(string $userId): bool {
+		if ($userId === '') {
+			return false;
+		}
+
+		if (!array_key_exists($userId, $this->userExistsCache)) {
+			$this->userExistsCache[$userId] = $this->userManager->userExists($userId);
+		}
+
+		return $this->userExistsCache[$userId];
 	}
 
 	/**
