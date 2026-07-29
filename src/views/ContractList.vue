@@ -497,8 +497,11 @@ export default {
 				filtered = filtered.filter(c => c.responsibleUser === this.filterResponsible)
 			}
 
-			// Verwaiste Verträge (nur Admins, #299)
-			if (this.filterOwnerMissing) {
+			// Verwaiste Verträge (nur Admins, #299). isAdmin wird zusätzlich
+			// geprüft, damit ein noch gespeicherter Filterwert nach dem Entzug
+			// der Admin-Rolle nicht zu einer leeren, unerklärten Liste führt -
+			// die Checkbox ist dann ja ausgeblendet und nicht mehr abwählbar.
+			if (this.filterOwnerMissing && this.isAdmin) {
 				filtered = filtered.filter(c => c.ownerMissing)
 			}
 
