@@ -76,6 +76,7 @@ class SettingsService {
 		'statuses' => [],
 		'contractType' => '',
 		'responsible' => '',
+		'ownerMissing' => false,
 	];
 
 	public function __construct(
@@ -377,7 +378,7 @@ class SettingsService {
 	/**
 	 * Get filter preferences for a user
 	 *
-	 * @return array{vendor: string, statuses: string[], contractType: string}
+	 * @return array{vendor: string, statuses: string[], contractType: string, responsible: string, ownerMissing: bool}
 	 */
 	public function getUserFilters(string $userId): array {
 		$json = $this->config->getUserValue(
@@ -405,6 +406,7 @@ class SettingsService {
 				? $filters['contractType']
 				: '',
 			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
+			'ownerMissing' => !empty($filters['ownerMissing']),
 		];
 	}
 
@@ -421,6 +423,7 @@ class SettingsService {
 				? $filters['contractType']
 				: '',
 			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
+			'ownerMissing' => !empty($filters['ownerMissing']),
 		];
 
 		$this->config->setUserValue(

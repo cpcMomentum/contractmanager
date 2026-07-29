@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Listener;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
+use OCA\ContractManager\Notification\NotificationService;
 use OCA\ContractManager\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -38,6 +39,7 @@ class UserDeletedListener implements IEventListener {
 		private ContractMapper $contractMapper,
 		private ReminderOptOutMapper $optOutMapper,
 		private SettingsService $settingsService,
+		private NotificationService $notificationService,
 		private IUserManager $userManager,
 		private LoggerInterface $logger,
 	) {
@@ -60,13 +62,20 @@ class UserDeletedListener implements IEventListener {
 				? 0
 				: $this->contractMapper->reassignOnOwnerDeletion($uid, $successor);
 
+			// Counted AFTER the handover, so this is exactly what is left over:
+			// private contracts, or everything when no successor is configured.
+			$needsAttention = $this->contractMapper->countByEffectiveOwner($uid);
+
 			$this->logger->info('Handled contract data of deleted user', [
 				'app' => Application::APP_ID,
 				'uid' => $uid,
 				'successor' => $successor,
 				'reassignedContracts' => $reassigned,
+				'contractsNeedingAttention' => $needsAttention,
 				'removedOptOuts' => $removedOptOuts,
 			]);
+
+			$this->notificationService->notifyAdminsAboutDeletedUser($uid, $reassigned, $needsAttention);
 		} catch (\Throwable $e) {
 			$this->logger->error('Failed to handle contract data of deleted user: ' . $e->getMessage(), [
 				'app' => Application::APP_ID,
