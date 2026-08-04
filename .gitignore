@@ -42,6 +42,9 @@ npm-debug.log*
 .env
 .env.local
 
+# Claude Code: lokale, ungetrackte Settings (u.a. NC_APPSTORE_TOKEN)
+.claude/settings.local.json
+
 # Composer
 composer.lock
 
