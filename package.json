@@ -10,7 +10,8 @@
         "test:watch": "vitest",
         "typecheck": "vue-tsc --noEmit",
         "lint": "eslint --ext .js,.ts,.vue src",
-        "lint:fix": "eslint --ext .js,.ts,.vue src --fix"
+        "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
+        "prepare": "git config core.hooksPath .githooks || true"
     },
     "repository": {
         "type": "git",
