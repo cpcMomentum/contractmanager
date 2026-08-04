@@ -323,12 +323,21 @@ gh release create vX.Y.Z ../contractmanager-vX.Y.Z.tar.gz \
   --title "vX.Y.Z" --notes "Siehe CHANGELOG.md"
 
 # 17. App Store Upload
+# Der Token kommt aus der Umgebungsvariable NC_APPSTORE_TOKEN, hinterlegt in
+# .claude/settings.local.json (gitignored). Vorher pruefen, sonst 401.
+test -n "$NC_APPSTORE_TOKEN" || { echo "FEHLER: NC_APPSTORE_TOKEN nicht gesetzt (siehe .claude/settings.local.json)"; exit 1; }
+
 DOWNLOAD_URL="https://github.com/cpcMomentum/contractmanager/releases/download/vX.Y.Z/contractmanager-vX.Y.Z.tar.gz"
 curl -X POST https://apps.nextcloud.com/api/v1/apps/releases \
-  -H "Authorization: Token d31fa215d4d16f3aefdab27d971f356727cc995a" \
+  -H "Authorization: Token $NC_APPSTORE_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"download\": \"$DOWNLOAD_URL\", \"signature\": \"$SIGNATURE\"}"
 ```
+
+**Niemals einen Token-Wert in diese Datei zurueckschreiben** — sie ist im Git
+getrackt und dieses Repo ist oeffentlich. Der frueher hier hartkodierte Token
+war dadurch seit dem 29.04.2026 auf GitHub einsehbar und musste am 04.08.2026
+im App Store neu erzeugt werden.
 
 **Phase 8: Aufraemen**
 
