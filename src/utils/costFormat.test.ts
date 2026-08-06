@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { costForApi, isCostValid, normalizeCostInput } from './costFormat'
+import { costForApi, costValidationError, isCostValid, normalizeCostInput } from './costFormat'
+
+describe('costValidationError (#315)', () => {
+	it('distinguishes unreadable input from an amount that is too large', () => {
+		// Zwei verschiedene Fehler brauchen zwei verschiedene Meldungen: bei
+		// "abc" hilft ein Beispiel, bei 100 Millionen die Obergrenze.
+		expect(costValidationError('abc')).toBe('format')
+		expect(costValidationError('100000000')).toBe('range')
+	})
+
+	it('returns null for everything that can be stored', () => {
+		expect(costValidationError('')).toBeNull()
+		expect(costValidationError(null)).toBeNull()
+		expect(costValidationError('10,50')).toBeNull()
+		expect(costValidationError('99999999,99')).toBeNull()
+	})
+})
 
 describe('isCostValid (#305)', () => {
 	it('regression: rejects input the DECIMAL column cannot take', () => {
@@ -26,6 +42,22 @@ describe('isCostValid (#305)', () => {
 		expect(isCostValid('1.234,56')).toBe(true)
 		expect(isCostValid('-10,5')).toBe(true)
 		expect(isCostValid(10.5)).toBe(true)
+	})
+
+	it('regression: rejects amounts the DECIMAL(10,2) column cannot hold (#315)', () => {
+		// DECIMAL(10,2) fasst 8 Vorkommastellen, also hoechstens 99999999.99.
+		// Ohne diese Pruefung liefe der Wert bis in die Spalte und scheiterte
+		// erst dort — der Nutzer saehe einen Serverfehler statt einer Meldung.
+		expect(isCostValid('100000000')).toBe(false)
+		expect(isCostValid('99999999.995')).toBe(false) // rundet auf 100000000.00
+		expect(isCostValid('-100000000')).toBe(false)
+		expect(isCostValid('1234567890,12')).toBe(false)
+	})
+
+	it('accepts the largest amount the column can hold (#315)', () => {
+		expect(isCostValid('99999999.99')).toBe(true)
+		expect(isCostValid('99999999,99')).toBe(true)
+		expect(isCostValid('-99999999.99')).toBe(true)
 	})
 })
 

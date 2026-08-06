@@ -54,25 +54,56 @@ export function normalizeCostInput(value: string | number | null | undefined): s
 }
 
 /**
+ * The largest amount the `cost` column can hold: it is DECIMAL(10,2), so eight
+ * digits before the decimal point (`Version010000Date20260116120000.php`).
+ */
+const MAX_COST = 99999999.99
+
+/**
  * Whether the entered amount can be stored at all.
  *
- * The field is a text input (see above), so the browser no longer rejects
- * non-numeric input the way a `type="number"` field did. Without this check
- * "abc" would travel all the way into the DECIMAL(10,2) column and the database
- * would answer with `invalid input syntax for type numeric` — a 500 instead of a
- * message the user can act on.
+ * Two ways it cannot be. Both end in a database error rather than a message the
+ * user can act on, so both are caught here:
+ *
+ * 1. It is not a number. The field is a text input (see above), so the browser
+ *    no longer rejects non-numeric input the way a `type="number"` field did —
+ *    "abc" would reach the column and Postgres answers with
+ *    `invalid input syntax for type numeric`.
+ * 2. It does not fit the column (#315). DECIMAL(10,2) holds at most
+ *    99999999.99; anything larger is rejected by the database on write.
+ *
+ * The range is checked against the *normalised* value, because rounding can
+ * push a value over the edge: 99999999.995 becomes 100000000.00.
  *
  * An empty amount is valid: the field is optional.
  *
  * @param value The current form value
- * @return true when the value is empty or a number
+ * @return true when the value is empty, or a number the column can hold
  */
 export function isCostValid(value: string | number | null | undefined): boolean {
+	return costValidationError(value) === null
+}
+
+/**
+ * Why an amount cannot be stored, so the form can say something useful instead
+ * of one message for two different problems (#315).
+ *
+ * @param value The current form value
+ * @return 'format' when it is not a number, 'range' when it does not fit the
+ *   column, null when it can be stored
+ */
+export function costValidationError(value: string | number | null | undefined): 'format' | 'range' | null {
 	const normalized = normalizeCostInput(value)
 	if (normalized === '') {
-		return true
+		return null
 	}
-	return Number.isFinite(Number(normalized))
+
+	const amount = Number(normalized)
+	if (!Number.isFinite(amount)) {
+		return 'format'
+	}
+
+	return Math.abs(amount) > MAX_COST ? 'range' : null
 }
 
 /**

@@ -575,7 +575,7 @@ import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
 import { reminderEnabledForEndDate } from '../utils/reminderForm'
 import { isEndDateApplicable, endDateForSave } from '../utils/contractFormRules'
-import { normalizeCostInput, costForApi, isCostValid } from '../utils/costFormat'
+import { normalizeCostInput, costForApi, costValidationError } from '../utils/costFormat'
 import ContractService from '../services/ContractService'
 import ExtractionService from '../services/ExtractionService'
 import SettingsService from '../services/SettingsService'
@@ -691,12 +691,17 @@ export default {
 			return isUrl(this.form.mainDocument) && !isInternalUrl(this.form.mainDocument)
 		},
 		// Das Betragsfeld ist ein Textfeld (#305), der Browser weist unlesbare
-		// Eingaben also nicht mehr selbst ab. Ohne diese Pruefung landete "abc"
-		// in der DECIMAL-Spalte und die Datenbank antwortet mit einem Fehler.
+		// Eingaben also nicht mehr selbst ab. Ohne diese Pruefung liefe der Wert
+		// bis in die DECIMAL(10,2)-Spalte und scheiterte erst dort (#315).
 		costError() {
-			return isCostValid(this.form.cost)
-				? ''
-				: t('contractmanager', 'Bitte einen Betrag wie 10,50 eingeben')
+			switch (costValidationError(this.form.cost)) {
+			case 'format':
+				return t('contractmanager', 'Bitte einen Betrag wie 10,50 eingeben')
+			case 'range':
+				return t('contractmanager', 'Der Betrag darf höchstens 99.999.999,99 betragen')
+			default:
+				return ''
+			}
 		},
 		isValid() {
 			return (
