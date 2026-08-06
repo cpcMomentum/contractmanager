@@ -275,12 +275,15 @@
 					<div class="cm-field-row">
 						<label class="cm-field">
 							<span>{{ t('contractmanager', 'Betrag') }}</span>
+							<!-- Bewusst type="text": bei type="number" castet Vue den v-model-Wert
+								 zur Zahl, und aus 10,50 wird sichtbar 10,5 (#305). -->
 							<input v-model="form.cost"
-								type="number"
-								step="0.01"
+								type="text"
+								inputmode="decimal"
 								class="cm-input"
 								:disabled="readOnly"
-								:placeholder="t('contractmanager', '0.00')">
+								:placeholder="t('contractmanager', '0.00')"
+								@blur="normalizeCostField">
 						</label>
 						<label class="cm-field">
 							<span>{{ t('contractmanager', 'Währung') }}</span>
@@ -291,6 +294,11 @@
 							</select>
 						</label>
 					</div>
+
+					<NcNoteCard v-if="costError" type="error">
+						{{ costError }}
+					</NcNoteCard>
+
 					<div class="cm-field-row">
 						<label class="cm-field">
 							<span>{{ t('contractmanager', 'Zahlweise') }}</span>
@@ -567,6 +575,7 @@ import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
 import { reminderEnabledForEndDate } from '../utils/reminderForm'
 import { isEndDateApplicable, endDateForSave } from '../utils/contractFormRules'
+import { normalizeCostInput, costForApi, isCostValid } from '../utils/costFormat'
 import ContractService from '../services/ContractService'
 import ExtractionService from '../services/ExtractionService'
 import SettingsService from '../services/SettingsService'
@@ -681,9 +690,18 @@ export default {
 		isExternalDocument() {
 			return isUrl(this.form.mainDocument) && !isInternalUrl(this.form.mainDocument)
 		},
+		// Das Betragsfeld ist ein Textfeld (#305), der Browser weist unlesbare
+		// Eingaben also nicht mehr selbst ab. Ohne diese Pruefung landete "abc"
+		// in der DECIMAL-Spalte und die Datenbank antwortet mit einem Fehler.
+		costError() {
+			return isCostValid(this.form.cost)
+				? ''
+				: t('contractmanager', 'Bitte einen Betrag wie 10,50 eingeben')
+		},
 		isValid() {
 			return (
 				this.form.name.trim() !== ''
+				&& this.costError === ''
 				&& this.form.vendor.trim() !== ''
 				&& this.form.startDate !== null
 				&& !this.dateError
@@ -859,6 +877,11 @@ export default {
 		this.loadVendorOptions()
 	},
 	methods: {
+		// Erst beim Verlassen des Felds formatieren, nicht beim Tippen — sonst
+		// springt der Cursor waehrend der Eingabe (#305).
+		normalizeCostField() {
+			this.form.cost = normalizeCostInput(this.form.cost)
+		},
 		onEscape(event) {
 			// Esc in einem offenen Dropdown (NcSelect) soll nur das Dropdown
 			// schliessen, nicht das ganze Modal
@@ -989,7 +1012,9 @@ export default {
 				cancellationDeadlineType: contract.cancellationDeadlineType || 'normal',
 				renewalPeriodValue: renewal.value,
 				renewalPeriodUnit: renewal.unit,
-				cost: contract.cost || '',
+				// Normalisieren statt uebernehmen: auf SQLite liefert die
+				// DECIMAL(10,2)-Spalte bereits "10.5" statt "10.50" (#305).
+				cost: normalizeCostInput(contract.cost),
 				currency: contract.currency || 'EUR',
 				costInterval: contract.costInterval || 'monthly',
 				contractFolder: contract.contractFolder || '',
@@ -1029,11 +1054,9 @@ export default {
 				renewalPeriod: this.form.contractType === 'auto_renewal'
 					? this.formatPeriod(this.form.renewalPeriodValue, this.form.renewalPeriodUnit)
 					: null,
-				// Native <input type="number"> makes Vue store a Number; the API
-				// declares cost as ?string, so coerce back (empty -> null).
-				cost: (this.form.cost === '' || this.form.cost === null || this.form.cost === undefined)
-					? null
-					: String(this.form.cost),
+				// Zwei Nachkommastellen, auch wenn das Feld nie verlassen wurde
+				// (Speichern direkt aus dem fokussierten Feld heraus) — #305.
+				cost: costForApi(this.form.cost),
 				currency: this.form.currency,
 				costInterval: this.form.costInterval || null,
 				contractFolder: this.form.contractFolder.trim() || null,
@@ -1165,7 +1188,7 @@ export default {
 			if (data.vendor) this.form.vendor = data.vendor
 			if (data.contractType) this.form.contractType = data.contractType
 			if (data.currency) this.form.currency = data.currency
-			if (data.cost) this.form.cost = data.cost
+			if (data.cost) this.form.cost = normalizeCostInput(data.cost)
 			if (data.startDate) {
 				const start = parseLocalDate(data.startDate)
 				if (start && !isNaN(start.getTime())) {
