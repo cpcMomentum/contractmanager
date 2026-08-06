@@ -1,6 +1,7 @@
-# ContractManager
+# VertragsWerk
 
 Nextcloud App zur Vertragsverwaltung mit automatischen Kündigungserinnerungen.
+Die App-ID bleibt `contractmanager`.
 
 ## Features
 
