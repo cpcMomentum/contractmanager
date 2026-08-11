@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Anzeigename der App auf „VertragsWerk" umgestellt (App-ID bleibt `contractmanager`)
+
 ### Fixed
+- Beträge mit zwei Nachkommastellen bleiben erhalten: „10,50" wurde im Vertragsformular als „10,5" angezeigt und blieb auch nach dem Korrigieren und Speichern so. Das Feld nimmt jetzt auch die deutsche Komma-Schreibweise entgegen und zeigt Beträge einheitlich mit zwei Nachkommastellen (#305)
+- Ein Betrag, der sich nicht als Zahl lesen lässt oder über 99.999.999,99 liegt, wird beim Speichern mit einem Hinweis abgewiesen, statt zu einem Serverfehler zu führen (#315)
+- Das ausgelieferte JavaScript enthielt Entwicklungscode: Die App lädt jetzt ein kleineres Paket und läuft im Browser schneller. Fehlermeldungen der Oberfläche, die nur im Entwicklungsmodus auftraten, sind damit ebenfalls verschwunden (#306)
 - Wird ein Nutzerkonto gelöscht, verlieren dessen Verträge nicht mehr stillschweigend ihren Eigentümer: Die Zuständigkeit geht an einen Nachfolger über, der per `occ config:app:set contractmanager deletion_successor --value=<Nutzer>` festgelegt wird. Ohne festgelegten Nachfolger bleibt alles unverändert. Verträge werden dabei nie gelöscht, auch nicht die im Papierkorb, und der Ersteller bleibt als Angabe erhalten. Verträge mit einem anderen Verantwortlichen sowie private Verträge bleiben unberührt (#299)
 - Verträge im Papierkorb werden nicht mehr automatisch nach 30 Tagen endgültig gelöscht, wenn ihr Ersteller kein Konto mehr hat. Endgültig löschen kann sie damit nur noch ein Administrator (#299)
 
 ### Added
+- Die eigenen Vertragsdaten lassen sich jetzt über Nextclouds App [user_migration](https://github.com/nextcloud/user_migration) mit exportieren und wieder einspielen: `occ user:export` legt sie ins Standard-Archiv, `occ user:import` spielt sie samt Kategorien zurück, ohne die vorhandene Kategorienliste zu verdoppeln. Verträge im Papierkorb bleiben außen vor, angehängte Dateien nimmt Nextcloud selbst mit (#273)
 - Neue Administrator-Einstellung „Nachfolger bei gelöschtem Konto": Wer hier eingetragen ist, übernimmt die Zuständigkeit für die Verträge gelöschter Konten. Ohne Eintrag bleibt alles unverändert (#299)
 - Administratoren werden benachrichtigt, wenn ein Konto gelöscht wurde, samt Anzahl der übertragenen Verträge und derer, die noch eine Zuordnung brauchen (#299)
 - Neuer Filter „Ohne aktiven Eigentümer" in der Vertragsliste, nur für Administratoren: zeigt Verträge, deren Zuständiger beziehungsweise Ersteller kein Konto mehr hat, und macht sie über „Verträge übertragen" weiterreichbar (#299)
