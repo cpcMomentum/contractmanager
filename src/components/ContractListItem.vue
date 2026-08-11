@@ -74,14 +74,17 @@
 					</template>
 					{{ t('contractmanager', 'Wiederherstellen') }}
 				</NcActionButton>
-				<NcActionButton v-if="canEdit && mode !== 'trash'"
+				<!-- Bearbeitendes nur in der Vertragsliste: im Archiv wird
+				     angesehen und wiederhergestellt, im Papierkorb wiederher-
+				     gestellt und geloescht (#328). -->
+				<NcActionButton v-if="canEdit && mode === 'default'"
 					@click.stop="$emit('duplicate', contract)">
 					<template #icon>
 						<ContentDuplicate :size="20" />
 					</template>
 					{{ t('contractmanager', 'Duplizieren') }}
 				</NcActionButton>
-				<NcActionButton v-if="canEdit && mode !== 'trash'"
+				<NcActionButton v-if="canEdit && mode === 'default'"
 					@click.stop="$emit('edit', contract)">
 					<template #icon>
 						<PencilIcon :size="20" />
