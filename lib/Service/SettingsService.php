@@ -406,7 +406,10 @@ class SettingsService {
 				? $filters['contractType']
 				: '',
 			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
-			'ownerMissing' => !empty($filters['ownerMissing']),
+			// Bewusst nicht aus dem gespeicherten Wert gelesen (#332): siehe
+			// setUserFilters. Ein aus einer frueheren Version stammendes true
+			// wird damit ignoriert und beim naechsten Speichern ueberschrieben.
+			'ownerMissing' => false,
 		];
 	}
 
@@ -423,7 +426,13 @@ class SettingsService {
 				? $filters['contractType']
 				: '',
 			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
-			'ownerMissing' => !empty($filters['ownerMissing']),
+			// "Ohne aktiven Eigentuemer" wird bewusst nie dauerhaft gespeichert
+			// (#332). Der Filter ist das Administratoren-Diagnosewerkzeug aus
+			// #299 und liefert im Normalbetrieb fast immer null Treffer. Einmal
+			// angetippt filterte er ueber Monate stumm weiter, weil die leere
+			// Liste keinen Grund nannte. Er gilt jetzt nur fuer die laufende
+			// Ansicht und ist nach jedem Neuladen aus.
+			'ownerMissing' => false,
 		];
 
 		$this->config->setUserValue(
