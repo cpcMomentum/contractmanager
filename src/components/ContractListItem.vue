@@ -74,9 +74,10 @@
 					</template>
 					{{ t('contractmanager', 'Wiederherstellen') }}
 				</NcActionButton>
-				<!-- Bearbeitendes nur in der Vertragsliste: im Archiv wird
-				     angesehen und wiederhergestellt, im Papierkorb wiederher-
-				     gestellt und geloescht (#328). -->
+				<!-- Duplizieren und Bearbeiten gibt es nur in der Vertragsliste.
+				     Im Archiv wird angesehen, wiederhergestellt und geloescht,
+				     im Papierkorb wiederhergestellt und endgueltig geloescht
+				     (#328). -->
 				<NcActionButton v-if="canEdit && mode === 'default'"
 					@click.stop="$emit('duplicate', contract)">
 					<template #icon>
