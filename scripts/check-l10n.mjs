@@ -2,7 +2,7 @@
 /**
  * Prueft, dass jeder uebersetzbare String aus src/ auch in den l10n-Dateien steht.
  *
- * Hintergrund (#334): 42 Strings waren ueber Monate nie eingetragen und fielen
+ * Hintergrund (#334): 41 Strings waren ueber Monate nie eingetragen und fielen
  * damit in JEDER Sprache auf den deutschen Quelltext zurueck. Aufgefallen ist es
  * nur zufaellig, weil auf Deutsch entwickelt wird und Nextcloud bei fehlendem
  * Eintrag genau diesen Quelltext anzeigt - die Luecke ist im Alltag unsichtbar.
