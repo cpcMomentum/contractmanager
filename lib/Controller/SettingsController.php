@@ -143,7 +143,24 @@ class SettingsController extends Controller {
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
 			'aiModel' => $this->settingsService->getAiModel(),
 			'reminderLink' => $this->getReminderLinkDiagnostics(),
+			'deletionSuccessor' => $this->settingsService->getDeletionSuccessor(),
+			'deletionSuccessorDisplayName' => $this->getDeletionSuccessorDisplayName(),
 		]);
+	}
+
+	/**
+	 * Display name of the configured successor, so the settings field shows a
+	 * name instead of a bare uid. Falls back to the uid when that account is
+	 * gone - worth seeing, because a successor without an account receives
+	 * nothing (#299).
+	 */
+	private function getDeletionSuccessorDisplayName(): string {
+		$uid = $this->settingsService->getDeletionSuccessor();
+		if ($uid === '') {
+			return '';
+		}
+
+		return $this->userManager->get($uid)?->getDisplayName() ?? $uid;
 	}
 
 	/**
@@ -201,6 +218,7 @@ class SettingsController extends Controller {
 		?string $aiApiKey = null,
 		?string $aiApiUrl = null,
 		?string $aiModel = null,
+		?string $deletionSuccessor = null,
 	): JSONResponse {
 		if ($reminderDays1 !== null) {
 			$this->settingsService->setReminderDays1($reminderDays1);
@@ -240,6 +258,12 @@ class SettingsController extends Controller {
 			$this->settingsService->setAiModel($aiModel);
 		}
 
+		// An empty string clears the successor, which is a valid choice: no
+		// successor means contracts are left untouched on account deletion.
+		if ($deletionSuccessor !== null) {
+			$this->settingsService->setDeletionSuccessor($deletionSuccessor);
+		}
+
 		return new JSONResponse([
 			'reminderDays1' => $this->settingsService->getReminderDays1(),
 			'reminderDays2' => $this->settingsService->getReminderDays2(),
@@ -251,6 +275,8 @@ class SettingsController extends Controller {
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
 			'aiModel' => $this->settingsService->getAiModel(),
 			'reminderLink' => $this->getReminderLinkDiagnostics(),
+			'deletionSuccessor' => $this->settingsService->getDeletionSuccessor(),
+			'deletionSuccessorDisplayName' => $this->getDeletionSuccessorDisplayName(),
 		]);
 	}
 

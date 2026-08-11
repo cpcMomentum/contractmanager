@@ -38,6 +38,15 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      # Faengt Strings ab, die in t() stehen, aber in keiner l10n-Datei (#334).
+      # Solche Texte fallen in JEDER Sprache auf den deutschen Quelltext zurueck
+      # und bleiben beim Entwickeln unsichtbar, weil auf Deutsch getestet wird.
+      # Der Pflichtschritt "bei l10n-Aenderung Sprache umschalten" konnte das
+      # nicht auffangen: Wer den Eintrag vergisst, aendert keine l10n-Datei, also
+      # greift der Ausloeser nicht.
+      - name: l10n-Vollstaendigkeit
+        run: npm run lint:l10n
+
       - name: Typecheck
         run: npm run typecheck
 

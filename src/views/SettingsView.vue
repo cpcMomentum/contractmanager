@@ -382,6 +382,28 @@
 								</div>
 							</div>
 						</div>
+
+						<!-- Successor for contracts of deleted accounts (#299) -->
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Nachfolger bei gelöschtem Konto') }}</label>
+							<p class="settings-description">
+								{{ t('contractmanager', 'Wird ein Konto gelöscht, geht die Zuständigkeit für dessen Verträge an diese Person über. Ohne Angabe bleiben die Verträge unverändert. Private Verträge werden nie automatisch übertragen, sie bleiben für Administratoren sichtbar. Verträge werden dabei nie gelöscht.') }}
+							</p>
+							<NcSelect v-model="deletionSuccessorOption"
+								:options="transferUserResults"
+								:loading="transferSearching"
+								:placeholder="t('contractmanager', 'Benutzer suchen...')"
+								label="displayName"
+								track-by="id"
+								:clearable="true"
+								input-id="deletion-successor"
+								@open="onTransferOpen"
+								@search="onTransferSearch"
+								@update:model-value="onDeletionSuccessorChange" />
+							<p class="settings-description">
+								{{ t('contractmanager', 'Denk daran, den Eintrag anzupassen, wenn diese Person selbst das Unternehmen verlässt.') }}
+							</p>
+						</div>
 					</div>
 
 					<!-- Custom Fields Settings -->
@@ -651,7 +673,10 @@ export default {
 				aiApiKey: '',
 				aiApiUrl: '',
 				aiModel: '',
+				deletionSuccessor: '',
 			},
+			// Object form of adminSettings.deletionSuccessor for the NcSelect.
+			deletionSuccessorOption: null,
 			reminderLink: null,
 			reminderLinkExpanded: false,
 			permissionSettings: {
@@ -819,7 +844,15 @@ export default {
 					aiApiKey: settings.aiApiKey || '',
 					aiApiUrl: settings.aiApiUrl || '',
 					aiModel: settings.aiModel || '',
+					deletionSuccessor: settings.deletionSuccessor || '',
 				}
+				this.deletionSuccessorOption = settings.deletionSuccessor
+					? {
+						id: 'user:' + settings.deletionSuccessor,
+						uid: settings.deletionSuccessor,
+						displayName: settings.deletionSuccessorDisplayName || settings.deletionSuccessor,
+					}
+					: null
 				this.reminderLink = settings.reminderLink || null
 			} catch (error) {
 				console.error('Failed to load admin settings:', error)
@@ -867,6 +900,11 @@ export default {
 		principalUid(principal) {
 			if (!principal) return ''
 			return principal.uid || String(principal.id || '').replace('user:', '')
+		},
+		// Clearing the field is a valid choice: no successor means contracts of
+		// a deleted account are left untouched.
+		onDeletionSuccessorChange(option) {
+			this.adminSettings.deletionSuccessor = this.principalUid(option)
 		},
 
 		// Lazy-load a first batch of users when a transfer picker is first opened,
@@ -964,6 +1002,7 @@ export default {
 					aiApiKey: this.adminSettings.aiApiKey,
 					aiApiUrl: this.adminSettings.aiApiUrl,
 					aiModel: this.adminSettings.aiModel,
+					deletionSuccessor: this.adminSettings.deletionSuccessor || '',
 				})
 				this.adminSettings = {
 					reminderDays1: result.reminderDays1 || 14,
@@ -975,6 +1014,7 @@ export default {
 					aiApiKey: result.aiApiKey || '',
 					aiApiUrl: result.aiApiUrl || '',
 					aiModel: result.aiModel || '',
+					deletionSuccessor: result.deletionSuccessor || '',
 				}
 				if (result.reminderLink) {
 					this.reminderLink = result.reminderLink

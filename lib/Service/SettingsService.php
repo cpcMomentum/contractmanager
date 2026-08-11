@@ -35,6 +35,8 @@ class SettingsService {
 
 	private const KEY_CUSTOM_FIELD_LABEL_PREFIX = 'custom_field_label_';
 
+	private const KEY_DELETION_SUCCESSOR = 'deletion_successor';
+
 	private const KEY_AI_PROVIDER = 'ai_provider';
 	private const KEY_AI_API_KEY = 'ai_api_key';
 	private const KEY_AI_API_URL = 'ai_api_url';
@@ -74,6 +76,7 @@ class SettingsService {
 		'statuses' => [],
 		'contractType' => '',
 		'responsible' => '',
+		'ownerMissing' => false,
 	];
 
 	public function __construct(
@@ -147,6 +150,29 @@ class SettingsService {
 	// ========================================
 	// Custom Field Labels (Admin)
 	// ========================================
+
+	/**
+	 * Get the user contracts are handed over to when their owner's account is
+	 * deleted (#299). Empty means no automatic handover happens.
+	 */
+	public function getDeletionSuccessor(): string {
+		return $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_DELETION_SUCCESSOR,
+			''
+		);
+	}
+
+	/**
+	 * Set the successor for contracts of deleted users. Empty clears it.
+	 */
+	public function setDeletionSuccessor(string $userId): void {
+		$this->config->setAppValue(
+			Application::APP_ID,
+			self::KEY_DELETION_SUCCESSOR,
+			trim($userId)
+		);
+	}
 
 	/**
 	 * Get label for a custom field (1-3)
@@ -352,7 +378,7 @@ class SettingsService {
 	/**
 	 * Get filter preferences for a user
 	 *
-	 * @return array{vendor: string, statuses: string[], contractType: string}
+	 * @return array{vendor: string, statuses: string[], contractType: string, responsible: string, ownerMissing: bool}
 	 */
 	public function getUserFilters(string $userId): array {
 		$json = $this->config->getUserValue(
@@ -380,6 +406,10 @@ class SettingsService {
 				? $filters['contractType']
 				: '',
 			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
+			// Bewusst nicht aus dem gespeicherten Wert gelesen (#332): siehe
+			// setUserFilters. Ein aus einer frueheren Version stammendes true
+			// wird damit ignoriert und beim naechsten Speichern ueberschrieben.
+			'ownerMissing' => false,
 		];
 	}
 
@@ -396,6 +426,13 @@ class SettingsService {
 				? $filters['contractType']
 				: '',
 			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
+			// "Ohne aktiven Eigentuemer" wird bewusst nie dauerhaft gespeichert
+			// (#332). Der Filter ist das Administratoren-Diagnosewerkzeug aus
+			// #299 und liefert im Normalbetrieb fast immer null Treffer. Einmal
+			// angetippt filterte er ueber Monate stumm weiter, weil die leere
+			// Liste keinen Grund nannte. Er gilt jetzt nur fuer die laufende
+			// Ansicht und ist nach jedem Neuladen aus.
+			'ownerMissing' => false,
 		];
 
 		$this->config->setUserValue(

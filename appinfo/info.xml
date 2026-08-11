@@ -3,10 +3,10 @@
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
 
     <id>contractmanager</id>
-    <name>Verträge</name>
+    <name>VertragsWerk</name>
     <summary>Vertragsverwaltung mit Kündigungserinnerungen</summary>
     <description><![CDATA[
-# Verträge
+# VertragsWerk
 
 Verwalten Sie Ihre Verträge zentral in Nextcloud:
 
@@ -19,7 +19,7 @@ Verwalten Sie Ihre Verträge zentral in Nextcloud:
 Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     ]]></description>
 
-    <version>1.2.6</version>
+    <version>1.3.0</version>
     <licence>AGPL-3.0-or-later</licence>
 
     <author mail="axel.deffner@cpcmomentum.com" homepage="https://github.com/cpcMomentum">Axel Deffner</author>
@@ -57,7 +57,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
 
     <navigations>
         <navigation>
-            <name>Verträge</name>
+            <name>VertragsWerk</name>
             <route>contractmanager.page.index</route>
             <icon>app.svg</icon>
             <order>10</order>

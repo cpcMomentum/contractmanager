@@ -193,6 +193,25 @@ class ContractMapper extends QBMapper {
     }
 
     /**
+     * All contracts strictly OWNED by the user (created_by), active and
+     * archived, excluding trash. Unlike findAllVisible() this does NOT return
+     * other users' non-private contracts — used for user-migration export so
+     * that only the user's own data leaves their account.
+     *
+     * @return Contract[]
+     */
+    public function findAllByOwner(string $userId): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
+            ->andWhere($qb->expr()->isNull('deleted_at'))
+            ->orderBy('id', 'ASC');
+
+        return $this->findEntities($qb);
+    }
+
+    /**
      * @throws DoesNotExistException
      * @throws MultipleObjectsReturnedException
      */
@@ -413,6 +432,33 @@ class ContractMapper extends QBMapper {
         $qb->update($this->getTableName())
             ->set('responsible_user', $qb->createNamedParameter($to))
             ->where($qb->expr()->isNull('deleted_at'))
+            ->andWhere($this->effectiveOwnerExpr($qb, $from));
+        return $qb->executeStatement();
+    }
+
+    /**
+     * Reassign responsibility after the owner's account was deleted (#299).
+     *
+     * Differs from reassignResponsible() in one point: private contracts are
+     * left alone. The user marked them private on purpose, and handing them to
+     * another non-admin would reverse that decision after the fact. They stay
+     * put and remain visible to admins, who decide what happens to them.
+     *
+     * Trash rows are excluded as well, but for a different reason: the trash
+     * view filters on createdBy, not on responsibleUser, so reassigning them
+     * would have no visible effect at all. They are instead kept from being
+     * auto-purged by TrashCleanupJob.
+     *
+     * createdBy is never touched - it documents who created the contract.
+     *
+     * @return int Number of contracts updated
+     */
+    public function reassignOnOwnerDeletion(string $from, string $to): int {
+        $qb = $this->db->getQueryBuilder();
+        $qb->update($this->getTableName())
+            ->set('responsible_user', $qb->createNamedParameter($to))
+            ->where($qb->expr()->isNull('deleted_at'))
+            ->andWhere($qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
             ->andWhere($this->effectiveOwnerExpr($qb, $from));
         return $qb->executeStatement();
     }

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-11
+
+### Changed
+- Anzeigename der App auf „VertragsWerk" umgestellt (App-ID bleibt `contractmanager`)
+
+### Security
+- Die mitgelieferte Bibliothek dompurify wurde auf 3.4.13 gehoben. Die Vorversion konnte unter bestimmten Umständen Schadcode in einem abgetrennten Teilbaum ausführbar lassen. Der Bump allein hätte nicht gereicht: dompurify steckt im ausgelieferten JavaScript, deshalb wurde es neu gebaut
+
+### Fixed
+- Ein archivierter Vertrag ließ sich nicht mehr ansehen: Der Klick darauf öffnete ein leeres Formular. Das Archiv zeigt Verträge jetzt wieder vollständig an, allerdings nur noch lesend. Wer einen archivierten Vertrag ändern will, stellt ihn vorher wieder her. Die Einträge „Duplizieren“ und „Bearbeiten“ sind dort entfallen, sie waren ohnehin wirkungslos. „Wiederherstellen“ und „Löschen“ bleiben (#328)
+- 41 Texte der Oberfläche waren nie in die Übersetzungsdateien eingetragen und erschienen deshalb in jeder Sprache auf Deutsch, darunter „Betrag“, „Gekündigt am“, „Aktive Verträge“ und die Beschriftungen der Einstellungen. Sie sind jetzt vollständig hinterlegt und übersetzt. Damit die Lücke nicht erneut entsteht, prüft die CI ab sofort bei jedem Pull Request, ob jeder übersetzbare Text in allen vier Übersetzungsdateien steht (#334)
+- Eine leere Vertragsliste behauptet nicht mehr, es gebe noch keine Verträge, wenn in Wahrheit nur ein Filter, eine Kategorie oder die Suche greift. Sie nennt jetzt die Einschränkung als Ursache und bietet an, die Filter zurückzusetzen. Der Administratoren-Filter „Ohne aktiven Eigentümer“ wird außerdem nicht mehr dauerhaft gespeichert: Er ist ein Diagnosewerkzeug, das im Normalbetrieb fast immer null Treffer liefert, und filterte einmal angetippt über Monate stumm weiter. Er gilt nur noch für die laufende Ansicht (#332)
+- Beim Duplizieren eines Vertrags werden Start- und Enddatum sowie die Kündigungsdaten nicht mehr aus dem Original übernommen. Bisher stand im Startdatum der Kopie das alte Datum, und der Kalender des Browsers öffnete sich deshalb im damaligen Monat, sodass man bis zum heutigen Tag vorblättern musste. Bei leeren Feldern öffnet er sich von selbst im aktuellen Monat. Die Kopie eines gekündigten Vertrags trägt außerdem nicht länger dessen Kündigungsdaten mit sich, sondern startet als laufender Vertrag. Alles Übrige, also Anbieter, Kategorie, Kosten, Kündigungsfrist, Erinnerungen und Notizen, wird weiterhin übernommen (#307)
+- Beträge mit zwei Nachkommastellen bleiben erhalten: „10,50" wurde im Vertragsformular als „10,5" angezeigt und blieb auch nach dem Korrigieren und Speichern so. Das Feld nimmt jetzt auch die deutsche Komma-Schreibweise entgegen und zeigt Beträge einheitlich mit zwei Nachkommastellen (#305)
+- Ein Betrag, der sich nicht als Zahl lesen lässt oder über 99.999.999,99 liegt, wird beim Speichern mit einem Hinweis abgewiesen, statt zu einem Serverfehler zu führen (#315)
+- Das ausgelieferte JavaScript enthielt Entwicklungscode: Die App lädt jetzt ein kleineres Paket und läuft im Browser schneller. Fehlermeldungen der Oberfläche, die nur im Entwicklungsmodus auftraten, sind damit ebenfalls verschwunden (#306)
+- Wird ein Nutzerkonto gelöscht, verlieren dessen Verträge nicht mehr stillschweigend ihren Eigentümer: Die Zuständigkeit geht an einen Nachfolger über, der per `occ config:app:set contractmanager deletion_successor --value=<Nutzer>` festgelegt wird. Ohne festgelegten Nachfolger bleibt alles unverändert. Verträge werden dabei nie gelöscht, auch nicht die im Papierkorb, und der Ersteller bleibt als Angabe erhalten. Verträge mit einem anderen Verantwortlichen sowie private Verträge bleiben unberührt (#299)
+- Verträge im Papierkorb werden nicht mehr automatisch nach 30 Tagen endgültig gelöscht, wenn ihr Ersteller kein Konto mehr hat. Endgültig löschen kann sie damit nur noch ein Administrator (#299)
+
+### Added
+- Die eigenen Vertragsdaten lassen sich jetzt über Nextclouds App [user_migration](https://github.com/nextcloud/user_migration) mit exportieren und wieder einspielen: `occ user:export` legt sie ins Standard-Archiv, `occ user:import` spielt sie samt Kategorien zurück, ohne die vorhandene Kategorienliste zu verdoppeln. Verträge im Papierkorb bleiben außen vor, angehängte Dateien nimmt Nextcloud selbst mit (#273)
+- Neue Administrator-Einstellung „Nachfolger bei gelöschtem Konto": Wer hier eingetragen ist, übernimmt die Zuständigkeit für die Verträge gelöschter Konten. Ohne Eintrag bleibt alles unverändert (#299)
+- Administratoren werden benachrichtigt, wenn ein Konto gelöscht wurde, samt Anzahl der übertragenen Verträge und derer, die noch eine Zuordnung brauchen (#299)
+- Neuer Filter „Ohne aktiven Eigentümer" in der Vertragsliste, nur für Administratoren: zeigt Verträge, deren Zuständiger beziehungsweise Ersteller kein Konto mehr hat, und macht sie über „Verträge übertragen" weiterreichbar (#299)
+
 ## [1.2.6] - 2026-07-23
 
 ### Added
@@ -391,7 +416,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...v1.3.0
 [1.2.6]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.3...v1.2.4

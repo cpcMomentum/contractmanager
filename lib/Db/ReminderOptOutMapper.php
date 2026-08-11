@@ -85,4 +85,24 @@ class ReminderOptOutMapper extends QBMapper {
 			->where($qb->expr()->eq('contract_id', $qb->createNamedParameter($contractId, IQueryBuilder::PARAM_INT)));
 		$qb->executeStatement();
 	}
+
+	/**
+	 * Delete all opt-outs of a user (used when their account is deleted, #299).
+	 *
+	 * An opt-out is a setting, not a record of something that happened: it has
+	 * no timestamp and only means "do not remind me about this contract".
+	 * Nextcloud drops the app's other per-user settings along with the account;
+	 * this one only survives because it lives in the app's own table instead of
+	 * oc_preferences. Leaving it behind matters because Nextcloud allows a uid
+	 * to be handed out again, and a stale row would silently mute reminders for
+	 * whoever gets that uid next.
+	 *
+	 * @return int Number of rows removed
+	 */
+	public function deleteByUser(string $userId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
+		return $qb->executeStatement();
+	}
 }

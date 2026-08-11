@@ -58,7 +58,48 @@ class ContractController extends Controller {
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
-		return new JSONResponse($this->service->findAllVisible($this->userId, $isAdmin));
+		return new JSONResponse(
+			$this->withOwnerStatus($this->service->findAllVisible($this->userId, $isAdmin), $isAdmin)
+		);
+	}
+
+	/**
+	 * Flag contracts whose effective owner no longer has an account (#299).
+	 *
+	 * Admins only: the filter is an admin clean-up tool, and whether some
+	 * account still exists has no business being in everyone's contract list.
+	 *
+	 * Resolved per request instead of stored in a column - being orphaned is a
+	 * statement about the user database, not a property of the contract, and a
+	 * stored flag would drift the moment an account is created or removed.
+	 *
+	 * @param \OCA\ContractManager\Db\Contract[] $contracts
+	 * @return array<int, array<string, mixed>|\OCA\ContractManager\Db\Contract>
+	 */
+	private function withOwnerStatus(array $contracts, bool $isAdmin): array {
+		if (!$isAdmin) {
+			return $contracts;
+		}
+
+		$exists = [];
+		$resolve = function (string $uid) use (&$exists): bool {
+			if ($uid === '') {
+				return false;
+			}
+			if (!array_key_exists($uid, $exists)) {
+				$exists[$uid] = $this->userManager->userExists($uid);
+			}
+			return $exists[$uid];
+		};
+
+		return array_map(static function ($contract) use ($resolve): array {
+			$responsible = $contract->getResponsibleUser();
+			$owner = ($responsible !== null && $responsible !== '')
+				? $responsible
+				: (string)$contract->getCreatedBy();
+
+			return $contract->jsonSerialize() + ['ownerMissing' => !$resolve($owner)];
+		}, $contracts);
 	}
 
 	/**
@@ -67,7 +108,9 @@ class ContractController extends Controller {
 	#[NoAdminRequired]
 	public function archived(): JSONResponse {
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
-		return new JSONResponse($this->service->findArchivedVisible($this->userId, $isAdmin));
+		return new JSONResponse(
+			$this->withOwnerStatus($this->service->findArchivedVisible($this->userId, $isAdmin), $isAdmin)
+		);
 	}
 
 	/**

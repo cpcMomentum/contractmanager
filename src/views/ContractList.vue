@@ -106,6 +106,13 @@
 				:clearable="true"
 				input-id="filter-responsible"
 				@update:model-value="persistFilters" />
+			<NcCheckboxRadioSwitch v-if="isAdmin"
+				:model-value="filterOwnerMissing"
+				type="switch"
+				class="filter-owner-missing"
+				@update:model-value="onOwnerMissingChange">
+				{{ t('contractmanager', 'Ohne aktiven Eigentümer') }}
+			</NcCheckboxRadioSwitch>
 			<NcButton v-if="hasActiveFilters"
 				variant="tertiary"
 				@click="resetFilters">
@@ -120,14 +127,27 @@
 			<NcLoadingIcon :size="44" />
 		</div>
 
+		<!-- Leerzustand: solange Filter, Kategorie oder Suche greifen, darf hier
+		     nicht "noch keinen Vertrag angelegt" stehen (#332). -->
 		<NcEmptyContent v-else-if="contracts.length === 0"
-			:name="t('contractmanager', 'Keine Verträge')"
-			:description="t('contractmanager', 'Erstellen Sie Ihren ersten Vertrag, um zu beginnen.')">
+			:name="viewIsNarrowed
+				? t('contractmanager', 'Kein Vertrag passt zur aktuellen Auswahl')
+				: t('contractmanager', 'Keine Verträge')"
+			:description="viewIsNarrowed
+				? t('contractmanager', 'Filter, Kategorie oder Suche schränken die Liste ein. Heben Sie die Einschränkung auf, um alle Verträge zu sehen.')
+				: t('contractmanager', 'Erstellen Sie Ihren ersten Vertrag, um zu beginnen.')">
 			<template #icon>
-				<FileDocumentIcon :size="64" />
+				<FilterOffIcon v-if="viewIsNarrowed" :size="64" />
+				<FileDocumentIcon v-else :size="64" />
 			</template>
-			<template v-if="canEdit" #action>
-				<NcButton variant="primary" @click="showCreateForm = true">
+			<template #action>
+				<NcButton v-if="hasActiveFilters" variant="primary" @click="resetFilters">
+					<template #icon>
+						<FilterOffIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Filter zurücksetzen') }}
+				</NcButton>
+				<NcButton v-else-if="!viewIsNarrowed && canEdit" variant="primary" @click="showCreateForm = true">
 					<template #icon>
 						<PlusIcon :size="20" />
 					</template>
@@ -196,6 +216,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import SortAscendingIcon from 'vue-material-design-icons/SortAscending.vue'
@@ -209,6 +230,7 @@ import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isPlanned } from '../utils/contractStatus'
+import { contractForDuplicate } from '../utils/contractDuplicate'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 import { showInfo, showError } from '@nextcloud/dialogs'
@@ -227,6 +249,7 @@ export default {
 		NcLoadingIcon,
 		NcEmptyContent,
 		NcSelect,
+		NcCheckboxRadioSwitch,
 		PlusIcon,
 		FileDocumentIcon,
 		SortAscendingIcon,
@@ -281,6 +304,12 @@ export default {
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
 			filterResponsible: filters.responsible || null,
+			// Admin-only (#299): contracts whose effective owner no longer has
+			// an account. Bewusst nicht aus den gespeicherten Filtern gelesen
+			// und nie mitgespeichert (#332): ein Diagnosewerkzeug, das im
+			// Normalbetrieb null Treffer liefert, darf nicht monatelang stumm
+			// weiterfiltern. Gilt nur fuer die laufende Ansicht.
+			filterOwnerMissing: false,
 			// Window the badge / filter uses for "Kündigungsfrist endet". Defaults to the
 			// constant in utils/contractStatus; gets overridden once the admin
 			// setting comes back from the user-settings endpoint.
@@ -303,6 +332,7 @@ export default {
 			allContracts: 'allContracts',
 			loading: 'isLoading',
 			canEdit: 'canEdit',
+			isAdmin: 'isAdmin',
 		}),
 		...mapState(useCategoriesStore, ['allCategories']),
 		vendorOptions() {
@@ -326,6 +356,7 @@ export default {
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
 			if (this.filterResponsible) return true
+			if (this.filterOwnerMissing) return true
 			return false
 		},
 		// --- KPI-Kennzahlen: beziehen sich auf die aktuell ANGEZEIGTE (gefilterte)
@@ -333,10 +364,17 @@ export default {
 		kpiBaseContracts() {
 			return this.contracts
 		},
-		kpiScopeActive() {
+		// Ob die Ansicht ueberhaupt eingeschraenkt ist: Filterleiste, Kategorie
+		// in der Seitenleiste oder Suche (#332). Entscheidet zusaetzlich, was
+		// der Leerzustand sagt - "noch keinen Vertrag angelegt" waere sonst
+		// gelogen, sobald eine dieser drei Einschraenkungen greift.
+		viewIsNarrowed() {
 			return this.hasActiveFilters
 				|| this.categoryFilter !== null
 				|| this.searchQuery.trim() !== ''
+		},
+		kpiScopeActive() {
+			return this.viewIsNarrowed
 		},
 		kpiScopeLabel() {
 			if (this.categoryFilter === 'uncategorized') {
@@ -483,6 +521,14 @@ export default {
 				filtered = filtered.filter(c => c.responsibleUser === this.filterResponsible)
 			}
 
+			// Verwaiste Verträge (nur Admins, #299). isAdmin wird zusätzlich
+			// geprüft, damit ein noch gespeicherter Filterwert nach dem Entzug
+			// der Admin-Rolle nicht zu einer leeren, unerklärten Liste führt -
+			// die Checkbox ist dann ja ausgeblendet und nicht mehr abwählbar.
+			if (this.filterOwnerMissing && this.isAdmin) {
+				filtered = filtered.filter(c => c.ownerMissing)
+			}
+
 			return this.sortContracts(filtered)
 		},
 	},
@@ -520,12 +566,9 @@ export default {
 		},
 
 		handleDuplicate(contract) {
-			this.editingContract = {
-				...contract,
-				id: null,
-				name: contract.name + ' (' + t('contractmanager', 'Kopie') + ')',
-				status: 'active',
-			}
+			// Laufzeit- und Kuendigungsdaten sowie der Archiv-Zustand gehoeren
+			// zum Original, nicht zur Kopie (#307).
+			this.editingContract = contractForDuplicate(contract, t('contractmanager', 'Kopie'))
 			this.showCreateForm = true
 		},
 
@@ -701,7 +744,13 @@ export default {
 			this.filterStatuses = []
 			this.filterContractType = null
 			this.filterResponsible = null
+			this.filterOwnerMissing = false
 			this.persistFilters()
+		},
+
+		// Wirkt nur auf die laufende Ansicht, kein persistFilters (#332).
+		onOwnerMissingChange(value) {
+			this.filterOwnerMissing = value
 		},
 
 		async persistFilters() {
@@ -759,6 +808,12 @@ export default {
 		.v-select {
 			min-width: 180px;
 			flex: 1;
+		}
+
+		// The selects above grow (flex: 1); without this the switch would be
+		// squeezed and its label wrapped.
+		.filter-owner-missing {
+			flex: 0 0 auto;
 		}
 	}
 
