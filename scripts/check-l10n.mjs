@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+/* eslint-disable no-console -- Ausgabe ist der Zweck: das Skript laeuft im CI. */
 /**
  * Prueft, dass jeder uebersetzbare String aus src/ auch in den l10n-Dateien steht.
  *
@@ -125,7 +125,9 @@ if (problems.length > 0) {
 	console.error('\nJeder sichtbare String gehört in alle vier Dateien:')
 	console.error('  l10n/de.js  l10n/de.json  l10n/en.js  l10n/en.json')
 	console.error('Deutsche Werte identisch zum Quelltext, englische übersetzt.')
-	process.exit(1)
-}
+	// exitCode statt process.exit(): laesst stdout/stderr sauber leerlaufen.
+	process.exitCode = 1
+} else {
 
-console.log(`l10n ok: ${used.size} Strings, ${reference.size} Einträge, vier Dateien deckungsgleich`)
+	console.log(`l10n ok: ${used.size} Strings, ${reference.size} Einträge, vier Dateien deckungsgleich`)
+}
