@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-11
+
 ### Changed
 - Anzeigename der App auf „VertragsWerk" umgestellt (App-ID bleibt `contractmanager`)
 
+### Security
+- Die mitgelieferte Bibliothek dompurify wurde auf 3.4.13 gehoben. Die Vorversion konnte unter bestimmten Umständen Schadcode in einem abgetrennten Teilbaum ausführbar lassen. Der Bump allein hätte nicht gereicht: dompurify steckt im ausgelieferten JavaScript, deshalb wurde es neu gebaut
+
 ### Fixed
+- Ein archivierter Vertrag ließ sich nicht mehr ansehen: Der Klick darauf öffnete ein leeres Formular. Das Archiv zeigt Verträge jetzt wieder vollständig an, allerdings nur noch lesend. Wer einen archivierten Vertrag ändern will, stellt ihn vorher wieder her. Die Einträge „Duplizieren“ und „Bearbeiten“ sind dort entfallen, sie waren ohnehin wirkungslos. „Wiederherstellen“ und „Löschen“ bleiben (#328)
 - 41 Texte der Oberfläche waren nie in die Übersetzungsdateien eingetragen und erschienen deshalb in jeder Sprache auf Deutsch, darunter „Betrag“, „Gekündigt am“, „Aktive Verträge“ und die Beschriftungen der Einstellungen. Sie sind jetzt vollständig hinterlegt und übersetzt. Damit die Lücke nicht erneut entsteht, prüft die CI ab sofort bei jedem Pull Request, ob jeder übersetzbare Text in allen vier Übersetzungsdateien steht (#334)
 - Eine leere Vertragsliste behauptet nicht mehr, es gebe noch keine Verträge, wenn in Wahrheit nur ein Filter, eine Kategorie oder die Suche greift. Sie nennt jetzt die Einschränkung als Ursache und bietet an, die Filter zurückzusetzen. Der Administratoren-Filter „Ohne aktiven Eigentümer“ wird außerdem nicht mehr dauerhaft gespeichert: Er ist ein Diagnosewerkzeug, das im Normalbetrieb fast immer null Treffer liefert, und filterte einmal angetippt über Monate stumm weiter. Er gilt nur noch für die laufende Ansicht (#332)
 - Beim Duplizieren eines Vertrags werden Start- und Enddatum sowie die Kündigungsdaten nicht mehr aus dem Original übernommen. Bisher stand im Startdatum der Kopie das alte Datum, und der Kalender des Browsers öffnete sich deshalb im damaligen Monat, sodass man bis zum heutigen Tag vorblättern musste. Bei leeren Feldern öffnet er sich von selbst im aktuellen Monat. Die Kopie eines gekündigten Vertrags trägt außerdem nicht länger dessen Kündigungsdaten mit sich, sondern startet als laufender Vertrag. Alles Übrige, also Anbieter, Kategorie, Kosten, Kündigungsfrist, Erinnerungen und Notizen, wird weiterhin übernommen (#307)
@@ -410,7 +416,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...v1.3.0
 [1.2.6]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.3...v1.2.4
