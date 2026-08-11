@@ -217,6 +217,7 @@ import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isPlanned } from '../utils/contractStatus'
+import { contractForDuplicate } from '../utils/contractDuplicate'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 import { showInfo, showError } from '@nextcloud/dialogs'
@@ -542,12 +543,9 @@ export default {
 		},
 
 		handleDuplicate(contract) {
-			this.editingContract = {
-				...contract,
-				id: null,
-				name: contract.name + ' (' + t('contractmanager', 'Kopie') + ')',
-				status: 'active',
-			}
+			// Laufzeit- und Kuendigungsdaten sowie der Archiv-Zustand gehoeren
+			// zum Original, nicht zur Kopie (#307).
+			this.editingContract = contractForDuplicate(contract, t('contractmanager', 'Kopie'))
 			this.showCreateForm = true
 		},
 

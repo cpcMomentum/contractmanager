@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Anzeigename der App auf „VertragsWerk" umgestellt (App-ID bleibt `contractmanager`)
 
 ### Fixed
+- Beim Duplizieren eines Vertrags werden Start- und Enddatum sowie die Kündigungsdaten nicht mehr aus dem Original übernommen. Bisher stand im Startdatum der Kopie das alte Datum, und der Kalender des Browsers öffnete sich deshalb im damaligen Monat, sodass man bis zum heutigen Tag vorblättern musste. Bei leeren Feldern öffnet er sich von selbst im aktuellen Monat. Die Kopie eines gekündigten Vertrags trägt außerdem nicht länger dessen Kündigungsdaten mit sich, sondern startet als laufender Vertrag. Alles Übrige, also Anbieter, Kategorie, Kosten, Kündigungsfrist, Erinnerungen und Notizen, wird weiterhin übernommen (#307)
 - Beträge mit zwei Nachkommastellen bleiben erhalten: „10,50" wurde im Vertragsformular als „10,5" angezeigt und blieb auch nach dem Korrigieren und Speichern so. Das Feld nimmt jetzt auch die deutsche Komma-Schreibweise entgegen und zeigt Beträge einheitlich mit zwei Nachkommastellen (#305)
 - Ein Betrag, der sich nicht als Zahl lesen lässt oder über 99.999.999,99 liegt, wird beim Speichern mit einem Hinweis abgewiesen, statt zu einem Serverfehler zu führen (#315)
 - Das ausgelieferte JavaScript enthielt Entwicklungscode: Die App lädt jetzt ein kleineres Paket und läuft im Browser schneller. Fehlermeldungen der Oberfläche, die nur im Entwicklungsmodus auftraten, sind damit ebenfalls verschwunden (#306)
