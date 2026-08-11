@@ -20,15 +20,16 @@
 			<ContractListItem v-for="contract in archivedContracts"
 				:key="contract.id"
 				:contract="contract"
-				@click="handleContractClick"
+				mode="archive"
+				@edit="handleContractClick"
+				@view="handleContractClick"
 				@restore="handleRestore" />
 		</div>
 
-		<ContractForm :show="showEditForm"
-			:contract="editingContract"
-			:loading="formLoading"
-			@close="closeForm"
-			@submit="handleFormSubmit" />
+		<ContractForm :show="showViewForm"
+			:contract="viewingContract"
+			:read-only="true"
+			@close="closeForm" />
 
 		<NcDialog v-if="showRestoreDialog"
 			:name="t('contractmanager', 'Vertrag wiederherstellen')"
@@ -71,11 +72,10 @@ export default {
 	},
 	data() {
 		return {
-			showEditForm: false,
+			showViewForm: false,
 			showRestoreDialog: false,
-			editingContract: null,
+			viewingContract: null,
 			restoringContract: null,
-			formLoading: false,
 		}
 	},
 	computed: {
@@ -89,12 +89,15 @@ export default {
 		this.fetchCategories()
 	},
 	methods: {
-		...mapActions(useContractsStore, ['fetchArchivedContracts', 'restoreContract', 'updateContract']),
+		...mapActions(useContractsStore, ['fetchArchivedContracts', 'restoreContract']),
 		...mapActions(useCategoriesStore, ['fetchCategories']),
 
+		// Im Archiv wird nur angesehen, nicht bearbeitet (#328). Beide
+		// Ereignisse landen deshalb im selben schreibgeschuetzten Formular:
+		// ContractListItem sendet je nach Berechtigung 'edit' oder 'view'.
 		handleContractClick(contract) {
-			this.editingContract = contract
-			this.showEditForm = true
+			this.viewingContract = contract
+			this.showViewForm = true
 		},
 
 		handleRestore(contract) {
@@ -115,23 +118,8 @@ export default {
 		},
 
 		closeForm() {
-			this.showEditForm = false
-			this.editingContract = null
-		},
-
-		async handleFormSubmit(data) {
-			this.formLoading = true
-			try {
-				await this.updateContract({
-					id: this.editingContract.id,
-					data,
-				})
-				this.closeForm()
-			} catch (error) {
-				console.error('Failed to update contract:', error)
-			} finally {
-				this.formLoading = false
-			}
+			this.showViewForm = false
+			this.viewingContract = null
 		},
 	},
 }
