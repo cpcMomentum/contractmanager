@@ -374,4 +374,49 @@ class SettingsServiceTest extends TestCase {
 
 		$this->assertSame('https://cloud.example.com', $this->service->getCliUrl());
 	}
+
+	// ========================================
+	// Filter-Einstellungen (#332)
+	// ========================================
+
+	public function testSetUserFiltersNeverPersistsOwnerMissing(): void {
+		$stored = null;
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->willReturnCallback(function ($user, $app, $key, $value) use (&$stored) {
+				$stored = json_decode($value, true);
+			});
+
+		$this->service->setUserFilters('testuser', [
+			'vendor' => 'Stadtwerke',
+			'statuses' => ['active'],
+			'contractType' => 'fixed',
+			'responsible' => 'alice',
+			'ownerMissing' => true,
+		]);
+
+		$this->assertFalse($stored['ownerMissing'], 'Der Diagnosefilter darf nie gespeichert werden');
+		$this->assertSame('Stadtwerke', $stored['vendor'], 'Die uebrigen Filter bleiben erhalten');
+		$this->assertSame(['active'], $stored['statuses']);
+		$this->assertSame('fixed', $stored['contractType']);
+		$this->assertSame('alice', $stored['responsible']);
+	}
+
+	public function testGetUserFiltersIgnoresStoredOwnerMissing(): void {
+		$this->config->expects($this->once())
+			->method('getUserValue')
+			->willReturn(json_encode([
+				'vendor' => 'Telekom',
+				'statuses' => ['cancelled'],
+				'contractType' => '',
+				'responsible' => '',
+				'ownerMissing' => true,
+			]));
+
+		$filters = $this->service->getUserFilters('testuser');
+
+		$this->assertFalse($filters['ownerMissing'], 'Ein Altwert aus fruheren Versionen bleibt wirkungslos');
+		$this->assertSame('Telekom', $filters['vendor']);
+		$this->assertSame(['cancelled'], $filters['statuses']);
+	}
 }

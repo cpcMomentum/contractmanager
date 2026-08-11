@@ -127,14 +127,27 @@
 			<NcLoadingIcon :size="44" />
 		</div>
 
+		<!-- Leerzustand: solange Filter, Kategorie oder Suche greifen, darf hier
+		     nicht "noch keinen Vertrag angelegt" stehen (#332). -->
 		<NcEmptyContent v-else-if="contracts.length === 0"
-			:name="t('contractmanager', 'Keine Verträge')"
-			:description="t('contractmanager', 'Erstellen Sie Ihren ersten Vertrag, um zu beginnen.')">
+			:name="viewIsNarrowed
+				? t('contractmanager', 'Kein Vertrag passt zur aktuellen Auswahl')
+				: t('contractmanager', 'Keine Verträge')"
+			:description="viewIsNarrowed
+				? t('contractmanager', 'Filter, Kategorie oder Suche schränken die Liste ein. Heben Sie die Einschränkung auf, um alle Verträge zu sehen.')
+				: t('contractmanager', 'Erstellen Sie Ihren ersten Vertrag, um zu beginnen.')">
 			<template #icon>
-				<FileDocumentIcon :size="64" />
+				<FilterOffIcon v-if="viewIsNarrowed" :size="64" />
+				<FileDocumentIcon v-else :size="64" />
 			</template>
-			<template v-if="canEdit" #action>
-				<NcButton variant="primary" @click="showCreateForm = true">
+			<template #action>
+				<NcButton v-if="hasActiveFilters" variant="primary" @click="resetFilters">
+					<template #icon>
+						<FilterOffIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Filter zurücksetzen') }}
+				</NcButton>
+				<NcButton v-else-if="!viewIsNarrowed && canEdit" variant="primary" @click="showCreateForm = true">
 					<template #icon>
 						<PlusIcon :size="20" />
 					</template>
@@ -292,8 +305,11 @@ export default {
 			filterContractType: filters.contractType || null,
 			filterResponsible: filters.responsible || null,
 			// Admin-only (#299): contracts whose effective owner no longer has
-			// an account. The backend only sends ownerMissing to admins.
-			filterOwnerMissing: !!filters.ownerMissing,
+			// an account. Bewusst nicht aus den gespeicherten Filtern gelesen
+			// und nie mitgespeichert (#332): ein Diagnosewerkzeug, das im
+			// Normalbetrieb null Treffer liefert, darf nicht monatelang stumm
+			// weiterfiltern. Gilt nur fuer die laufende Ansicht.
+			filterOwnerMissing: false,
 			// Window the badge / filter uses for "Kündigungsfrist endet". Defaults to the
 			// constant in utils/contractStatus; gets overridden once the admin
 			// setting comes back from the user-settings endpoint.
@@ -348,10 +364,17 @@ export default {
 		kpiBaseContracts() {
 			return this.contracts
 		},
-		kpiScopeActive() {
+		// Ob die Ansicht ueberhaupt eingeschraenkt ist: Filterleiste, Kategorie
+		// in der Seitenleiste oder Suche (#332). Entscheidet zusaetzlich, was
+		// der Leerzustand sagt - "noch keinen Vertrag angelegt" waere sonst
+		// gelogen, sobald eine dieser drei Einschraenkungen greift.
+		viewIsNarrowed() {
 			return this.hasActiveFilters
 				|| this.categoryFilter !== null
 				|| this.searchQuery.trim() !== ''
+		},
+		kpiScopeActive() {
+			return this.viewIsNarrowed
 		},
 		kpiScopeLabel() {
 			if (this.categoryFilter === 'uncategorized') {
@@ -725,9 +748,9 @@ export default {
 			this.persistFilters()
 		},
 
+		// Wirkt nur auf die laufende Ansicht, kein persistFilters (#332).
 		onOwnerMissingChange(value) {
 			this.filterOwnerMissing = value
-			this.persistFilters()
 		},
 
 		async persistFilters() {
@@ -738,7 +761,6 @@ export default {
 						statuses: this.filterStatuses,
 						contractType: this.filterContractType || '',
 						responsible: this.filterResponsible || '',
-						ownerMissing: this.filterOwnerMissing,
 					},
 				})
 			} catch (error) {
