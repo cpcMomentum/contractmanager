@@ -40,15 +40,30 @@ function sourceFiles(dir) {
 /**
  * Einfach-gequotete Strings koennen \' enthalten ("Er sagt \'hallo\'"), deshalb
  * matcht das Muster escapte Zeichen mit und macht sie danach rueckgaengig.
+ *
+ * Erfasst werden t() und n(). n() nimmt Singular und Plural als zwei Argumente,
+ * beide brauchen einen Eintrag. n() wird derzeit nirgends verwendet, steht aber
+ * bereit - sonst haette die Pruefung dieselbe Luecke wie der Prozess, den sie
+ * ersetzt: unsichtbar bis zum ersten Pluralstring.
  */
-const CALL = new RegExp(`\\bt\\(\\s*'${APP_ID}'\\s*,\\s*'((?:[^'\\\\]|\\\\.)*)'`, 'g')
+const STR = "'((?:[^'\\\\]|\\\\.)*)'"
+const CALL_T = new RegExp(`\\bt\\(\\s*'${APP_ID}'\\s*,\\s*${STR}`, 'g')
+const CALL_N = new RegExp(`\\bn\\(\\s*'${APP_ID}'\\s*,\\s*${STR}\\s*,\\s*${STR}`, 'g')
+
+function unescape(text) {
+	return text.replace(/\\'/g, "'").replace(/\\\\/g, '\\')
+}
 
 function usedStrings() {
 	const found = new Map()
 	for (const file of sourceFiles(SRC)) {
 		const code = readFileSync(file, 'utf8')
-		for (const match of code.matchAll(CALL)) {
-			const text = match[1].replace(/\\'/g, "'").replace(/\\\\/g, '\\')
+		const texts = [
+			...[...code.matchAll(CALL_T)].map(m => m[1]),
+			...[...code.matchAll(CALL_N)].flatMap(m => [m[1], m[2]]),
+		]
+		for (const raw of texts) {
+			const text = unescape(raw)
 			if (!found.has(text)) {
 				found.set(text, file)
 			}
