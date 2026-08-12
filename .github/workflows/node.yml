@@ -44,8 +44,12 @@ jobs:
       # Der Pflichtschritt "bei l10n-Aenderung Sprache umschalten" konnte das
       # nicht auffangen: Wer den Eintrag vergisst, aendert keine l10n-Datei, also
       # greift der Ausloeser nicht.
+      #
+      # Seit #340 der Waechter aus worktime: er sieht zusaetzlich lib/,
+      # templates/ und appinfo/. Der Vorgaenger prueft nur src/ und meldete
+      # deshalb gruen, waehrend 29 Backend-Strings englisch ausgeliefert wurden.
       - name: l10n-Vollstaendigkeit
-        run: npm run lint:l10n
+        run: npm run l10n:check
 
       - name: Typecheck
         run: npm run typecheck

@@ -11,6 +11,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 class CategoryController extends Controller {
@@ -19,6 +20,7 @@ class CategoryController extends Controller {
         IRequest $request,
         private CategoryService $service,
         private ?string $userId,
+        private IL10N $l,
     ) {
         parent::__construct(Application::APP_ID, $request);
     }
@@ -44,7 +46,7 @@ class CategoryController extends Controller {
             $category = $this->service->update($id, $name, $sortOrder);
             return new JSONResponse($category);
         } catch (NotFoundException $e) {
-            return new JSONResponse(['error' => 'Category not found'], Http::STATUS_NOT_FOUND);
+            return new JSONResponse(['error' => $this->l->t('Kategorie nicht gefunden')], Http::STATUS_NOT_FOUND);
         }
     }
 
@@ -56,7 +58,7 @@ class CategoryController extends Controller {
             $this->service->delete($id);
             return new JSONResponse(['success' => true]);
         } catch (NotFoundException $e) {
-            return new JSONResponse(['error' => 'Category not found'], Http::STATUS_NOT_FOUND);
+            return new JSONResponse(['error' => $this->l->t('Kategorie nicht gefunden')], Http::STATUS_NOT_FOUND);
         }
     }
 }

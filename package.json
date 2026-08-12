@@ -10,7 +10,8 @@
         "test:watch": "vitest",
         "typecheck": "vue-tsc --noEmit",
         "lint": "eslint --ext .js,.ts,.vue src",
-        "lint:l10n": "node scripts/check-l10n.mjs",
+        "l10n:check": "node scripts/l10n-check.mjs",
+        "l10n:fix": "node scripts/l10n-check.mjs --fix",
         "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
         "prepare": "git config core.hooksPath .githooks || true"
     },

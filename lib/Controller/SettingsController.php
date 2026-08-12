@@ -11,6 +11,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserManager;
 
@@ -23,6 +24,7 @@ class SettingsController extends Controller {
 		private PermissionService $permissionService,
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
+		private IL10N $l,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -37,7 +39,7 @@ class SettingsController extends Controller {
 	#[NoAdminRequired]
 	public function get(): JSONResponse {
 		if ($this->userId === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], 401);
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
 		}
 
 		return new JSONResponse([
@@ -75,7 +77,7 @@ class SettingsController extends Controller {
 		?string $defaultAmountType = null,
 	): JSONResponse {
 		if ($this->userId === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], 401);
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
 		}
 
 		if ($emailReminder !== null) {
