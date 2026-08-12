@@ -64,7 +64,7 @@ function filesUnder(dir, re) {
 	return out
 }
 
-// Frontend: t('worktime', '<literal>') — single-quoted, erstes Argument.
+// Frontend: t('contractmanager', '<literal>') — single-quoted, erstes Argument.
 const T_FRONTEND = /\bt\(\s*'contractmanager'\s*,\s*'((?:[^'\\]|\\.)*)'/g
 // Backend (PHP): $l->t('…') oder ->t("…"); Whitespace/Newlines toleriert (mehrzeilige Aufrufe).
 const T_BACKEND_SQ = /->t\(\s*'((?:[^'\\]|\\.)*)'/g
@@ -79,7 +79,12 @@ function extractCanonicalKeys() {
 	const keys = new Set()
 	// Frontend
 	for (const base of FRONTEND_DIRS) {
-		for (const file of filesUnder(join(ROOT, base), /\.(js|vue)$/)) {
+		// .ts gehoert dazu: worktime (Vue 2) kennt es nicht, VertragsWerk ist
+		// Vue 3 + TypeScript. Ohne die Endung waere ein t() in einer .ts-Datei
+		// unsichtbar — und --fix wuerde dessen Katalogeintrag als "tot" loeschen.
+		// Testdateien bleiben aussen vor, ihre Strings gehoeren nicht in den Katalog.
+		for (const file of filesUnder(join(ROOT, base), /\.(js|ts|vue)$/)) {
+			if (/\.(test|spec)\.[jt]s$/.test(file)) continue
 			const code = readFileSync(file, 'utf8')
 			for (const m of code.matchAll(T_FRONTEND)) keys.add(unescapeSingle(m[1], "'"))
 		}
@@ -203,7 +208,7 @@ function main() {
 	console.log(red(`\n✗ ${problems.length} Konsistenz-Problem(e):`))
 	for (const p of problems) console.log(red('  • ' + p))
 	console.log(dim('\n  Beheben:  npm run l10n:fix   (regeneriert die Kataloge aus dem Code)'))
-	console.log(dim('  Danach Uebersetzungen fuer neue Keys in l10n/{en,cs}.{js,json} ergaenzen.'))
+	console.log(dim('  Danach Uebersetzungen fuer neue Keys in l10n/en.{js,json} ergaenzen.'))
 	process.exit(1)
 }
 
@@ -240,7 +245,7 @@ function applyFix(canonical, catalogs) {
 	}
 
 	console.log(changed
-		? green(`\n✓ Kataloge regeneriert. Bitte neue Keys in en/cs uebersetzen und committen.`)
+		? green(`\n✓ Kataloge regeneriert. Bitte neue Keys in en uebersetzen und committen.`)
 		: green(`\n✓ Bereits konsistent — nichts zu tun.`))
 }
 
