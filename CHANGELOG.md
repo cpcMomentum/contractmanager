@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Die Übersetzungsprüfung der CI sieht jetzt auch den Serverteil der App und nicht mehr nur die Oberfläche. Zusätzlich läuft sie bereits beim Commit statt erst im Pull Request. Der bisherige Prüfer meldete „in Ordnung", während die 29 englischen Meldungen ausgeliefert wurden (#340)
 
+## [1.3.0] - 2026-08-11
+
 ### Changed
 - Anzeigename der App auf „VertragsWerk" umgestellt (App-ID bleibt `contractmanager`)
 
