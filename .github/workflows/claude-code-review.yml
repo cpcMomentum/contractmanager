@@ -2,10 +2,18 @@ name: Claude Code Review
 
 # Automatisches Review jedes PRs. Die Logik liegt in nc-app-tooling, damit sie
 # nicht fuenfmal auseinanderlaeuft (#339) — hier stehen nur Ausloeser,
-# Concurrency und die Weitergabe des Tokens.
+# Concurrency, Berechtigungen und die Weitergabe des Tokens.
 #
-# secrets: inherit ist PFLICHT. Ohne das ist CLAUDE_CODE_OAUTH_TOKEN im
-# aufgerufenen Workflow leer und der Lauf scheitert.
+# ZWEI Dinge sind hier Pflicht, sonst startet der Lauf gar nicht erst:
+#
+#   secrets: inherit  — sonst ist CLAUDE_CODE_OAUTH_TOKEN drueben leer.
+#   permissions       — bei aufgerufenen Workflows setzt der AUFRUFER die
+#                       Obergrenze. Ein aufgerufener Workflow kann seine
+#                       Rechte nicht selbst erweitern; fehlen sie hier,
+#                       endet der Lauf mit startup_failure. Und der taucht
+#                       in der Check-Liste des PRs gar nicht auf — der PR
+#                       sieht dann vollstaendig gruen aus, obwohl kein
+#                       Review gelaufen ist.
 
 on:
   pull_request:
@@ -17,5 +25,12 @@ concurrency:
 
 jobs:
   claude-review:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      id-token: write
+      # write: der Gate-Step bricht den eigenen Run per `gh run cancel` ab
+      actions: write
     uses: cpcMomentum/nc-app-tooling/.github/workflows/claude-code-review.yml@v1.6.0
     secrets: inherit
