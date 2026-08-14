@@ -52,6 +52,7 @@ jobs:
       # Seit #340 der Waechter aus worktime: er sieht zusaetzlich lib/,
       # templates/ und appinfo/. Der Vorgaenger prueft nur src/ und meldete
       # deshalb gruen, waehrend 29 Backend-Strings englisch ausgeliefert wurden.
+
       # Faengt vergessene Frontend-Builds. Kein Byte-Diff — der Build ist in der
       # CI nicht reproduzierbar (#251). Stattdessen: wurden Eingaben geaendert,
       # ohne dass sich js/ und css/ geaendert haben? Genau so blieb bei #327 die
@@ -72,10 +73,14 @@ jobs:
       - name: Produktions-Build
         run: npm run build
 
-      # Ein Build-Artefakt-Drift-Check (git diff js/ css/) ist hier bewusst NICHT
-      # aktiv: Er braucht einen reproduzierbaren Build, aber dieser Job wirft den
-      # Lock weg (rm -f package-lock.json, npm/cli#4828) und floatet damit die
-      # Dependency-Versionen -> Byte-Diff schlaegt immer an. Als Hard-Gate erst
-      # sinnvoll nach Umstieg auf reproduzierbare Installs. Siehe #251.
-      # Die eigentliche Absicherung gegen fehlende Build-Artefakte ist der
-      # Packaging-Guard (Check 15) im Release-Skill.
+      # Ein Byte-Diff (git diff js/ css/ nach dem Build) bleibt bewusst aus:
+      # Er braucht einen reproduzierbaren Build, aber dieser Job wirft den Lock
+      # weg (rm -f package-lock.json, npm/cli#4828) und floatet damit die
+      # Dependency-Versionen -> der Diff schlaegt immer an. Gemessen: ein
+      # Rebuild ohne Quelltextaenderung erzeugt 315 Byte Unterschied, nur
+      # andere Minifier-Kuerzel.
+      #
+      # Die Absicherung leistet stattdessen der Schritt "Bundle aktuell" weiter
+      # oben (#251): er vergleicht keine Bytes, sondern fragt, ob Eingaben
+      # geaendert wurden, ohne dass sich js/ und css/ geaendert haben. Dazu der
+      # Packaging-Guard (Check 15) im Release-Skill als zweite Ebene.
