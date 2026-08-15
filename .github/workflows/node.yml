@@ -81,10 +81,11 @@ jobs:
       # unter Linux mit npm 11 aus dem auf macOS erzeugten Lockfile
       # byte-identisch (nachgemessen 15.08.2026, Node 20/22/24 einzeln).
       #
-      # git status statt git diff: der Diff sieht nur getrackte Dateien. Bei
-      # worktime und rechnungswerk tragen die Chunks Content-Hashes im Namen --
-      # ein neu entstandener Chunk kaeme als UNTRACKED daher und rutschte
-      # durch, waehrend die alte Datei unveraendert daneben liegen bleibt.
+      # git status statt git diff: der Diff sieht nur getrackte Dateien. Eine
+      # neu entstandene Bundle-Datei kaeme als UNTRACKED daher und rutschte
+      # durch, waehrend die alte unveraendert daneben liegen bleibt. Diese App
+      # baut zwar auf feste Dateinamen, aber die Flotte nicht durchgehend --
+      # worktime und rechnungswerk haben Chunks mit Content-Hashes.
       # status --porcelain erfasst geaendert, geloescht und neu.
       - name: Bundle passt zum Quellstand
         run: |
