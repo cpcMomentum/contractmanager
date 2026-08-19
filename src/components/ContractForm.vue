@@ -1,9 +1,13 @@
 <template>
 	<!-- v-if: NcModal darf erst beim Oeffnen gemountet werden, sonst aktiviert
 	     sein Focus-Trap schon beim Seitenladen und verschluckt Tab app-weit (#266) -->
+	<!-- label-id statt :name: NcModals :name rendert einen sichtbaren <h2> im
+	     Kopf, der auf NC 34 die zentrierte Suchleiste ueberlagert (#337). Der
+	     Titel steht deshalb nur noch unsichtbar im Body (für Screenreader); die
+	     sichtbare Identitaet liefert der Zusammenfassungs-Kopf. -->
 	<NcModal v-if="show"
 		:show="show"
-		:name="readOnly ? t('contractmanager', 'Vertragsdetails') : (isEdit ? t('contractmanager', 'Vertrag bearbeiten') : t('contractmanager', 'Neuer Vertrag'))"
+		label-id="contract-form-title"
 		size="large"
 		@close="$emit('close')">
 		<!-- Esc schliesst auch mit Fokus in einem Eingabefeld. NcModals eigener
@@ -11,6 +15,9 @@
 		<div class="contract-form"
 			:class="{ 'contract-form--readonly': readOnly }"
 			@keydown.esc="onEscape">
+			<h2 id="contract-form-title" class="hidden-visually">
+				{{ modalTitle }}
+			</h2>
 			<form @submit.prevent="handleSubmit">
 				<!-- Summary header (existing contracts): key facts at a glance -->
 				<div v-if="isEdit || readOnly" class="form-summary">
@@ -646,6 +653,19 @@ export default {
 		isEdit() {
 			return this.contract !== null && this.contract.id != null
 		},
+		// Accessible name of the dialog. Rendered visually hidden and referenced
+		// via NcModal's label-id — NcModal's own :name would render a visible
+		// <h2> in the header, which on NC 34 overlaps the centered search bar
+		// (#337). The visible identity comes from the summary header (edit/view)
+		// instead; here we only keep the dialog labelled for screen readers.
+		modalTitle() {
+			if (this.readOnly) {
+				return t('contractmanager', 'Vertragsdetails')
+			}
+			return this.isEdit
+				? t('contractmanager', 'Vertrag bearbeiten')
+				: t('contractmanager', 'Neuer Vertrag')
+		},
 		documentDisplayName() {
 			return getDisplayName(this.form.mainDocument)
 		},
@@ -1276,6 +1296,19 @@ export default {
 	padding: 4px 22px 0;
 	max-height: min(90vh, calc(100vh - 120px));
 	overflow-y: auto;
+}
+
+/* Accessible dialog title (#337): named for screen readers, never shown. */
+.hidden-visually {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
 }
 
 /*
