@@ -120,9 +120,6 @@ OC.L10N.register(
     "z.B. abc123xyz" : "z.B. abc123xyz",
     "Erste Erinnerung" : "Erste Erinnerung",
     "Letzte Erinnerung" : "Letzte Erinnerung",
-    "Admin-Einstellungen speichern" : "Admin-Einstellungen speichern",
-    "Admin-Einstellungen gespeichert" : "Admin-Einstellungen gespeichert",
-    "Fehler beim Speichern der Admin-Einstellungen" : "Fehler beim Speichern der Admin-Einstellungen",
     "Kategorien verwalten" : "Kategorien verwalten",
     "Kategorien für die Vertragsorganisation hinzufügen, bearbeiten oder löschen." : "Kategorien für die Vertragsorganisation hinzufügen, bearbeiten oder löschen.",
     "Neue Kategorie..." : "Neue Kategorie...",
@@ -322,6 +319,13 @@ OC.L10N.register(
     "Vertrag läuft aus" : "Vertrag läuft aus",
     "Der Vertrag „%1$s\" läuft am **%2$s** aus." : "Der Vertrag „%1$s\" läuft am **%2$s** aus.",
     "Der Vertrag „%1$s\" läuft am **%2$s** aus!" : "Der Vertrag „%1$s\" läuft am **%2$s** aus!",
-    "Dies ist die letzte Erinnerung." : "Dies ist die letzte Erinnerung."
+    "Dies ist die letzte Erinnerung." : "Dies ist die letzte Erinnerung.",
+    "Aktiv – Analyse verfügbar" : "Aktiv – Analyse verfügbar",
+    "Inaktiv – kein API-Key gespeichert" : "Inaktiv – kein API-Key gespeichert",
+    "Deaktiviert – kein Provider gewählt" : "Deaktiviert – kein Provider gewählt",
+    "KI-Einstellungen speichern" : "KI-Einstellungen speichern",
+    "Provider, API-Key, URL und Modell werden zusammen gespeichert." : "Provider, API-Key, URL und Modell werden zusammen gespeichert.",
+    "KI-Einstellungen gespeichert" : "KI-Einstellungen gespeichert",
+    "Fehler beim Speichern der KI-Einstellungen" : "Fehler beim Speichern der KI-Einstellungen"
 },
 "nplurals=2; plural=(n != 1);");

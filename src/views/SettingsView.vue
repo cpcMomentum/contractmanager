@@ -368,7 +368,8 @@
 									<NcTextField v-model="adminSettings.reminderDays1"
 										type="number"
 										:min="1"
-										class="number-input" />
+										class="number-input"
+										@blur="saveAdminField('reminderDays1', parseInt(adminSettings.reminderDays1, 10))" />
 									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
 								</div>
 
@@ -377,7 +378,8 @@
 									<NcTextField v-model="adminSettings.reminderDays2"
 										type="number"
 										:min="1"
-										class="number-input" />
+										class="number-input"
+										@blur="saveAdminField('reminderDays2', parseInt(adminSettings.reminderDays2, 10))" />
 									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
 								</div>
 							</div>
@@ -424,7 +426,8 @@
 							<NcTextField v-if="customFieldEnabled(n)"
 								v-model="adminSettings['customFieldLabel' + n]"
 								:placeholder="customFieldPlaceholders[n - 1]"
-								class="settings-input custom-field-label" />
+								class="settings-input custom-field-label"
+								@blur="saveAdminField('customFieldLabel' + n, adminSettings['customFieldLabel' + n])" />
 						</div>
 					</div>
 
@@ -448,6 +451,13 @@
 								:reduce="option => option.value"
 								:clearable="true"
 								class="settings-input" />
+							<p class="ai-status" :class="aiActive ? 'ai-status--active' : 'ai-status--inactive'">
+								{{ aiActive
+									? t('contractmanager', 'Aktiv – Analyse verfügbar')
+									: (adminSettings.aiProvider
+										? t('contractmanager', 'Inaktiv – kein API-Key gespeichert')
+										: t('contractmanager', 'Deaktiviert – kein Provider gewählt')) }}
+							</p>
 						</div>
 
 						<template v-if="adminSettings.aiProvider">
@@ -475,16 +485,19 @@
 									:placeholder="aiDefaultModel"
 									class="settings-input" />
 							</div>
-						</template>
-					</div>
 
-					<div v-show="activeSection === 'admin'" class="settings-actions">
-						<NcButton variant="primary" :disabled="savingAdmin" @click="saveAdminSettings">
-							<template #icon>
-								<NcLoadingIcon v-if="savingAdmin" :size="20" />
-							</template>
-							{{ t('contractmanager', 'Admin-Einstellungen speichern') }}
-						</NcButton>
+							<div class="settings-actions settings-actions--inline">
+								<NcButton variant="primary" :disabled="savingAi" @click="saveAiSettings">
+									<template #icon>
+										<NcLoadingIcon v-if="savingAi" :size="20" />
+									</template>
+									{{ t('contractmanager', 'KI-Einstellungen speichern') }}
+								</NcButton>
+								<p class="settings-description settings-description--hint">
+									{{ t('contractmanager', 'Provider, API-Key, URL und Modell werden zusammen gespeichert.') }}
+								</p>
+							</div>
+						</template>
 					</div>
 
 					<!-- Category Management (Admin only) -->
@@ -615,6 +628,7 @@ import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
 import SettingsService from '../services/SettingsService'
 import ContractService from '../services/ContractService'
+import { isAiActive } from '../utils/aiSettings'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
 
@@ -662,7 +676,7 @@ export default {
 			},
 			savingUserReminders: false,
 			defaultAmountType: 'netto',
-			savingAdmin: false,
+			savingAi: false,
 			adminSettings: {
 				reminderDays1: 14,
 				reminderDays2: 3,
@@ -724,6 +738,12 @@ export default {
 			if (this.adminSettings.aiProvider === 'claude') return 'claude-sonnet-4-6'
 			return 'gpt-4o'
 		},
+		// KI ist erst "aktiv", wenn ein Provider gewählt UND ein API-Key
+		// gespeichert ist. Der Key kommt vom Server maskiert zurück (nicht-leer),
+		// ein frisch eingegebener Key ist der Klartext — beides zählt als gesetzt.
+		aiActive() {
+			return isAiActive(this.adminSettings)
+		},
 		canTransfer() {
 			return !!this.transferFrom && !!this.transferTo
 				&& this.principalUid(this.transferFrom) !== this.principalUid(this.transferTo)
@@ -765,6 +785,23 @@ export default {
 				this.adminSettings['customFieldLabel' + n] = this.customFieldPlaceholders[n - 1].replace('z.B. ', '')
 			} else {
 				this.adminSettings['customFieldLabel' + n] = ''
+			}
+			this.saveAdminField('customFieldLabel' + n, this.adminSettings['customFieldLabel' + n])
+		},
+
+		// Autosave a single independent admin field (reminder days, custom-field
+		// labels, deletion successor). The backend PUT /admin applies only the
+		// fields that are non-null, so sending one field leaves the rest — and
+		// especially the AI credentials — untouched. The AI block keeps its own
+		// deliberate save (saveAiSettings) because it only makes sense as a
+		// complete, validated set. (#151)
+		async saveAdminField(field, value) {
+			try {
+				await SettingsService.updateAdminSettings({ [field]: value })
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save admin setting ' + field + ':', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
 			}
 		},
 
@@ -905,6 +942,7 @@ export default {
 		// a deleted account are left untouched.
 		onDeletionSuccessorChange(option) {
 			this.adminSettings.deletionSuccessor = this.principalUid(option)
+			this.saveAdminField('deletionSuccessor', this.adminSettings.deletionSuccessor || '')
 		},
 
 		// Lazy-load a first batch of users when a transfer picker is first opened,
@@ -989,42 +1027,30 @@ export default {
 			}
 		},
 
-		async saveAdminSettings() {
-			this.savingAdmin = true
+		// The AI block is saved as one deliberate, complete set (provider + key +
+		// URL + model), not autosaved per field: a half-entered credential set
+		// should not persist. Only the AI fields are sent and only the AI fields
+		// of the response are taken back — the masked key in particular — so this
+		// never clobbers the independently autosaved fields. (#151)
+		async saveAiSettings() {
+			this.savingAi = true
 			try {
 				const result = await SettingsService.updateAdminSettings({
-					reminderDays1: parseInt(this.adminSettings.reminderDays1, 10),
-					reminderDays2: parseInt(this.adminSettings.reminderDays2, 10),
-					customFieldLabel1: this.adminSettings.customFieldLabel1,
-					customFieldLabel2: this.adminSettings.customFieldLabel2,
-					customFieldLabel3: this.adminSettings.customFieldLabel3,
 					aiProvider: this.adminSettings.aiProvider || '',
 					aiApiKey: this.adminSettings.aiApiKey,
 					aiApiUrl: this.adminSettings.aiApiUrl,
 					aiModel: this.adminSettings.aiModel,
-					deletionSuccessor: this.adminSettings.deletionSuccessor || '',
 				})
-				this.adminSettings = {
-					reminderDays1: result.reminderDays1 || 14,
-					reminderDays2: result.reminderDays2 || 3,
-					customFieldLabel1: result.customFieldLabel1 || '',
-					customFieldLabel2: result.customFieldLabel2 || '',
-					customFieldLabel3: result.customFieldLabel3 || '',
-					aiProvider: result.aiProvider || '',
-					aiApiKey: result.aiApiKey || '',
-					aiApiUrl: result.aiApiUrl || '',
-					aiModel: result.aiModel || '',
-					deletionSuccessor: result.deletionSuccessor || '',
-				}
-				if (result.reminderLink) {
-					this.reminderLink = result.reminderLink
-				}
-				showSuccess(t('contractmanager', 'Admin-Einstellungen gespeichert'))
+				this.adminSettings.aiProvider = result.aiProvider || ''
+				this.adminSettings.aiApiKey = result.aiApiKey || ''
+				this.adminSettings.aiApiUrl = result.aiApiUrl || ''
+				this.adminSettings.aiModel = result.aiModel || ''
+				showSuccess(t('contractmanager', 'KI-Einstellungen gespeichert'))
 			} catch (error) {
-				console.error('Failed to save admin settings:', error)
-				showError(t('contractmanager', 'Fehler beim Speichern der Admin-Einstellungen'))
+				console.error('Failed to save AI settings:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern der KI-Einstellungen'))
 			} finally {
-				this.savingAdmin = false
+				this.savingAi = false
 			}
 		},
 
@@ -1415,6 +1441,34 @@ export default {
 
 .settings-actions {
 	margin-top: 24px;
+}
+
+/* KI-Block: eigener Speichern-Schritt direkt am Block, nicht am Seitenende. */
+.settings-actions--inline {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 16px;
+}
+
+.settings-description--hint {
+	margin: 0;
+}
+
+/* Statuszeile des KI-Blocks: sagt, ob die Analyse wirklich einsatzbereit ist. */
+.ai-status {
+	margin: 6px 0 0;
+	font-size: 0.9em;
+	font-weight: 500;
+}
+
+.ai-status--active {
+	color: var(--color-success, #2d7d46);
+}
+
+.ai-status--inactive {
+	color: var(--color-text-maxcontrast);
 }
 
 .permission-select {
