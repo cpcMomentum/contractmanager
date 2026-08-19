@@ -34,6 +34,29 @@ class Notifier implements INotifier {
 			throw new UnknownNotificationException();
 		}
 
+		try {
+			return $this->prepareContractNotification($notification, $languageCode);
+		} catch (UnknownNotificationException $e) {
+			// Genuinely unknown subject — let NC handle it.
+			throw $e;
+		} catch (\InvalidArgumentException $e) {
+			// Safety net: an NC INotification setter rejected a value while
+			// building a known notification. The concrete #357 cause (a relative
+			// icon URL) is fixed below with getAbsoluteURL(), so this should no
+			// longer fire in normal operation; it stays to guard against any
+			// other setter rejection on a future NC version. NC 34+ deprecates
+			// letting \InvalidArgumentException escape prepare(), so convert it
+			// and discard the undisplayable notification cleanly.
+			throw new UnknownNotificationException();
+		}
+	}
+
+	/**
+	 * Build a known VertragsWerk notification. Any \InvalidArgumentException
+	 * raised by an NC setter while building it (e.g. a value NC rejects on a
+	 * given version) is caught and handled by prepare().
+	 */
+	private function prepareContractNotification(INotification $notification, string $languageCode): INotification {
 		$l = $this->l10nFactory->get(Application::APP_ID, $languageCode);
 		$params = $notification->getSubjectParameters();
 
@@ -57,8 +80,16 @@ class Notifier implements INotifier {
 				throw new UnknownNotificationException();
 		}
 
+		// #357: NC 34's setIcon() rejects anything that is not an absolute
+		// http(s) URL, and imagePath() returns a relative path. Passing the raw
+		// imagePath() throws InvalidValueException (⊂ \InvalidArgumentException),
+		// which aborts prepare() before setLink() — the notification then loses
+		// both its icon and its link (and NC 34 logs the throw on every cycle).
+		// Wrap it in getAbsoluteURL() so the icon is a valid absolute URL.
 		$notification->setIcon(
-			$this->urlGenerator->imagePath(Application::APP_ID, 'app.svg')
+			$this->urlGenerator->getAbsoluteURL(
+				$this->urlGenerator->imagePath(Application::APP_ID, 'app.svg')
+			)
 		);
 		$notification->setLink(
 			$this->urlGenerator->linkToRouteAbsolute('contractmanager.page.index')
