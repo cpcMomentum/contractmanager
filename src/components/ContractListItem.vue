@@ -1,7 +1,7 @@
 <template>
 	<div class="contract-list-item"
 		:class="['contract-list-item--' + statusChip.cls, { 'contract-list-item--dragging': dragging }]"
-		draggable="true"
+		:draggable="isDraggable"
 		@dragstart="onDragStart"
 		@dragend="dragging = false">
 		<span class="contract-list-item__accent" aria-hidden="true" />
@@ -262,6 +262,11 @@ export default {
 			}
 			return labels[this.deadlineInfo.labelKey] || null
 		},
+		// Archive and trash are view-only (#328) — dragging a row there must not
+		// be able to change its category, even for editors.
+		isDraggable() {
+			return this.canEdit && this.mode === 'default'
+		},
 		deleteDialogButtons() {
 			return [
 				{
@@ -281,9 +286,10 @@ export default {
 		formatDate,
 		formatPeriod,
 		// Drag the row onto a category in the sidebar to reassign it (#359).
-		// Only editors may recategorise; without edit rights the row is inert.
+		// Only editors may recategorise, and only from the default (active
+		// contracts) list — archive and trash rows are not draggable.
 		onDragStart(event) {
-			if (!this.canEdit) {
+			if (!this.isDraggable) {
 				event.preventDefault()
 				return
 			}
@@ -423,9 +429,13 @@ $st-dark: (
 
 	&:last-child { border-bottom: none; }
 
-	/* grab cursor signals the row can be dragged onto a sidebar category (#359). */
 	&:hover {
 		background: var(--color-background-hover);
+	}
+
+	/* grab cursor signals the row can be dragged onto a sidebar category
+	   (#359); only shown where dragging is actually enabled. */
+	&[draggable="true"]:hover {
 		cursor: grab;
 	}
 
