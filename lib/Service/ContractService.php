@@ -583,6 +583,27 @@ class ContractService {
 	}
 
 	/**
+	 * Reassign a contract's category (drag-and-drop, #359).
+	 * A null categoryId removes the category.
+	 *
+	 * Note: Access check must be done by caller using checkWriteAccess()
+	 *
+	 * @throws NotFoundException
+	 */
+	public function setCategory(int $id, ?int $categoryId): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
+
+		$contract->setCategoryId($categoryId);
+		$contract->setUpdatedAt(new DateTime());
+
+		return $this->mapper->update($contract);
+	}
+
+	/**
 	 * Restore a contract from archive
 	 *
 	 * Note: Access check must be done by caller using checkWriteAccess()

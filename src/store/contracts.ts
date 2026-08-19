@@ -169,6 +169,15 @@ export const useContractsStore = defineStore('contracts', () => {
 		}
 	}
 
+	async function setContractCategory(id: number, categoryId: number | null): Promise<Contract> {
+		const contract = await ContractService.setCategory(id, categoryId)
+		const index = contracts.value.findIndex((c) => c.id === contract.id)
+		if (index !== -1) {
+			contracts.value.splice(index, 1, contract)
+		}
+		return contract
+	}
+
 	async function deleteContract(id: number): Promise<void> {
 		loading.value = true
 		error.value = null
@@ -292,6 +301,7 @@ export const useContractsStore = defineStore('contracts', () => {
 		fetchContract,
 		createContract,
 		updateContract,
+		setContractCategory,
 		deleteContract,
 		archiveContract,
 		restoreContract,

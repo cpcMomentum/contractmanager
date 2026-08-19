@@ -325,7 +325,10 @@
 		"KI-Einstellungen speichern": "Save AI settings",
 		"Provider, API-Key, URL und Modell werden zusammen gespeichert.": "Provider, API Key, URL and model are saved together.",
 		"KI-Einstellungen gespeichert": "AI settings saved",
-		"Fehler beim Speichern der KI-Einstellungen": "Error saving the AI settings"
+		"Fehler beim Speichern der KI-Einstellungen": "Error saving the AI settings",
+		"Kategorie entfernt": "Category removed",
+		"In Kategorie verschoben": "Moved to category",
+		"Fehler beim Ändern der Kategorie": "Error changing the category"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }

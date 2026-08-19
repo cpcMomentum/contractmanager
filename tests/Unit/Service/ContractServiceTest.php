@@ -460,6 +460,57 @@ class ContractServiceTest extends TestCase {
 	}
 
 	// ========================================
+	// setCategory (#359)
+	// ========================================
+
+	public function testSetCategoryReassignsContract(): void {
+		$contract = $this->createRealContract('alice');
+		$contract->setCategoryId(null);
+
+		$this->mapper->expects($this->once())
+			->method('find')
+			->with(7)
+			->willReturn($contract);
+		$this->mapper->expects($this->once())
+			->method('update')
+			->with($this->callback(static fn (Contract $c): bool => $c->getCategoryId() === 5))
+			->willReturnArgument(0);
+
+		$result = $this->service->setCategory(7, 5);
+
+		$this->assertSame(5, $result->getCategoryId());
+	}
+
+	public function testSetCategoryToNullRemovesCategory(): void {
+		$contract = $this->createRealContract('alice');
+		$contract->setCategoryId(3);
+
+		$this->mapper->expects($this->once())
+			->method('find')
+			->with(7)
+			->willReturn($contract);
+		$this->mapper->expects($this->once())
+			->method('update')
+			->with($this->callback(static fn (Contract $c): bool => $c->getCategoryId() === null))
+			->willReturnArgument(0);
+
+		$result = $this->service->setCategory(7, null);
+
+		$this->assertNull($result->getCategoryId());
+	}
+
+	public function testSetCategoryThrowsNotFoundWhenMissing(): void {
+		$this->expectException(NotFoundException::class);
+
+		$this->mapper->expects($this->once())
+			->method('find')
+			->with(999)
+			->willThrowException(new DoesNotExistException(''));
+
+		$this->service->setCategory(999, 5);
+	}
+
+	// ========================================
 	// Helper Methods
 	// ========================================
 

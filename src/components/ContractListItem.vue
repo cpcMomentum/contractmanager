@@ -1,8 +1,15 @@
 <template>
-	<div class="contract-list-item" :class="'contract-list-item--' + statusChip.cls">
+	<div class="contract-list-item"
+		:class="['contract-list-item--' + statusChip.cls, { 'contract-list-item--dragging': dragging }]"
+		:draggable="isDraggable"
+		@dragstart="onDragStart"
+		@dragend="dragging = false">
 		<span class="contract-list-item__accent" aria-hidden="true" />
 		<div class="contract-list-item__name">
-			<a class="contract-name" href="#" @click.prevent="onEdit">
+			<a class="contract-name"
+				href="#"
+				draggable="false"
+				@click.prevent="onEdit">
 				{{ contract.name }}
 			</a>
 			<div class="contract-list-item__meta">
@@ -146,6 +153,7 @@ import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
 import { isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled, isPlanned } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
+import { CONTRACT_DND_TYPE } from '../utils/categoryDrop'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
 export default {
@@ -189,6 +197,7 @@ export default {
 	data() {
 		return {
 			showDeleteDialog: false,
+			dragging: false,
 		}
 	},
 	computed: {
@@ -253,6 +262,11 @@ export default {
 			}
 			return labels[this.deadlineInfo.labelKey] || null
 		},
+		// Archive and trash are view-only (#328) — dragging a row there must not
+		// be able to change its category, even for editors.
+		isDraggable() {
+			return this.canEdit && this.mode === 'default'
+		},
 		deleteDialogButtons() {
 			return [
 				{
@@ -271,6 +285,18 @@ export default {
 		...mapActions(useContractsStore, ['deleteContract']),
 		formatDate,
 		formatPeriod,
+		// Drag the row onto a category in the sidebar to reassign it (#359).
+		// Only editors may recategorise, and only from the default (active
+		// contracts) list — archive and trash rows are not draggable.
+		onDragStart(event) {
+			if (!this.isDraggable) {
+				event.preventDefault()
+				return
+			}
+			this.dragging = true
+			event.dataTransfer.setData(CONTRACT_DND_TYPE, String(this.contract.id))
+			event.dataTransfer.effectAllowed = 'move'
+		},
 		onEdit() {
 			if (this.canEdit) {
 				this.$emit('edit', this.contract)
@@ -403,7 +429,20 @@ $st-dark: (
 
 	&:last-child { border-bottom: none; }
 
-	&:hover { background: var(--color-background-hover); }
+	&:hover {
+		background: var(--color-background-hover);
+	}
+
+	/* grab cursor signals the row can be dragged onto a sidebar category
+	   (#359); only shown where dragging is actually enabled. */
+	&[draggable="true"]:hover {
+		cursor: grab;
+	}
+
+	&--dragging {
+		opacity: 0.5;
+		cursor: grabbing;
+	}
 
 	&__accent {
 		position: absolute;
