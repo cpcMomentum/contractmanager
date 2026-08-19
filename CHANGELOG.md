@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Auf Nextcloud 34 kamen alle Benachrichtigungen von VertragsWerk ohne Symbol und ohne anklickbaren Link an, und im Server-Log stapelte sich im Minutentakt eine Verfallswarnung. Ursache: Das Symbol wurde mit einer relativen Adresse gesetzt, die Nextcloud 34 nicht mehr annimmt — der abgewiesene Wert brach die Aufbereitung ab, bevor der Link gesetzt war. Das Symbol wird jetzt als vollständige Adresse gesetzt; Symbol und Link erscheinen wieder, und die Log-Warnung entfällt (#357, #358)
 - Meldungen des Servers erschienen auf Englisch, auch wenn die App auf Deutsch lief: „Name is required" statt „Name ist erforderlich", „Contract not found" statt „Vertrag nicht gefunden". Betroffen waren 29 Texte aus der Vertragsprüfung, der Rechteprüfung und der Dokumentenerkennung sowie 18 weitere, die gar nicht übersetzbar angelegt waren. Sie sind jetzt durchgängig deutsch und in beiden Sprachen hinterlegt. Ursache war eine Umstellung vom März, die die Texte ins Englische übersetzte, ohne die Übersetzungsdateien nachzuziehen — die deutschen Fassungen lagen seither unerreichbar daneben (#340)
 
 ### Changed

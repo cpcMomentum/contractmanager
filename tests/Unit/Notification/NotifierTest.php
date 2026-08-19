@@ -77,4 +77,61 @@ class NotifierTest extends TestCase {
 		$this->assertSame('contractmanager', $this->notifier->getID());
 		$this->assertNotSame('', $this->notifier->getName());
 	}
+
+	public function testIconIsSetAsAbsoluteUrl(): void {
+		// #357 root cause: NC 34's setIcon() rejects a non-absolute URL, but
+		// imagePath() returns a relative path. The notifier must wrap it in
+		// getAbsoluteURL(); otherwise setIcon() throws and the notification
+		// loses both its icon and its link on NC 34. This locks the icon in as
+		// an absolute (http) URL so a regression to raw imagePath() fails here.
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('imagePath')
+			->willReturn('/custom_apps/contractmanager/img/app.svg');
+		$urlGenerator->method('getAbsoluteURL')
+			->willReturnCallback(static fn (string $path): string => 'http://localhost' . $path);
+		$urlGenerator->method('linkToRouteAbsolute')
+			->willReturn('http://localhost/apps/contractmanager/');
+
+		$l = $this->createMock(IL10N::class);
+		$l->method('t')->willReturnCallback(
+			static fn (string $text, array $params = []): string => vsprintf($text, $params)
+		);
+		$l10nFactory = $this->createMock(IFactory::class);
+		$l10nFactory->method('get')->willReturn($l);
+
+		$notifier = new Notifier($urlGenerator, $l10nFactory);
+
+		$notification = $this->notification('contractmanager', Notifier::SUBJECT_USER_DELETED, [
+			'deletedUser' => 'alice',
+			'reassigned' => 3,
+			'needsAttention' => 2,
+		]);
+		$notification->expects($this->once())
+			->method('setIcon')
+			->with($this->stringStartsWith('http://'))
+			->willReturnSelf();
+
+		$notifier->prepare($notification, 'de');
+	}
+
+	public function testSetterRejectionIsDiscardedAsUnknown(): void {
+		// #357 safety net: if an NC INotification setter rejects a value while
+		// building a known notification, the resulting \InvalidArgumentException
+		// must not escape prepare() (deprecated on NC 34+). It is converted to
+		// UnknownNotificationException so the undisplayable notification is
+		// discarded cleanly instead of spamming the log every cycle.
+		$notification = $this->createMock(INotification::class);
+		$notification->method('getApp')->willReturn('contractmanager');
+		$notification->method('getSubject')->willReturn(Notifier::SUBJECT_USER_DELETED);
+		$notification->method('getSubjectParameters')->willReturn([
+			'deletedUser' => 'alice',
+			'reassigned' => 3,
+			'needsAttention' => 2,
+		]);
+		$notification->method('setParsedSubject')
+			->willThrowException(new \InvalidArgumentException('invalid subject'));
+
+		$this->expectException(UnknownNotificationException::class);
+		$this->notifier->prepare($notification, 'de');
+	}
 }
