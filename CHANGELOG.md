@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Die Administrator-Einstellungen speichern jetzt einheitlich: Erinnerungstage, Zusatzfeld-Angaben und der Nachfolger bei gelöschtem Konto werden automatisch beim Verlassen des Feldes gesichert, wie die übrigen Einstellungen. Der leicht zu übersehende Sammel-Button „Admin-Einstellungen speichern" entfällt dadurch. Die KI-Vertragsanalyse behält bewusst einen eigenen „KI-Einstellungen speichern"-Schritt, weil Provider, API-Key, URL und Modell nur als vollständiger Satz sinnvoll sind, und zeigt darüber klar an, ob sie aktiv ist oder mangels API-Key nur konfiguriert aussieht (#151)
+
 ### Fixed
 - Auf Nextcloud 34 legte sich der Titel des Vertragsfensters („Neuer Vertrag", „Vertrag bearbeiten", „Vertragsdetails") quer über die Suchleiste im Kopfbereich. Ursache war nicht die App: Nextcloud hat die Suchleiste in die Mitte verschoben, wo das Fenster seinen Titel zeichnete. Der Titel wird jetzt nicht mehr sichtbar dort dargestellt; das Fenster trägt seine Kopfzeile ohnehin selbst. Für Vorlesesoftware bleibt es benannt (#337)
 - Auf Nextcloud 34 kamen alle Benachrichtigungen von VertragsWerk ohne Symbol und ohne anklickbaren Link an, und im Server-Log stapelte sich im Minutentakt eine Verfallswarnung. Ursache: Das Symbol wurde mit einer relativen Adresse gesetzt, die Nextcloud 34 nicht mehr annimmt — der abgewiesene Wert brach die Aufbereitung ab, bevor der Link gesetzt war. Das Symbol wird jetzt als vollständige Adresse gesetzt; Symbol und Link erscheinen wieder, und die Log-Warnung entfällt (#357, #358)
