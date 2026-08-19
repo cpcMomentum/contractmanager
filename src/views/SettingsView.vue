@@ -485,19 +485,19 @@
 									:placeholder="aiDefaultModel"
 									class="settings-input" />
 							</div>
-
-							<div class="settings-actions settings-actions--inline">
-								<NcButton variant="primary" :disabled="savingAi" @click="saveAiSettings">
-									<template #icon>
-										<NcLoadingIcon v-if="savingAi" :size="20" />
-									</template>
-									{{ t('contractmanager', 'KI-Einstellungen speichern') }}
-								</NcButton>
-								<p class="settings-description settings-description--hint">
-									{{ t('contractmanager', 'Provider, API-Key, URL und Modell werden zusammen gespeichert.') }}
-								</p>
-							</div>
 						</template>
+
+						<div class="settings-actions settings-actions--inline">
+							<NcButton variant="primary" :disabled="savingAi" @click="saveAiSettings">
+								<template #icon>
+									<NcLoadingIcon v-if="savingAi" :size="20" />
+								</template>
+								{{ t('contractmanager', 'KI-Einstellungen speichern') }}
+							</NcButton>
+							<p class="settings-description settings-description--hint">
+								{{ t('contractmanager', 'Provider, API-Key, URL und Modell werden zusammen gespeichert.') }}
+							</p>
+						</div>
 					</div>
 
 					<!-- Category Management (Admin only) -->
