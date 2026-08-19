@@ -369,7 +369,7 @@
 										type="number"
 										:min="1"
 										class="number-input"
-										@blur="saveAdminField('reminderDays1', parseInt(adminSettings.reminderDays1, 10))" />
+										@blur="saveReminderDays('reminderDays1')" />
 									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
 								</div>
 
@@ -379,7 +379,7 @@
 										type="number"
 										:min="1"
 										class="number-input"
-										@blur="saveAdminField('reminderDays2', parseInt(adminSettings.reminderDays2, 10))" />
+										@blur="saveReminderDays('reminderDays2')" />
 									<span class="unit">{{ t('contractmanager', 'Tage') }}</span>
 								</div>
 							</div>
@@ -803,6 +803,17 @@ export default {
 				console.error('Failed to save admin setting ' + field + ':', error)
 				showError(t('contractmanager', 'Fehler beim Speichern'))
 			}
+		},
+
+		// A cleared reminder-days field parses to NaN, which JSON-serializes to
+		// null and is silently ignored by the backend (see saveAdminField) — do
+		// not report a false "gespeichert" for a value that was never persisted.
+		saveReminderDays(field) {
+			const parsed = parseInt(this.adminSettings[field], 10)
+			if (Number.isNaN(parsed)) {
+				return
+			}
+			this.saveAdminField(field, parsed)
 		},
 
 		async loadUserSettings() {
