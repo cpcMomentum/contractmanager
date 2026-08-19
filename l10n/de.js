@@ -322,6 +322,9 @@ OC.L10N.register(
     "Vertrag läuft aus" : "Vertrag läuft aus",
     "Der Vertrag „%1$s\" läuft am **%2$s** aus." : "Der Vertrag „%1$s\" läuft am **%2$s** aus.",
     "Der Vertrag „%1$s\" läuft am **%2$s** aus!" : "Der Vertrag „%1$s\" läuft am **%2$s** aus!",
-    "Dies ist die letzte Erinnerung." : "Dies ist die letzte Erinnerung."
+    "Dies ist die letzte Erinnerung." : "Dies ist die letzte Erinnerung.",
+    "Kategorie entfernt" : "Kategorie entfernt",
+    "In Kategorie verschoben" : "In Kategorie verschoben",
+    "Fehler beim Ändern der Kategorie" : "Fehler beim Ändern der Kategorie"
 },
 "nplurals=2; plural=(n != 1);");

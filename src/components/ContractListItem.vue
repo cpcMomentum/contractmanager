@@ -1,8 +1,15 @@
 <template>
-	<div class="contract-list-item" :class="'contract-list-item--' + statusChip.cls">
+	<div class="contract-list-item"
+		:class="['contract-list-item--' + statusChip.cls, { 'contract-list-item--dragging': dragging }]"
+		draggable="true"
+		@dragstart="onDragStart"
+		@dragend="dragging = false">
 		<span class="contract-list-item__accent" aria-hidden="true" />
 		<div class="contract-list-item__name">
-			<a class="contract-name" href="#" @click.prevent="onEdit">
+			<a class="contract-name"
+				href="#"
+				draggable="false"
+				@click.prevent="onEdit">
 				{{ contract.name }}
 			</a>
 			<div class="contract-list-item__meta">
@@ -146,6 +153,7 @@ import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
 import { isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled, isPlanned } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
+import { CONTRACT_DND_TYPE } from '../utils/categoryDrop'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
 export default {
@@ -189,6 +197,7 @@ export default {
 	data() {
 		return {
 			showDeleteDialog: false,
+			dragging: false,
 		}
 	},
 	computed: {
@@ -271,6 +280,17 @@ export default {
 		...mapActions(useContractsStore, ['deleteContract']),
 		formatDate,
 		formatPeriod,
+		// Drag the row onto a category in the sidebar to reassign it (#359).
+		// Only editors may recategorise; without edit rights the row is inert.
+		onDragStart(event) {
+			if (!this.canEdit) {
+				event.preventDefault()
+				return
+			}
+			this.dragging = true
+			event.dataTransfer.setData(CONTRACT_DND_TYPE, String(this.contract.id))
+			event.dataTransfer.effectAllowed = 'move'
+		},
 		onEdit() {
 			if (this.canEdit) {
 				this.$emit('edit', this.contract)
@@ -403,7 +423,16 @@ $st-dark: (
 
 	&:last-child { border-bottom: none; }
 
-	&:hover { background: var(--color-background-hover); }
+	/* grab cursor signals the row can be dragged onto a sidebar category (#359). */
+	&:hover {
+		background: var(--color-background-hover);
+		cursor: grab;
+	}
+
+	&--dragging {
+		opacity: 0.5;
+		cursor: grabbing;
+	}
 
 	&__accent {
 		position: absolute;

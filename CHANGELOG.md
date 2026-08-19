@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Verträge lassen sich jetzt per Ziehen aus der Liste auf einen Kategorie-Eintrag in der Seitenleiste einer Kategorie zuordnen oder umsortieren. Ein Ziehen auf „Ohne Kategorie" entfernt die Zuordnung. Das Ziel wird beim Drüberziehen hervorgehoben. Das ist eine Ergänzung zum Bearbeiten-Formular, das die Kategorie weiterhin setzt (Touch- und Tastatur-Weg bleiben unverändert). Nur Bearbeiter können auf diesem Weg umsortieren (#359)
+
 ### Fixed
 - Meldungen des Servers erschienen auf Englisch, auch wenn die App auf Deutsch lief: „Name is required" statt „Name ist erforderlich", „Contract not found" statt „Vertrag nicht gefunden". Betroffen waren 29 Texte aus der Vertragsprüfung, der Rechteprüfung und der Dokumentenerkennung sowie 18 weitere, die gar nicht übersetzbar angelegt waren. Sie sind jetzt durchgängig deutsch und in beiden Sprachen hinterlegt. Ursache war eine Umstellung vom März, die die Texte ins Englische übersetzte, ohne die Übersetzungsdateien nachzuziehen — die deutschen Fassungen lagen seither unerreichbar daneben (#340)
 

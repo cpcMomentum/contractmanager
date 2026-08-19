@@ -322,6 +322,9 @@ OC.L10N.register(
     "Vertrag läuft aus" : "Contract expiring",
     "Der Vertrag „%1$s\" läuft am **%2$s** aus." : "The contract \"%1$s\" expires on **%2$s**.",
     "Der Vertrag „%1$s\" läuft am **%2$s** aus!" : "The contract \"%1$s\" expires on **%2$s**!",
-    "Dies ist die letzte Erinnerung." : "This is the final reminder."
+    "Dies ist die letzte Erinnerung." : "This is the final reminder.",
+    "Kategorie entfernt" : "Category removed",
+    "In Kategorie verschoben" : "Moved to category",
+    "Fehler beim Ändern der Kategorie" : "Error changing the category"
 },
 "nplurals=2; plural=(n != 1);");

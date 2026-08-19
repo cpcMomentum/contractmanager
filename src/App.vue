@@ -24,13 +24,18 @@
 				</template>
 			</NcAppNavigationItem>
 
-			<!-- Category filters -->
+			<!-- Category filters. Double as drop targets: dragging a contract row
+			     onto one reassigns its category (#359). -->
 			<NcAppNavigationItem v-for="category in allCategories"
 				:key="category.id"
 				:name="category.name"
-				:class="{ active: currentView === 'contracts' && selectedCategoryId === category.id }"
+				:class="{ active: currentView === 'contracts' && selectedCategoryId === category.id, 'nav-drop-target': dropTargetKey === category.id }"
 				class="category-item"
-				@click="filterByCategory(category.id)">
+				@click="filterByCategory(category.id)"
+				@dragover.prevent="dropTargetKey = category.id"
+				@dragenter.prevent="dropTargetKey = category.id"
+				@dragleave="onCategoryDragLeave(category.id, $event)"
+				@drop.prevent="onCategoryDrop(category.id, $event)">
 				<template #icon>
 					<TagIcon :size="20" />
 				</template>
@@ -41,9 +46,13 @@
 
 			<NcAppNavigationItem v-if="uncategorizedCount > 0"
 				:name="t('contractmanager', 'Ohne Kategorie')"
-				:class="{ active: currentView === 'contracts' && selectedCategoryId === 'uncategorized' }"
+				:class="{ active: currentView === 'contracts' && selectedCategoryId === 'uncategorized', 'nav-drop-target': dropTargetKey === 'uncategorized' }"
 				class="category-item"
-				@click="filterByCategory('uncategorized')">
+				@click="filterByCategory('uncategorized')"
+				@dragover.prevent="dropTargetKey = 'uncategorized'"
+				@dragenter.prevent="dropTargetKey = 'uncategorized'"
+				@dragleave="onCategoryDragLeave('uncategorized', $event)"
+				@drop.prevent="onCategoryDrop('uncategorized', $event)">
 				<template #icon>
 					<TagIcon :size="20" />
 				</template>
@@ -115,6 +124,8 @@ import SettingsView from './views/SettingsView.vue'
 import { mapState, mapActions } from 'pinia'
 import { useContractsStore } from './store/contracts'
 import { useCategoriesStore } from './store/categories'
+import { parseContractId, resolveTargetCategoryId } from './utils/categoryDrop'
+import { showSuccess, showError } from '@nextcloud/dialogs'
 
 export default {
 	name: 'App',
@@ -141,6 +152,8 @@ export default {
 			currentView: 'contracts',
 			selectedCategoryId: null,
 			searchQuery: '',
+			// Key of the category entry currently hovered during a drag (#359).
+			dropTargetKey: null,
 		}
 	},
 	computed: {
@@ -165,7 +178,40 @@ export default {
 		this.fetchTrashedContracts()
 	},
 	methods: {
-		...mapActions(useContractsStore, ['fetchArchivedContracts', 'fetchPermissions', 'fetchTrashedContracts']),
+		...mapActions(useContractsStore, ['fetchArchivedContracts', 'fetchPermissions', 'fetchTrashedContracts', 'setContractCategory']),
+		// dragleave fires when the cursor crosses onto a child element too; only
+		// clear the highlight when the pointer actually leaves the whole entry.
+		onCategoryDragLeave(key, event) {
+			if (event.currentTarget.contains(event.relatedTarget)) {
+				return
+			}
+			if (this.dropTargetKey === key) {
+				this.dropTargetKey = null
+			}
+		},
+		// A contract row was dropped on a category (#359): reassign its category.
+		async onCategoryDrop(key, event) {
+			this.dropTargetKey = null
+			const id = parseContractId(event.dataTransfer)
+			if (id === null) {
+				return
+			}
+			const targetCategoryId = resolveTargetCategoryId(key)
+			const contract = this.allContracts.find(c => c.id === id)
+			// No-op when already in the target category — avoids a needless save.
+			if (contract && (contract.categoryId ?? null) === targetCategoryId) {
+				return
+			}
+			try {
+				await this.setContractCategory(id, targetCategoryId)
+				showSuccess(targetCategoryId === null
+					? t('contractmanager', 'Kategorie entfernt')
+					: t('contractmanager', 'In Kategorie verschoben'))
+			} catch (error) {
+				console.error('Failed to reassign category:', error)
+				showError(t('contractmanager', 'Fehler beim Ändern der Kategorie'))
+			}
+		},
 		showAllContracts() {
 			this.currentView = 'contracts'
 			this.selectedCategoryId = null
@@ -190,6 +236,15 @@ export default {
 
 .category-item {
 	padding-left: 16px;
+}
+
+/* Highlight the category entry a contract is being dragged onto (#359). The
+   class sits on the <li> (child-component root gets the parent scope); the
+   clickable link inside needs :deep to be reachable from scoped styles. */
+.nav-drop-target :deep(.app-navigation-entry-link) {
+	background-color: var(--color-primary-element-light);
+	box-shadow: inset 3px 0 0 var(--color-primary-element);
+	border-radius: var(--border-radius-large, 8px);
 }
 
 .nav-search {

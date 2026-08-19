@@ -457,6 +457,32 @@ class ContractController extends Controller {
 	}
 
 	/**
+	 * Reassign a contract's category (drag-and-drop in the sidebar, #359).
+	 * A null categoryId removes the category. Only the category is touched,
+	 * so this is a light alternative to the full update() endpoint.
+	 */
+	#[NoAdminRequired]
+	public function setCategory(int $id, ?int $categoryId = null): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
+		}
+		try {
+			$contract = $this->service->find($id);
+			$isAdmin = $this->permissionService->isAdmin($this->userId);
+			$isEditor = $this->permissionService->isEditor($this->userId);
+
+			$this->service->checkWriteAccess($contract, $this->userId, $isAdmin, $isEditor);
+			$updatedContract = $this->service->setCategory($id, $categoryId);
+
+			return new JSONResponse($updatedContract);
+		} catch (NotFoundException $e) {
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
+		}
+	}
+
+	/**
 	 * Archive a contract
 	 */
 	#[NoAdminRequired]
