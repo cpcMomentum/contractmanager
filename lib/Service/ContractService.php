@@ -87,12 +87,12 @@ class ContractService {
 
 		// Name is required
 		if (empty($data['name']) || trim($data['name']) === '') {
-			$errors['name'] = $this->l()->t('Name is required');
+			$errors['name'] = $this->l()->t('Name ist erforderlich');
 		}
 
 		// Vendor is required
 		if (empty($data['vendor']) || trim($data['vendor']) === '') {
-			$errors['vendor'] = $this->l()->t('Vendor is required');
+			$errors['vendor'] = $this->l()->t('Vertragspartner ist erforderlich');
 		}
 
 		// Date validation: startDate must be before endDate
@@ -101,10 +101,10 @@ class ContractService {
 				$start = new DateTime($data['startDate']);
 				$end = new DateTime($data['endDate']);
 				if ($start >= $end) {
-					$errors['endDate'] = $this->l()->t('End date must be after start date');
+					$errors['endDate'] = $this->l()->t('Enddatum muss nach Startdatum liegen');
 				}
 			} catch (\Exception $e) {
-				$errors['startDate'] = $this->l()->t('Invalid date format');
+				$errors['startDate'] = $this->l()->t('Ungültiges Datumsformat');
 			}
 		}
 
@@ -113,51 +113,51 @@ class ContractService {
 			try {
 				new DateTime($data['cancelledOn']);
 			} catch (\Exception $e) {
-				$errors['cancelledOn'] = $this->l()->t('Invalid date format');
+				$errors['cancelledOn'] = $this->l()->t('Ungültiges Datumsformat');
 			}
 		}
 		if (!empty($data['cancelledTo'])) {
 			try {
 				new DateTime($data['cancelledTo']);
 			} catch (\Exception $e) {
-				$errors['cancelledTo'] = $this->l()->t('Invalid date format');
+				$errors['cancelledTo'] = $this->l()->t('Ungültiges Datumsformat');
 			}
 		}
 		if (!empty($data['cancelledTo']) && empty($data['cancelledOn'])) {
-			$errors['cancelledTo'] = $this->l()->t('"Gekündigt zum" requires "Gekündigt am" to be set');
+			$errors['cancelledTo'] = $this->l()->t('„Gekündigt zum“ setzt „Gekündigt am“ voraus');
 		}
 		if (!empty($data['cancelledOn']) && !empty($data['cancelledTo']) && empty($errors['cancelledOn']) && empty($errors['cancelledTo'])) {
 			$cancelledOn = new DateTime($data['cancelledOn']);
 			$cancelledTo = new DateTime($data['cancelledTo']);
 			if ($cancelledTo < $cancelledOn) {
-				$errors['cancelledTo'] = $this->l()->t('"Gekündigt zum" must not be before "Gekündigt am"');
+				$errors['cancelledTo'] = $this->l()->t('„Gekündigt zum“ darf nicht vor „Gekündigt am“ liegen');
 			}
 		}
 
 		// Status validation
 		if (!empty($data['status']) && !in_array($data['status'], self::VALID_STATUSES, true)) {
-			$errors['status'] = $this->l()->t('Invalid status');
+			$errors['status'] = $this->l()->t('Ungültiger Status');
 		}
 
 		// Cost interval validation
 		if (!empty($data['costInterval']) && !in_array($data['costInterval'], self::VALID_INTERVALS, true)) {
-			$errors['costInterval'] = $this->l()->t('Invalid cost interval');
+			$errors['costInterval'] = $this->l()->t('Ungültiges Zahlungsintervall');
 		}
 
 		// String length validation (L2 Security Fix)
 		if (!empty($data['name']) && strlen($data['name']) > self::MAX_STRING_LENGTH) {
-			$errors['name'] = $this->l()->t('Name is too long (max. %s characters)', [self::MAX_STRING_LENGTH]);
+			$errors['name'] = $this->l()->t('Name ist zu lang (max. %s Zeichen)', [self::MAX_STRING_LENGTH]);
 		}
 		if (!empty($data['vendor']) && strlen($data['vendor']) > self::MAX_STRING_LENGTH) {
-			$errors['vendor'] = $this->l()->t('Vendor is too long (max. %s characters)', [self::MAX_STRING_LENGTH]);
+			$errors['vendor'] = $this->l()->t('Vertragspartner ist zu lang (max. %s Zeichen)', [self::MAX_STRING_LENGTH]);
 		}
 		if (!empty($data['notes']) && strlen($data['notes']) > self::MAX_NOTES_LENGTH) {
-			$errors['notes'] = $this->l()->t('Notes are too long (max. %s characters)', [self::MAX_NOTES_LENGTH]);
+			$errors['notes'] = $this->l()->t('Notizen sind zu lang (max. %s Zeichen)', [self::MAX_NOTES_LENGTH]);
 		}
 		for ($i = 1; $i <= 3; $i++) {
 			$key = 'customField' . $i;
 			if (!empty($data[$key]) && strlen($data[$key]) > self::MAX_STRING_LENGTH) {
-				$errors[$key] = $this->l()->t('Field is too long (max. %s characters)', [self::MAX_STRING_LENGTH]);
+				$errors[$key] = $this->l()->t('Feld ist zu lang (max. %s Zeichen)', [self::MAX_STRING_LENGTH]);
 			}
 		}
 
@@ -183,7 +183,7 @@ class ContractService {
 		if ($contract->getIsPrivate()
 			&& $contract->getCreatedBy() !== $userId
 			&& $contract->getResponsibleUser() !== $userId) {
-			throw new ForbiddenException($this->l()->t('No access to this private contract'));
+			throw new ForbiddenException($this->l()->t('Kein Zugriff auf diesen privaten Vertrag'));
 		}
 	}
 
@@ -202,7 +202,7 @@ class ContractService {
 
 		// Then check write permission
 		if (!$isAdmin && !$isEditor) {
-			throw new ForbiddenException($this->l()->t('No permission to edit'));
+			throw new ForbiddenException($this->l()->t('Keine Berechtigung zum Bearbeiten'));
 		}
 	}
 
@@ -220,7 +220,7 @@ class ContractService {
 		}
 
 		if ($contract->getCreatedBy() !== $userId) {
-			throw new ForbiddenException($this->l()->t('Only own contracts can be restored'));
+			throw new ForbiddenException($this->l()->t('Nur eigene Verträge können wiederhergestellt werden'));
 		}
 	}
 
@@ -232,7 +232,7 @@ class ContractService {
 	 */
 	public function checkAccess(Contract $contract, string $userId): void {
 		if ($contract->getCreatedBy() !== $userId) {
-			throw new ForbiddenException($this->l()->t('No access to this contract'));
+			throw new ForbiddenException($this->l()->t('Kein Zugriff auf diesen Vertrag'));
 		}
 	}
 
@@ -577,6 +577,27 @@ class ContractService {
 		}
 
 		$contract->setArchived(true);
+		$contract->setUpdatedAt(new DateTime());
+
+		return $this->mapper->update($contract);
+	}
+
+	/**
+	 * Reassign a contract's category (drag-and-drop, #359).
+	 * A null categoryId removes the category.
+	 *
+	 * Note: Access check must be done by caller using checkWriteAccess()
+	 *
+	 * @throws NotFoundException
+	 */
+	public function setCategory(int $id, ?int $categoryId): Contract {
+		try {
+			$contract = $this->mapper->find($id);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
+			throw new NotFoundException($e->getMessage());
+		}
+
+		$contract->setCategoryId($categoryId);
 		$contract->setUpdatedAt(new DateTime());
 
 		return $this->mapper->update($contract);

@@ -9,6 +9,7 @@ use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\SettingsService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
@@ -20,6 +21,7 @@ class SettingsControllerTest extends TestCase {
 	private PermissionService $permissionService;
 	private IUserManager $userManager;
 	private IGroupManager $groupManager;
+	private IL10N $l;
 	private SettingsController $controller;
 
 	protected function setUp(): void {
@@ -29,6 +31,8 @@ class SettingsControllerTest extends TestCase {
 		$this->permissionService = $this->createMock(PermissionService::class);
 		$this->userManager = $this->createMock(IUserManager::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
+		$this->l = $this->createMock(IL10N::class);
+		$this->l->method('t')->willReturnArgument(0);
 		$this->controller = new SettingsController(
 			$this->request,
 			'admin',
@@ -36,6 +40,7 @@ class SettingsControllerTest extends TestCase {
 			$this->permissionService,
 			$this->userManager,
 			$this->groupManager,
+			$this->l,
 		);
 	}
 

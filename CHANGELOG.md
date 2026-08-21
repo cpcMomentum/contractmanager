@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-21
+
+### Added
+- Verträge lassen sich jetzt per Ziehen aus der Liste auf einen Kategorie-Eintrag in der Seitenleiste einer Kategorie zuordnen oder umsortieren. Ein Ziehen auf „Ohne Kategorie" entfernt die Zuordnung. Das Ziel wird beim Drüberziehen hervorgehoben. Das ist eine Ergänzung zum Bearbeiten-Formular, das die Kategorie weiterhin setzt (Touch- und Tastatur-Weg bleiben unverändert). Nur Bearbeiter können auf diesem Weg umsortieren (#359)
+
+### Changed
+- Die Administrator-Einstellungen speichern jetzt einheitlich: Erinnerungstage, Zusatzfeld-Angaben und der Nachfolger bei gelöschtem Konto werden automatisch beim Verlassen des Feldes gesichert, wie die übrigen Einstellungen. Der leicht zu übersehende Sammel-Button „Admin-Einstellungen speichern" entfällt dadurch. Die KI-Vertragsanalyse behält bewusst einen eigenen „KI-Einstellungen speichern"-Schritt, weil Provider, API-Key, URL und Modell nur als vollständiger Satz sinnvoll sind, und zeigt darüber klar an, ob sie aktiv ist oder mangels API-Key nur konfiguriert aussieht (#151)
+
+### Fixed
+- Auf Nextcloud 34 legte sich der Titel des Vertragsfensters („Neuer Vertrag", „Vertrag bearbeiten", „Vertragsdetails") quer über die Suchleiste im Kopfbereich. Ursache war nicht die App: Nextcloud hat die Suchleiste in die Mitte verschoben, wo das Fenster seinen Titel zeichnete. Der Titel wird jetzt nicht mehr sichtbar dort dargestellt; das Fenster trägt seine Kopfzeile ohnehin selbst. Für Vorlesesoftware bleibt es benannt (#337)
+- Auf Nextcloud 34 kamen alle Benachrichtigungen von VertragsWerk ohne Symbol und ohne anklickbaren Link an, und im Server-Log stapelte sich im Minutentakt eine Verfallswarnung. Ursache: Das Symbol wurde mit einer relativen Adresse gesetzt, die Nextcloud 34 nicht mehr annimmt — der abgewiesene Wert brach die Aufbereitung ab, bevor der Link gesetzt war. Das Symbol wird jetzt als vollständige Adresse gesetzt; Symbol und Link erscheinen wieder, und die Log-Warnung entfällt (#357, #358)
+- Meldungen des Servers erschienen auf Englisch, auch wenn die App auf Deutsch lief: „Name is required" statt „Name ist erforderlich", „Contract not found" statt „Vertrag nicht gefunden". Betroffen waren 29 Texte aus der Vertragsprüfung, der Rechteprüfung und der Dokumentenerkennung sowie 18 weitere, die gar nicht übersetzbar angelegt waren. Sie sind jetzt durchgängig deutsch und in beiden Sprachen hinterlegt. Ursache war eine Umstellung vom März, die die Texte ins Englische übersetzte, ohne die Übersetzungsdateien nachzuziehen — die deutschen Fassungen lagen seither unerreichbar daneben (#340)
+
+### Changed
+- Die Übersetzungsprüfung der CI sieht jetzt auch den Serverteil der App und nicht mehr nur die Oberfläche. Zusätzlich läuft sie bereits beim Commit statt erst im Pull Request. Der bisherige Prüfer meldete „in Ordnung", während die 29 englischen Meldungen ausgeliefert wurden (#340)
+
 ## [1.3.0] - 2026-08-11
 
 ### Changed

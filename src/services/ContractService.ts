@@ -38,6 +38,11 @@ export default {
 		return response.data
 	},
 
+	async setCategory(id: number, categoryId: number | null): Promise<Contract> {
+		const response = await axios.put<Contract>(`${baseUrl}/${id}/category`, { categoryId })
+		return response.data
+	},
+
 	async delete(id: number): Promise<void> {
 		await axios.delete(`${baseUrl}/${id}`)
 	},

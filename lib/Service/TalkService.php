@@ -74,26 +74,26 @@ class TalkService {
 
 		if ($contractType === 'auto_renewal') {
 			if ($reminderType === 'first') {
-				$title = $l->t('Cancellation reminder');
-				$body = $l->t('The contract "%1$s" must be cancelled by **%2$s**.', [$contractName, $deadline]);
-				$footer = $l->t('This is the first reminder.');
+				$title = $l->t('Kündigungserinnerung');
+				$body = $l->t('Der Vertrag „%1$s" muss bis zum **%2$s** gekündigt werden.', [$contractName, $deadline]);
+				$footer = $l->t('Dies ist die erste Erinnerung.');
 				$message = "📋 **$title**\n\n$body\n\n_{$footer}_";
 			} else {
-				$title = $l->t('Final cancellation reminder');
-				$body = $l->t('The contract "%1$s" must be cancelled by **%2$s**!', [$contractName, $deadline]);
-				$footer = $l->t('This is the final reminder before the cancellation deadline.');
+				$title = $l->t('Letzte Kündigungserinnerung');
+				$body = $l->t('Der Vertrag „%1$s" muss bis zum **%2$s** gekündigt werden!', [$contractName, $deadline]);
+				$footer = $l->t('Dies ist die letzte Erinnerung vor Ablauf der Kündigungsfrist.');
 				$message = "⚠️ **$title**\n\n$body\n\n_{$footer}_";
 			}
 		} else {
 			if ($reminderType === 'first') {
-				$title = $l->t('Contract expiring');
-				$body = $l->t('The contract "%1$s" expires on **%2$s**.', [$contractName, $deadline]);
-				$footer = $l->t('This is the first reminder.');
+				$title = $l->t('Vertrag läuft aus');
+				$body = $l->t('Der Vertrag „%1$s" läuft am **%2$s** aus.', [$contractName, $deadline]);
+				$footer = $l->t('Dies ist die erste Erinnerung.');
 				$message = "📋 **$title**\n\n$body\n\n_{$footer}_";
 			} else {
-				$title = $l->t('Contract expiring');
-				$body = $l->t('The contract "%1$s" expires on **%2$s**!', [$contractName, $deadline]);
-				$footer = $l->t('This is the final reminder.');
+				$title = $l->t('Vertrag läuft aus');
+				$body = $l->t('Der Vertrag „%1$s" läuft am **%2$s** aus!', [$contractName, $deadline]);
+				$footer = $l->t('Dies ist die letzte Erinnerung.');
 				$message = "⚠️ **$title**\n\n$body\n\n_{$footer}_";
 			}
 		}

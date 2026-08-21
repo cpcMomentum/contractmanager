@@ -38,7 +38,7 @@ class ContractController extends Controller {
 	#[NoAdminRequired]
 	public function searchUsers(string $query = ''): JSONResponse {
 		if ($this->userId === null || !$this->permissionService->canEdit($this->userId)) {
-			return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(['error' => $this->l->t('Kein Zugriff')], Http::STATUS_FORBIDDEN);
 		}
 		$results = [];
 		foreach ($this->userManager->search($query, 25) as $user) {
@@ -158,7 +158,7 @@ class ContractController extends Controller {
 
 			return new JSONResponse($contract);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -171,7 +171,7 @@ class ContractController extends Controller {
 	#[NoAdminRequired]
 	public function getReminderOptOut(int $id): JSONResponse {
 		if ($this->userId === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
 		try {
 			$contract = $this->service->find($id);
@@ -180,7 +180,7 @@ class ContractController extends Controller {
 
 			return new JSONResponse(['optedOut' => $this->service->isReminderOptedOut($id, $this->userId)]);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -192,7 +192,7 @@ class ContractController extends Controller {
 	#[NoAdminRequired]
 	public function setReminderOptOut(int $id, bool $optedOut): JSONResponse {
 		if ($this->userId === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
 		try {
 			$contract = $this->service->find($id);
@@ -203,7 +203,7 @@ class ContractController extends Controller {
 
 			return new JSONResponse(['optedOut' => $this->service->isReminderOptedOut($id, $this->userId)]);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -241,11 +241,11 @@ class ContractController extends Controller {
 		string $cancellationDeadlineType = 'normal',
 	): JSONResponse {
 		if ($this->userId === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
 		// Check if user can create contracts
 		if (!$this->permissionService->canEdit($this->userId)) {
-			return new JSONResponse(['error' => $this->l->t('No permission to create')], Http::STATUS_FORBIDDEN);
+			return new JSONResponse(['error' => $this->l->t('Keine Berechtigung zum Erstellen')], Http::STATUS_FORBIDDEN);
 		}
 
 		try {
@@ -330,7 +330,7 @@ class ContractController extends Controller {
 		string $cancellationDeadlineType = 'normal',
 	): JSONResponse {
 		if ($this->userId === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
 		try {
 			$contract = $this->service->find($id);
@@ -387,7 +387,7 @@ class ContractController extends Controller {
 		} catch (ValidationException $e) {
 			return new JSONResponse(['errors' => $e->getErrors()], Http::STATUS_BAD_REQUEST);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -408,7 +408,7 @@ class ContractController extends Controller {
 
 			return new JSONResponse(['success' => true]);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -428,7 +428,7 @@ class ContractController extends Controller {
 
 			return new JSONResponse($restoredContract);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -443,7 +443,7 @@ class ContractController extends Controller {
 			$this->service->deletePermanently($id);
 			return new JSONResponse(['success' => true]);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		}
 	}
 
@@ -454,6 +454,32 @@ class ContractController extends Controller {
 	public function emptyTrash(): JSONResponse {
 		$count = $this->service->emptyTrash();
 		return new JSONResponse(['success' => true, 'deleted' => $count]);
+	}
+
+	/**
+	 * Reassign a contract's category (drag-and-drop in the sidebar, #359).
+	 * A null categoryId removes the category. Only the category is touched,
+	 * so this is a light alternative to the full update() endpoint.
+	 */
+	#[NoAdminRequired]
+	public function setCategory(int $id, ?int $categoryId = null): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
+		}
+		try {
+			$contract = $this->service->find($id);
+			$isAdmin = $this->permissionService->isAdmin($this->userId);
+			$isEditor = $this->permissionService->isEditor($this->userId);
+
+			$this->service->checkWriteAccess($contract, $this->userId, $isAdmin, $isEditor);
+			$updatedContract = $this->service->setCategory($id, $categoryId);
+
+			return new JSONResponse($updatedContract);
+		} catch (NotFoundException $e) {
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
+		}
 	}
 
 	/**
@@ -471,7 +497,7 @@ class ContractController extends Controller {
 
 			return new JSONResponse($archivedContract);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -492,7 +518,7 @@ class ContractController extends Controller {
 
 			return new JSONResponse($restoredContract);
 		} catch (NotFoundException $e) {
-			return new JSONResponse(['error' => 'Contract not found'], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $this->l->t('Vertrag nicht gefunden')], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		}
@@ -512,10 +538,10 @@ class ContractController extends Controller {
 	 */
 	public function transfer(string $from, string $to): JSONResponse {
 		if ($from === '' || $to === '') {
-			return new JSONResponse(['error' => $this->l->t('Both users are required')], Http::STATUS_BAD_REQUEST);
+			return new JSONResponse(['error' => $this->l->t('Beide Konten sind erforderlich')], Http::STATUS_BAD_REQUEST);
 		}
 		if ($from === $to) {
-			return new JSONResponse(['error' => $this->l->t('Source and target must differ')], Http::STATUS_BAD_REQUEST);
+			return new JSONResponse(['error' => $this->l->t('Quelle und Ziel müssen sich unterscheiden')], Http::STATUS_BAD_REQUEST);
 		}
 		$count = $this->service->transferResponsibility($from, $to);
 		return new JSONResponse(['transferred' => $count]);

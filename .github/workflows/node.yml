@@ -25,15 +25,20 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Abhaengigkeiten installieren
-        # npm/cli#4828: ein auf anderem OS erzeugter Lock laesst das plattform-
-        # spezifische rollup-Binary fehlen. Lock entfernen erzwingt frische,
-        # plattform-korrekte Aufloesung auf dem Linux-Runner.
-        run: |
-          rm -f package-lock.json
-          npm install --no-audit --no-fund
+        # `npm ci` statt `npm install`, und das Lockfile bleibt liegen. Bis zum
+        # 15.08.2026 stand hier `rm -f package-lock.json` mit Verweis auf
+        # npm/cli#4828 (fehlendes rollup-Binary). Der Fehler, der tatsaechlich
+        # auftrat, war ein anderer: npm 10 meldet auf einem synchronen Lock
+        # faelschlich "Missing: pinia@3.0.4". Mit npm 11 -- das mit Node 24
+        # kommt -- laeuft `npm ci` durch.
+        #
+        # Das ist die Voraussetzung fuer den Frische-Schritt weiter unten:
+        # ohne gepinnte Installation weicht der CI-Build vom lokalen ab und der
+        # Vergleich meldet immer (nc-app-tooling#1).
+        run: npm ci
 
       - name: ESLint
         run: npm run lint
@@ -44,8 +49,13 @@ jobs:
       # Der Pflichtschritt "bei l10n-Aenderung Sprache umschalten" konnte das
       # nicht auffangen: Wer den Eintrag vergisst, aendert keine l10n-Datei, also
       # greift der Ausloeser nicht.
+      #
+      # Seit #340 der Waechter aus worktime: er sieht zusaetzlich lib/,
+      # templates/ und appinfo/. Der Vorgaenger prueft nur src/ und meldete
+      # deshalb gruen, waehrend 29 Backend-Strings englisch ausgeliefert wurden.
+
       - name: l10n-Vollstaendigkeit
-        run: npm run lint:l10n
+        run: npm run l10n:check
 
       - name: Typecheck
         run: npm run typecheck
@@ -56,10 +66,41 @@ jobs:
       - name: Produktions-Build
         run: npm run build
 
-      # Ein Build-Artefakt-Drift-Check (git diff js/ css/) ist hier bewusst NICHT
-      # aktiv: Er braucht einen reproduzierbaren Build, aber dieser Job wirft den
-      # Lock weg (rm -f package-lock.json, npm/cli#4828) und floatet damit die
-      # Dependency-Versionen -> Byte-Diff schlaegt immer an. Als Hard-Gate erst
-      # sinnvoll nach Umstieg auf reproduzierbare Installs. Siehe #251.
-      # Die eigentliche Absicherung gegen fehlende Build-Artefakte ist der
-      # Packaging-Guard (Check 15) im Release-Skill.
+      # Der eigentliche Frische-Test: passt das eingecheckte Bundle zu den
+      # Quellen? Der Schritt darueber hat gerade neu gebaut -- weicht js/ oder
+      # css/ jetzt vom Commit ab, wurde beim Aendern der Quellen der Build
+      # vergessen. Genau so blieb bei contractmanager#327 eine verwundbare
+      # dompurify-Version im ausgelieferten Bundle stehen.
+      #
+      # Gemessen statt geraten. Der Vorgaenger (nc-bundle-check) schloss aus
+      # "src/ geaendert, js/ nicht" auf eine Absicht und lag bei reinen Typ- und
+      # Kommentaraenderungen falsch; sein Ausweg [skip bundle-check] hebelte ihn
+      # ganz aus. Beides faellt hiermit weg (nc-app-tooling#1).
+      #
+      # Traegt, weil der Build byte-reproduzierbar ist: alle fuenf Apps bauen
+      # unter Linux mit npm 11 aus dem auf macOS erzeugten Lockfile
+      # byte-identisch (nachgemessen 15.08.2026, Node 20/22/24 einzeln).
+      #
+      # git status statt git diff: der Diff sieht nur getrackte Dateien. Eine
+      # neu entstandene Bundle-Datei kaeme als UNTRACKED daher und rutschte
+      # durch, waehrend die alte unveraendert daneben liegen bleibt. Diese App
+      # baut zwar auf feste Dateinamen, aber die Flotte nicht durchgehend --
+      # worktime und rechnungswerk haben Chunks mit Content-Hashes.
+      # status --porcelain erfasst geaendert, geloescht und neu.
+      - name: Bundle passt zum Quellstand
+        run: |
+          ABWEICHUNG=$(git status --porcelain -- js/ css/)
+          if [ -n "$ABWEICHUNG" ]; then
+            echo "$ABWEICHUNG"
+            echo "::error::Das eingecheckte Bundle passt nicht zu den Quellen. Bitte 'npm run build' laufen lassen und das Ergebnis mitcommitten."
+            exit 1
+          fi
+
+      # Hier stand bis zum 15.08.2026, warum der Byte-Diff NICHT geht: der Job
+      # werfe den Lock weg und floate die Versionen, ein Rebuild erzeuge schon
+      # 315 Byte Unterschied. Beides stimmte -- solange der Lock weggeworfen
+      # wurde. Er wird es nicht mehr, und damit ist der Byte-Diff genau der
+      # Schritt darueber (#251).
+      #
+      # Zweite Ebene bleibt der Packaging-Guard (Check 15) im Release-Skill,
+      # dazu seit 08/2026 nc-bundle-fresh vor dem Packen.

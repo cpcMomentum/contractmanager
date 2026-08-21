@@ -1,6 +1,6 @@
 {
     "name": "contractmanager",
-    "version": "1.2.6",
+    "version": "1.4.0",
     "description": "Nextcloud App zur Vertragsverwaltung mit Kündigungserinnerungen",
     "main": "src/main.ts",
     "scripts": {
@@ -10,7 +10,8 @@
         "test:watch": "vitest",
         "typecheck": "vue-tsc --noEmit",
         "lint": "eslint --ext .js,.ts,.vue src",
-        "lint:l10n": "node scripts/check-l10n.mjs",
+        "l10n:check": "nc-l10n-check",
+        "l10n:fix": "nc-l10n-check --fix",
         "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
         "prepare": "git config core.hooksPath .githooks || true"
     },
@@ -45,6 +46,7 @@
         "@vue/tsconfig": "^0.7.0",
         "eslint": "^8.57.0",
         "happy-dom": "^20.9.0",
+        "nc-app-tooling": "github:cpcMomentum/nc-app-tooling#v1.11.0",
         "sass": "^1.70.0",
         "typescript": "^5.7.2",
         "vite": "^7.1.3",

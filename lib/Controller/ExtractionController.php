@@ -39,14 +39,14 @@ class ExtractionController extends Controller {
 	public function extract(string $filePath): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(
-				['error' => $this->l->t('Not authenticated')],
+				['error' => $this->l->t('Nicht angemeldet')],
 				Http::STATUS_UNAUTHORIZED
 			);
 		}
 
 		if (!$this->settingsService->isAiConfigured()) {
 			return new JSONResponse(
-				['error' => $this->l->t('AI extraction is not configured. Please ask your administrator to set up an AI provider.')],
+				['error' => $this->l->t('Die KI-Erkennung ist nicht eingerichtet. Bitte wenden Sie sich an Ihre Administration.')],
 				Http::STATUS_PRECONDITION_FAILED
 			);
 		}
@@ -78,12 +78,12 @@ class ExtractionController extends Controller {
 
 		} catch (\OCP\Files\NotFoundException $e) {
 			return new JSONResponse(
-				['error' => $this->l->t('File not found')],
+				['error' => $this->l->t('Datei nicht gefunden')],
 				Http::STATUS_NOT_FOUND
 			);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(
-				['error' => $this->l->t('Only PDF files are supported')],
+				['error' => $this->l->t('Es werden nur PDF-Dateien unterstützt')],
 				Http::STATUS_BAD_REQUEST
 			);
 		} catch (\Exception $e) {
@@ -93,7 +93,7 @@ class ExtractionController extends Controller {
 				'exception' => $e,
 			]);
 			return new JSONResponse(
-				['error' => $this->l->t('Extraction failed: %s', [$e->getMessage()])],
+				['error' => $this->l->t('Erkennung fehlgeschlagen: %s', [$e->getMessage()])],
 				Http::STATUS_INTERNAL_SERVER_ERROR
 			);
 		}
