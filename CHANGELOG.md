@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-21
+
 ### Added
 - Verträge lassen sich jetzt per Ziehen aus der Liste auf einen Kategorie-Eintrag in der Seitenleiste einer Kategorie zuordnen oder umsortieren. Ein Ziehen auf „Ohne Kategorie" entfernt die Zuordnung. Das Ziel wird beim Drüberziehen hervorgehoben. Das ist eine Ergänzung zum Bearbeiten-Formular, das die Kategorie weiterhin setzt (Touch- und Tastatur-Weg bleiben unverändert). Nur Bearbeiter können auf diesem Weg umsortieren (#359)
 
