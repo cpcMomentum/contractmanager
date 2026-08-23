@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Der Hinweis unter der Vorlaufzeit im Vertragsformular lautet jetzt schlicht „Standard: X Tage.“ statt „Leer lassen = Standard (X Tage).“. Das graue X im Feld ist nur ein Platzhalter, kein fester Wert; die alte Formulierung wirkte dadurch widersprüchlich, als ließe sich der voreingetragene Wert nicht löschen (#364)
+
 ## [1.4.0] - 2026-08-21
 
 ### Added
