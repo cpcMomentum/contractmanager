@@ -34,6 +34,7 @@ class SettingsService {
 	private const KEY_DEFAULT_AMOUNT_TYPE = 'default_amount_type';
 
 	private const KEY_CUSTOM_FIELD_LABEL_PREFIX = 'custom_field_label_';
+	private const KEY_CUSTOM_FIELD_ENABLED_PREFIX = 'custom_field_enabled_';
 
 	private const KEY_DELETION_SUCCESSOR = 'deletion_successor';
 
@@ -203,15 +204,58 @@ class SettingsService {
 	}
 
 	/**
-	 * Get all custom field labels
+	 * Whether a custom field (1-3) is active.
+	 *
+	 * The active state is a real flag, independent of the label. For contracts
+	 * created before this flag existed the value was never stored; we then fall
+	 * back to the historical rule "label not empty = active" so existing setups
+	 * keep working (#368).
+	 */
+	public function getCustomFieldEnabled(int $fieldNumber): bool {
+		if ($fieldNumber < 1 || $fieldNumber > 3) {
+			return false;
+		}
+		$stored = $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_CUSTOM_FIELD_ENABLED_PREFIX . $fieldNumber,
+			''
+		);
+		if ($stored === '') {
+			// Never set: derive from the old label-based behaviour.
+			return $this->getCustomFieldLabel($fieldNumber) !== '';
+		}
+		return $stored === '1';
+	}
+
+	/**
+	 * Set the active state for a custom field (1-3)
+	 */
+	public function setCustomFieldEnabled(int $fieldNumber, bool $enabled): void {
+		if ($fieldNumber < 1 || $fieldNumber > 3) {
+			return;
+		}
+		$this->config->setAppValue(
+			Application::APP_ID,
+			self::KEY_CUSTOM_FIELD_ENABLED_PREFIX . $fieldNumber,
+			$enabled ? '1' : '0'
+		);
+	}
+
+	/**
+	 * Get the custom field labels a contract form should show.
+	 *
+	 * A field only appears in the contract form when it is active AND named, so a
+	 * deactivated field is gated out here (empty label). The contract form keys
+	 * its visibility off a non-empty label, so this keeps that view unchanged
+	 * while making it honour the active flag (#368).
 	 *
 	 * @return array{customFieldLabel1: string, customFieldLabel2: string, customFieldLabel3: string}
 	 */
 	public function getCustomFieldLabels(): array {
 		return [
-			'customFieldLabel1' => $this->getCustomFieldLabel(1),
-			'customFieldLabel2' => $this->getCustomFieldLabel(2),
-			'customFieldLabel3' => $this->getCustomFieldLabel(3),
+			'customFieldLabel1' => $this->getCustomFieldEnabled(1) ? $this->getCustomFieldLabel(1) : '',
+			'customFieldLabel2' => $this->getCustomFieldEnabled(2) ? $this->getCustomFieldLabel(2) : '',
+			'customFieldLabel3' => $this->getCustomFieldEnabled(3) ? $this->getCustomFieldLabel(3) : '',
 		];
 	}
 

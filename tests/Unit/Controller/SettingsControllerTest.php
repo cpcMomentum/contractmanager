@@ -155,4 +155,35 @@ class SettingsControllerTest extends TestCase {
 
 		$this->assertSame('ok', $data['reminderLink']['status']);
 	}
+
+	// ========================================
+	// Custom Field Active Flag (#368)
+	// ========================================
+
+	public function testUpdateAdminSavesCustomFieldEnabled(): void {
+		$this->settingsService->expects($this->once())
+			->method('setCustomFieldEnabled')
+			->with(2, false);
+		// The label setter must NOT be touched — toggling keeps the name.
+		$this->settingsService->expects($this->never())->method('setCustomFieldLabel');
+
+		$this->controller->updateAdmin(customField2Enabled: false);
+	}
+
+	public function testUpdateAdminIgnoresNullCustomFieldEnabled(): void {
+		$this->settingsService->expects($this->never())->method('setCustomFieldEnabled');
+
+		$this->controller->updateAdmin(customField1Enabled: null);
+	}
+
+	public function testGetAdminExposesCustomFieldEnabledFlags(): void {
+		$this->settingsService->method('getCustomFieldEnabled')
+			->willReturnMap([[1, true], [2, false], [3, true]]);
+
+		$data = $this->controller->getAdmin()->getData();
+
+		$this->assertTrue($data['customField1Enabled']);
+		$this->assertFalse($data['customField2Enabled']);
+		$this->assertTrue($data['customField3Enabled']);
+	}
 }

@@ -419,4 +419,91 @@ class SettingsServiceTest extends TestCase {
 		$this->assertSame('Telekom', $filters['vendor']);
 		$this->assertSame(['cancelled'], $filters['statuses']);
 	}
+
+	// ========================================
+	// Custom Field Active Flag Tests (#368)
+	// ========================================
+
+	public function testGetCustomFieldEnabledReturnsStoredTrue(): void {
+		$this->config->expects($this->once())
+			->method('getAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_1', '')
+			->willReturn('1');
+
+		$this->assertTrue($this->service->getCustomFieldEnabled(1));
+	}
+
+	public function testGetCustomFieldEnabledReturnsStoredFalse(): void {
+		// Explicitly stored "0" wins even if a label exists — an active field may
+		// be blank, and a deactivated one may still keep its name.
+		$this->config->expects($this->once())
+			->method('getAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_2', '')
+			->willReturn('0');
+
+		$this->assertFalse($this->service->getCustomFieldEnabled(2));
+	}
+
+	public function testGetCustomFieldEnabledFallsBackToLabelWhenNeverSet(): void {
+		// Pre-#368 data: no flag stored, derive from "label not empty".
+		$this->config->method('getAppValue')
+			->willReturnMap([
+				[Application::APP_ID, 'custom_field_enabled_3', '', ''],
+				[Application::APP_ID, 'custom_field_label_3', '', 'Kostenstelle'],
+			]);
+
+		$this->assertTrue($this->service->getCustomFieldEnabled(3));
+	}
+
+	public function testGetCustomFieldEnabledFallbackIsFalseForEmptyLabel(): void {
+		$this->config->method('getAppValue')
+			->willReturnMap([
+				[Application::APP_ID, 'custom_field_enabled_1', '', ''],
+				[Application::APP_ID, 'custom_field_label_1', '', ''],
+			]);
+
+		$this->assertFalse($this->service->getCustomFieldEnabled(1));
+	}
+
+	public function testGetCustomFieldEnabledOutOfRange(): void {
+		$this->config->expects($this->never())->method('getAppValue');
+		$this->assertFalse($this->service->getCustomFieldEnabled(0));
+		$this->assertFalse($this->service->getCustomFieldEnabled(4));
+	}
+
+	public function testSetCustomFieldEnabledStoresFlag(): void {
+		$this->config->expects($this->once())
+			->method('setAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_2', '1');
+
+		$this->service->setCustomFieldEnabled(2, true);
+	}
+
+	public function testSetCustomFieldEnabledStoresFalse(): void {
+		$this->config->expects($this->once())
+			->method('setAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_3', '0');
+
+		$this->service->setCustomFieldEnabled(3, false);
+	}
+
+	public function testGetCustomFieldLabelsGatesDeactivatedFields(): void {
+		// A named-but-deactivated field is gated out of the contract-form labels
+		// (empty), while an active named field passes through.
+		$this->config->method('getAppValue')
+			->willReturnMap([
+				[Application::APP_ID, 'custom_field_enabled_1', '', '1'],
+				[Application::APP_ID, 'custom_field_label_1', '', 'Vertragsnummer'],
+				[Application::APP_ID, 'custom_field_enabled_2', '', '0'],
+				[Application::APP_ID, 'custom_field_label_2', '', 'Kostenstelle'],
+				[Application::APP_ID, 'custom_field_enabled_3', '', '0'],
+				[Application::APP_ID, 'custom_field_label_3', '', ''],
+			]);
+
+		$labels = $this->service->getCustomFieldLabels();
+
+		$this->assertSame('Vertragsnummer', $labels['customFieldLabel1']);
+		$this->assertSame('', $labels['customFieldLabel2'], 'Deaktiviert -> ausgeblendet');
+		$this->assertSame('', $labels['customFieldLabel3']);
+	}
 }
