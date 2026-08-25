@@ -629,6 +629,7 @@ import TagIcon from 'vue-material-design-icons/Tag.vue'
 import SettingsService from '../services/SettingsService'
 import ContractService from '../services/ContractService'
 import { isAiActive } from '../utils/aiSettings'
+import { resolveCustomFieldEnabled, customFieldEnabledKey } from '../utils/customFields'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
 
@@ -683,6 +684,9 @@ export default {
 				customFieldLabel1: '',
 				customFieldLabel2: '',
 				customFieldLabel3: '',
+				customField1Enabled: false,
+				customField2Enabled: false,
+				customField3Enabled: false,
 				aiProvider: '',
 				aiApiKey: '',
 				aiApiUrl: '',
@@ -777,16 +781,17 @@ export default {
 		...mapActions(useCategoriesStore, ['fetchCategories', 'createCategory', 'updateCategory', 'deleteCategory']),
 
 		customFieldEnabled(n) {
-			return this.adminSettings['customFieldLabel' + n] !== ''
+			return this.adminSettings[customFieldEnabledKey(n)]
 		},
 
+		// Toggle only flips the active flag; the label is left untouched. Enabling
+		// no longer prefills a hardcoded value, and disabling keeps the name so it
+		// survives being switched off and on again (#368). A deactivated field is
+		// gated out of the contract form server-side (empty label there).
 		toggleCustomField(n, enabled) {
-			if (enabled) {
-				this.adminSettings['customFieldLabel' + n] = this.customFieldPlaceholders[n - 1].replace('z.B. ', '')
-			} else {
-				this.adminSettings['customFieldLabel' + n] = ''
-			}
-			this.saveAdminField('customFieldLabel' + n, this.adminSettings['customFieldLabel' + n])
+			const key = customFieldEnabledKey(n)
+			this.adminSettings[key] = enabled
+			this.saveAdminField(key, enabled)
 		},
 
 		// Autosave a single independent admin field (reminder days, custom-field
@@ -888,6 +893,9 @@ export default {
 					customFieldLabel1: settings.customFieldLabel1 || '',
 					customFieldLabel2: settings.customFieldLabel2 || '',
 					customFieldLabel3: settings.customFieldLabel3 || '',
+					customField1Enabled: resolveCustomFieldEnabled(settings, 1),
+					customField2Enabled: resolveCustomFieldEnabled(settings, 2),
+					customField3Enabled: resolveCustomFieldEnabled(settings, 3),
 					aiProvider: settings.aiProvider || '',
 					aiApiKey: settings.aiApiKey || '',
 					aiApiUrl: settings.aiApiUrl || '',

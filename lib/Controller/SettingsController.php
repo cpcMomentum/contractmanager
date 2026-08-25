@@ -140,6 +140,9 @@ class SettingsController extends Controller {
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
 			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
 			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
+			'customField1Enabled' => $this->settingsService->getCustomFieldEnabled(1),
+			'customField2Enabled' => $this->settingsService->getCustomFieldEnabled(2),
+			'customField3Enabled' => $this->settingsService->getCustomFieldEnabled(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
@@ -216,6 +219,9 @@ class SettingsController extends Controller {
 		?string $customFieldLabel1 = null,
 		?string $customFieldLabel2 = null,
 		?string $customFieldLabel3 = null,
+		?bool $customField1Enabled = null,
+		?bool $customField2Enabled = null,
+		?bool $customField3Enabled = null,
 		?string $aiProvider = null,
 		?string $aiApiKey = null,
 		?string $aiApiUrl = null,
@@ -240,6 +246,18 @@ class SettingsController extends Controller {
 
 		if ($customFieldLabel3 !== null) {
 			$this->settingsService->setCustomFieldLabel(3, $customFieldLabel3);
+		}
+
+		if ($customField1Enabled !== null) {
+			$this->settingsService->setCustomFieldEnabled(1, $customField1Enabled);
+		}
+
+		if ($customField2Enabled !== null) {
+			$this->settingsService->setCustomFieldEnabled(2, $customField2Enabled);
+		}
+
+		if ($customField3Enabled !== null) {
+			$this->settingsService->setCustomFieldEnabled(3, $customField3Enabled);
 		}
 
 		if ($aiProvider !== null) {
@@ -272,6 +290,9 @@ class SettingsController extends Controller {
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
 			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
 			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
+			'customField1Enabled' => $this->settingsService->getCustomFieldEnabled(1),
+			'customField2Enabled' => $this->settingsService->getCustomFieldEnabled(2),
+			'customField3Enabled' => $this->settingsService->getCustomFieldEnabled(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
