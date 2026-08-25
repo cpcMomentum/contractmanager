@@ -264,7 +264,7 @@ OC.L10N.register(
     "Betrifft nur Ihre eigene Erinnerung, andere Berechtigte bleiben informiert." : "Affects your own reminder only, everyone else stays informed.",
     "Vorlaufzeit" : "Lead time",
     "Tage vor Ablauf" : "Days before expiry",
-    "Leer lassen = Standard ({days} Tage)." : "Leave empty for the default ({days} days).",
+    "Standard: {days} Tage." : "Default: {days} days.",
     "Zugriff & Zuständigkeit" : "Access & responsibility",
     "Bitte einen Betrag wie 10,50 eingeben" : "Please enter an amount such as 10.50",
     "Der Betrag darf höchstens 99.999.999,99 betragen" : "The amount must not exceed 99,999,999.99",
