@@ -37,7 +37,7 @@ class AutoBackupJob extends TimedJob {
 					'users' => $count,
 				]);
 			}
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			$this->logger->error('Auto-backup run failed', [
 				'app' => Application::APP_ID,
 				'exception' => $e->getMessage(),
