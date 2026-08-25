@@ -10,8 +10,7 @@ use OCA\ContractManager\Db\CategoryMapper;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
-use OCP\App\IAppManager;
-use OCP\AppFramework\Db\DoesNotExistException;
+use OCA\ContractManager\Service\ContractExportService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IL10N;
 use OCP\IUser;
@@ -40,7 +39,7 @@ class ContractMigrator implements IMigrator {
 		private ContractMapper $contractMapper,
 		private CategoryMapper $categoryMapper,
 		private ReminderOptOutMapper $optOutMapper,
-		private IAppManager $appManager,
+		private ContractExportService $exportService,
 		private ITimeFactory $timeFactory,
 		private IL10N $l10n,
 	) {
@@ -60,85 +59,17 @@ class ContractMigrator implements IMigrator {
 
 	public function export(IUser $user, IExportDestination $exportDestination, OutputInterface $output): void {
 		$output->writeln('Exporting contracts…');
-		$uid = $user->getUID();
 
-		$contracts = $this->contractMapper->findAllByOwner($uid);
-
-		// Collect referenced categories once (deduplicated by id).
-		$categories = [];
-		foreach ($contracts as $contract) {
-			$categoryId = $contract->getCategoryId();
-			if ($categoryId === null || isset($categories[$categoryId])) {
-				continue;
-			}
-			try {
-				$category = $this->categoryMapper->find($categoryId);
-				$categories[$categoryId] = [
-					'exportId' => $category->getId(),
-					'name' => $category->getName(),
-					'sortOrder' => $category->getSortOrder(),
-				];
-			} catch (DoesNotExistException) {
-				// Orphaned reference — contract keeps a null category on import.
-			}
-		}
-
-		$contractsData = [];
-		$optouts = [];
-		foreach ($contracts as $contract) {
-			$categoryId = $contract->getCategoryId();
-			$hasCategory = $categoryId !== null && isset($categories[$categoryId]);
-			$contractsData[] = [
-				'exportId' => $contract->getId(),
-				'categoryExportId' => $hasCategory ? $categoryId : null,
-				'name' => $contract->getName(),
-				'vendor' => $contract->getVendor(),
-				'status' => $contract->getStatus(),
-				'startDate' => $this->dateToString($contract->getStartDate()),
-				'endDate' => $this->dateToString($contract->getEndDate()),
-				'cancelledOn' => $this->dateToString($contract->getCancelledOn()),
-				'cancelledTo' => $this->dateToString($contract->getCancelledTo()),
-				'cancellationPeriod' => $contract->getCancellationPeriod(),
-				'contractType' => $contract->getContractType(),
-				'renewalPeriod' => $contract->getRenewalPeriod(),
-				'cancellationDeadlineType' => $contract->getCancellationDeadlineType(),
-				'cost' => $contract->getCost(),
-				'currency' => $contract->getCurrency(),
-				'costInterval' => $contract->getCostInterval(),
-				'amountType' => $contract->getAmountType(),
-				'contractFolder' => $contract->getContractFolder(),
-				'mainDocument' => $contract->getMainDocument(),
-				'reminderEnabled' => $contract->getReminderEnabled(),
-				'reminderDays' => $contract->getReminderDays(),
-				'notes' => $contract->getNotes(),
-				'customField1' => $contract->getCustomField1(),
-				'customField2' => $contract->getCustomField2(),
-				'customField3' => $contract->getCustomField3(),
-				'archived' => $contract->getArchived(),
-				'isPrivate' => $contract->getIsPrivate(),
-				'responsibleUser' => $contract->getResponsibleUser(),
-				'createdAt' => $this->dateToString($contract->getCreatedAt()),
-				'updatedAt' => $this->dateToString($contract->getUpdatedAt()),
-			];
-			if ($this->optOutMapper->isOptedOut($contract->getId(), $uid)) {
-				$optouts[] = ['contractExportId' => $contract->getId()];
-			}
-		}
-
-		$document = [
-			'schemaVersion' => $this->version,
-			'exportedAt' => $this->timeFactory->getDateTime()->format('c'),
-			'appVersion' => $this->appManager->getAppVersion(Application::APP_ID),
-			'categories' => array_values($categories),
-			'contracts' => $contractsData,
-			'optouts' => $optouts,
-		];
+		// The serialization lives in ContractExportService, shared with the
+		// periodic auto-backup and the occ export command so the formats can
+		// never drift (#296).
+		$document = $this->exportService->buildExportDocument($user->getUID());
 
 		$exportDestination->addFileContents(
 			self::PATH_CONTRACTS,
 			json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 		);
-		$output->writeln('Exported ' . count($contractsData) . ' contract(s).');
+		$output->writeln('Exported ' . count($document['contracts']) . ' contract(s).');
 	}
 
 	public function import(IUser $user, IImportSource $importSource, OutputInterface $output): void {
@@ -227,10 +158,6 @@ class ContractMigrator implements IMigrator {
 		}
 
 		$output->writeln('Imported ' . count($contractMap) . ' contract(s).');
-	}
-
-	private function dateToString(?\DateTime $date): ?string {
-		return $date?->format('c');
 	}
 
 	private function stringToDate(?string $value): ?\DateTime {

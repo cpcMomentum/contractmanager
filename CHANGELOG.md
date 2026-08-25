@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Automatisches Backup: Auf Wunsch sichert VertragsWerk die eigenen Vertragsdaten regelmäßig als JSON-Datei in einen wählbaren Nextcloud-Ordner, damit der aktuelle Stand in jedem normalen Nextcloud-Backup landet, ohne jedes Mal einen vollen Account-Export anzustoßen. Aktivierbar in den Einstellungen (Ordner + Intervall täglich/wöchentlich/monatlich); es werden die letzten 30 Sicherungen behalten. Zusätzlich gibt es den Befehl `occ contractmanager:export` für Admin/Automatisierung. Das Serialisierungsformat ist identisch mit dem der Datenmigration (#296)
+
 ### Changed
 - Zusatzfelder in den Administrator-Einstellungen haben jetzt ein echtes „aktiviert"-Flag statt der bisherigen Ableitung „Label leer = aus". Anhaken öffnet ein leeres Feld mit grauem Platzhalter (kein vorbefüllter Text mehr, den man erst löschen muss), Leerlöschen des Namens lässt das Feld offen, und ein abgehaktes Feld verschwindet aus dem Vertragsformular, behält aber seinen Namen fürs spätere Wiedereinschalten. Bestehende Konfigurationen bleiben unverändert (#368)
 - Der Hinweis unter der Vorlaufzeit im Vertragsformular lautet jetzt schlicht „Standard: X Tage.“ statt „Leer lassen = Standard (X Tage).“. Das graue X im Feld ist nur ein Platzhalter, kein fester Wert; die alte Formulierung wirkte dadurch widersprüchlich, als ließe sich der voreingetragene Wert nicht löschen (#364)
