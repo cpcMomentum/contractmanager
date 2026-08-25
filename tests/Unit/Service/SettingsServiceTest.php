@@ -506,4 +506,86 @@ class SettingsServiceTest extends TestCase {
 		$this->assertSame('', $labels['customFieldLabel2'], 'Deaktiviert -> ausgeblendet');
 		$this->assertSame('', $labels['customFieldLabel3']);
 	}
+
+	// ========================================
+	// Auto-Backup Settings Tests (#296)
+	// ========================================
+
+	public function testGetUserBackupEnabledDefaultsFalse(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_enabled', '0')
+			->willReturn('0');
+
+		$this->assertFalse($this->service->getUserBackupEnabled('u'));
+	}
+
+	public function testGetUserBackupEnabledTrue(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_enabled', '0')
+			->willReturn('1');
+
+		$this->assertTrue($this->service->getUserBackupEnabled('u'));
+	}
+
+	public function testSetUserBackupEnabledStoresFlag(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_enabled', '1');
+
+		$this->service->setUserBackupEnabled('u', true);
+	}
+
+	public function testGetUserBackupFolderDefault(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_folder', '/VertragsWerk-Backup')
+			->willReturn('/VertragsWerk-Backup');
+
+		$this->assertSame('/VertragsWerk-Backup', $this->service->getUserBackupFolder('u'));
+	}
+
+	public function testSetUserBackupFolderBlankResetsToDefault(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_folder', '/VertragsWerk-Backup');
+
+		$this->service->setUserBackupFolder('u', '   ');
+	}
+
+	public function testSetUserBackupFolderAddsLeadingSlash(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_folder', '/Backups/Vertraege');
+
+		$this->service->setUserBackupFolder('u', 'Backups/Vertraege');
+	}
+
+	public function testSetUserBackupIntervalRejectsInvalid(): void {
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$this->service->setUserBackupInterval('u', 'hourly');
+	}
+
+	public function testSetUserBackupIntervalStoresValid(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_interval', 'monthly');
+
+		$this->service->setUserBackupInterval('u', 'monthly');
+	}
+
+	public function testGetUserBackupLastRunReturnsInt(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_last_run', '0')
+			->willReturn('1724000000');
+
+		$this->assertSame(1724000000, $this->service->getUserBackupLastRun('u'));
+	}
+
+	public function testGetUsersWithBackupEnabledDelegates(): void {
+		$this->config->method('getUsersForUserValue')
+			->with(Application::APP_ID, 'backup_enabled', '1')
+			->willReturn(['alice', 'bob']);
+
+		$this->assertSame(['alice', 'bob'], $this->service->getUsersWithBackupEnabled());
+	}
 }

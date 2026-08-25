@@ -21,6 +21,12 @@
 					@click="activeSection = 'amount'">
 					<CashMultipleIcon :size="18" /> {{ t('contractmanager', 'Betragsangabe') }}
 				</button>
+				<button type="button"
+					class="settings-nav-item"
+					:class="{ active: activeSection === 'backup' }"
+					@click="activeSection = 'backup'">
+					<BackupRestoreIcon :size="18" /> {{ t('contractmanager', 'Auto-Backup') }}
+				</button>
 				<template v-if="$isAdmin">
 					<div class="settings-nav-group">
 						{{ t('contractmanager', 'Administration') }}
@@ -175,6 +181,39 @@
 							{{ t('contractmanager', 'Brutto') }}
 						</NcCheckboxRadioSwitch>
 					</div>
+				</div>
+
+				<!-- Auto-Backup (#296) -->
+				<div v-show="activeSection === 'backup'" class="settings-section">
+					<h3>{{ t('contractmanager', 'Automatisches Backup') }}</h3>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Sichert Ihre eigenen Vertragsdaten regelmäßig als JSON-Datei in einen Nextcloud-Ordner, damit der Stand in jedem normalen Nextcloud-Backup landet.') }}
+					</p>
+					<div class="settings-item">
+						<NcCheckboxRadioSwitch :model-value="backupEnabled" @update:model-value="onBackupEnabledChange">
+							{{ t('contractmanager', 'Automatisches Backup aktivieren') }}
+						</NcCheckboxRadioSwitch>
+					</div>
+					<template v-if="backupEnabled">
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Zielordner') }}</label>
+							<input v-model="backupFolder"
+								class="settings-input"
+								placeholder="/VertragsWerk-Backup"
+								@blur="onBackupFolderChange">
+						</div>
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Intervall') }}</label>
+							<select v-model="backupInterval" class="settings-input" @change="onBackupIntervalChange">
+								<option value="daily">{{ t('contractmanager', 'Täglich') }}</option>
+								<option value="weekly">{{ t('contractmanager', 'Wöchentlich') }}</option>
+								<option value="monthly">{{ t('contractmanager', 'Monatlich') }}</option>
+							</select>
+						</div>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.') }}
+						</p>
+					</template>
 				</div>
 
 				<!-- Admin Settings -->
@@ -623,6 +662,7 @@ import ChevronUpIcon from 'vue-material-design-icons/ChevronUp.vue'
 import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline.vue'
 import BellIcon from 'vue-material-design-icons/Bell.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
+import BackupRestoreIcon from 'vue-material-design-icons/BackupRestore.vue'
 import SwapHorizontalIcon from 'vue-material-design-icons/SwapHorizontal.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
@@ -655,6 +695,7 @@ export default {
 		InformationOutlineIcon,
 		BellIcon,
 		CashMultipleIcon,
+		BackupRestoreIcon,
 		SwapHorizontalIcon,
 		CogIcon,
 		TagIcon,
@@ -677,6 +718,9 @@ export default {
 			},
 			savingUserReminders: false,
 			defaultAmountType: 'netto',
+			backupEnabled: false,
+			backupFolder: '/VertragsWerk-Backup',
+			backupInterval: 'weekly',
 			savingAi: false,
 			adminSettings: {
 				reminderDays1: 14,
@@ -836,8 +880,48 @@ export default {
 					days2: settings.reminderDays2 || 3,
 				}
 				this.defaultAmountType = settings.defaultAmountType || 'netto'
+				this.backupEnabled = settings.backupEnabled === true
+				this.backupFolder = settings.backupFolder || '/VertragsWerk-Backup'
+				this.backupInterval = settings.backupInterval || 'weekly'
 			} catch (error) {
 				console.error('Failed to load user settings:', error)
+			}
+		},
+
+		async onBackupEnabledChange(value) {
+			const previous = this.backupEnabled
+			this.backupEnabled = value
+			try {
+				await SettingsService.updateUserSettings({ backupEnabled: value })
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save backup enabled:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.backupEnabled = previous
+			}
+		},
+
+		async onBackupFolderChange() {
+			const previous = this.backupFolder
+			try {
+				await SettingsService.updateUserSettings({ backupFolder: this.backupFolder })
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save backup folder:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.backupFolder = previous
+			}
+		},
+
+		async onBackupIntervalChange() {
+			const previous = this.backupInterval
+			try {
+				await SettingsService.updateUserSettings({ backupInterval: this.backupInterval })
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save backup interval:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.backupInterval = previous
 			}
 		},
 

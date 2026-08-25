@@ -52,6 +52,9 @@ class SettingsController extends Controller {
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
+			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
+			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
+			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
 			// App-globale Standard-Vorlaufzeiten. Das Frontend nutzt sie zur Berechnung
 			// von "Kündigungsfrist endet" und als Fallback-Anzeige, wenn der Nutzer keine
@@ -75,6 +78,9 @@ class SettingsController extends Controller {
 		?string $sortDirection = null,
 		?array $filters = null,
 		?string $defaultAmountType = null,
+		?bool $backupEnabled = null,
+		?string $backupFolder = null,
+		?string $backupInterval = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
@@ -108,6 +114,15 @@ class SettingsController extends Controller {
 		if ($defaultAmountType !== null) {
 			$this->settingsService->setUserDefaultAmountType($this->userId, $defaultAmountType);
 		}
+		if ($backupEnabled !== null) {
+			$this->settingsService->setUserBackupEnabled($this->userId, $backupEnabled);
+		}
+		if ($backupFolder !== null) {
+			$this->settingsService->setUserBackupFolder($this->userId, $backupFolder);
+		}
+		if ($backupInterval !== null) {
+			$this->settingsService->setUserBackupInterval($this->userId, $backupInterval);
+		}
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
@@ -119,6 +134,9 @@ class SettingsController extends Controller {
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
+			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
+			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
+			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
 		]);
 	}
 

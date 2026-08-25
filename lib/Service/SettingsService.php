@@ -43,6 +43,21 @@ class SettingsService {
 	private const KEY_AI_API_URL = 'ai_api_url';
 	private const KEY_AI_MODEL = 'ai_model';
 
+	private const KEY_BACKUP_ENABLED = 'backup_enabled';
+	private const KEY_BACKUP_FOLDER = 'backup_folder';
+	private const KEY_BACKUP_INTERVAL = 'backup_interval';
+	private const KEY_BACKUP_LAST_RUN = 'backup_last_run';
+
+	public const BACKUP_INTERVAL_DAILY = 'daily';
+	public const BACKUP_INTERVAL_WEEKLY = 'weekly';
+	public const BACKUP_INTERVAL_MONTHLY = 'monthly';
+	private const ALLOWED_BACKUP_INTERVALS = [
+		self::BACKUP_INTERVAL_DAILY,
+		self::BACKUP_INTERVAL_WEEKLY,
+		self::BACKUP_INTERVAL_MONTHLY,
+	];
+	public const DEFAULT_BACKUP_FOLDER = '/VertragsWerk-Backup';
+
 	private const ALLOWED_AI_PROVIDERS = ['claude', 'openai_compatible'];
 	private const DEFAULT_AI_URLS = [
 		'claude' => 'https://api.anthropic.com',
@@ -505,6 +520,112 @@ class SettingsService {
 			Application::APP_ID,
 			self::KEY_DEFAULT_AMOUNT_TYPE,
 			$amountType
+		);
+	}
+
+	// ========================================
+	// Auto-Backup Settings (per user, #296)
+	// ========================================
+
+	public function getUserBackupEnabled(string $userId): bool {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_ENABLED,
+			'0'
+		) === '1';
+	}
+
+	public function setUserBackupEnabled(string $userId, bool $enabled): void {
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_ENABLED,
+			$enabled ? '1' : '0'
+		);
+	}
+
+	public function getUserBackupFolder(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_FOLDER,
+			self::DEFAULT_BACKUP_FOLDER
+		);
+	}
+
+	/**
+	 * Store the target folder. A blank value resets to the default rather than
+	 * an empty path (which would write into the user root).
+	 */
+	public function setUserBackupFolder(string $userId, string $folder): void {
+		$folder = trim($folder);
+		if ($folder === '') {
+			$folder = self::DEFAULT_BACKUP_FOLDER;
+		}
+		if ($folder[0] !== '/') {
+			$folder = '/' . $folder;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_FOLDER,
+			$folder
+		);
+	}
+
+	public function getUserBackupInterval(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_INTERVAL,
+			self::BACKUP_INTERVAL_WEEKLY
+		);
+	}
+
+	public function setUserBackupInterval(string $userId, string $interval): void {
+		if (!in_array($interval, self::ALLOWED_BACKUP_INTERVALS, true)) {
+			return;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_INTERVAL,
+			$interval
+		);
+	}
+
+	/**
+	 * Unix timestamp of the last successful backup, or 0 if never run.
+	 */
+	public function getUserBackupLastRun(string $userId): int {
+		return (int)$this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_LAST_RUN,
+			'0'
+		);
+	}
+
+	public function setUserBackupLastRun(string $userId, int $timestamp): void {
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_LAST_RUN,
+			(string)$timestamp
+		);
+	}
+
+	/**
+	 * UIDs of all users who enabled the auto-backup.
+	 *
+	 * @return string[]
+	 */
+	public function getUsersWithBackupEnabled(): array {
+		return $this->config->getUsersForUserValue(
+			Application::APP_ID,
+			self::KEY_BACKUP_ENABLED,
+			'1'
 		);
 	}
 

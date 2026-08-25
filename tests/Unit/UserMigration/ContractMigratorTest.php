@@ -9,6 +9,7 @@ use OCA\ContractManager\Db\CategoryMapper;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
+use OCA\ContractManager\Service\ContractExportService;
 use OCA\ContractManager\UserMigration\ContractMigrator;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -41,11 +42,21 @@ class ContractMigratorTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		$this->migrator = new ContractMigrator(
+		// The migrator delegates the serialization to ContractExportService; a real
+		// one over the mocked mappers keeps the end-to-end export assertions valid.
+		$exportService = new ContractExportService(
 			$this->contractMapper,
 			$this->categoryMapper,
 			$this->optOutMapper,
 			$this->appManager,
+			$this->timeFactory,
+		);
+
+		$this->migrator = new ContractMigrator(
+			$this->contractMapper,
+			$this->categoryMapper,
+			$this->optOutMapper,
+			$exportService,
 			$this->timeFactory,
 			$l10n,
 		);
