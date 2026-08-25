@@ -902,22 +902,26 @@ export default {
 		},
 
 		async onBackupFolderChange() {
+			const previous = this.backupFolder
 			try {
 				await SettingsService.updateUserSettings({ backupFolder: this.backupFolder })
 				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
 			} catch (error) {
 				console.error('Failed to save backup folder:', error)
 				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.backupFolder = previous
 			}
 		},
 
 		async onBackupIntervalChange() {
+			const previous = this.backupInterval
 			try {
 				await SettingsService.updateUserSettings({ backupInterval: this.backupInterval })
 				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
 			} catch (error) {
 				console.error('Failed to save backup interval:', error)
 				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.backupInterval = previous
 			}
 		},
 
