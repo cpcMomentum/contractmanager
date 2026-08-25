@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Zusatzfelder in den Administrator-Einstellungen haben jetzt ein echtes „aktiviert"-Flag statt der bisherigen Ableitung „Label leer = aus". Anhaken öffnet ein leeres Feld mit grauem Platzhalter (kein vorbefüllter Text mehr, den man erst löschen muss), Leerlöschen des Namens lässt das Feld offen, und ein abgehaktes Feld verschwindet aus dem Vertragsformular, behält aber seinen Namen fürs spätere Wiedereinschalten. Bestehende Konfigurationen bleiben unverändert (#368)
+- Der Hinweis unter der Vorlaufzeit im Vertragsformular lautet jetzt schlicht „Standard: X Tage.“ statt „Leer lassen = Standard (X Tage).“. Das graue X im Feld ist nur ein Platzhalter, kein fester Wert; die alte Formulierung wirkte dadurch widersprüchlich, als ließe sich der voreingetragene Wert nicht löschen (#364)
 
 ## [1.4.0] - 2026-08-21
 
