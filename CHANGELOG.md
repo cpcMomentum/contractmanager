@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-26
+
+### Added
+- Automatisches Backup: Auf Wunsch sichert VertragsWerk die eigenen Vertragsdaten regelmäßig als JSON-Datei in einen wählbaren Nextcloud-Ordner, damit der aktuelle Stand in jedem normalen Nextcloud-Backup landet, ohne jedes Mal einen vollen Account-Export anzustoßen. Aktivierbar in den Einstellungen (Ordner + Intervall täglich/wöchentlich/monatlich); es werden die letzten 30 Sicherungen behalten. Zusätzlich gibt es den Befehl `occ contractmanager:export` für Admin/Automatisierung. Das Serialisierungsformat ist identisch mit dem der Datenmigration (#296)
+
+### Changed
+- Zusatzfelder in den Administrator-Einstellungen haben jetzt ein echtes „aktiviert"-Flag statt der bisherigen Ableitung „Label leer = aus". Anhaken öffnet ein leeres Feld mit grauem Platzhalter (kein vorbefüllter Text mehr, den man erst löschen muss), Leerlöschen des Namens lässt das Feld offen, und ein abgehaktes Feld verschwindet aus dem Vertragsformular, behält aber seinen Namen fürs spätere Wiedereinschalten. Bestehende Konfigurationen bleiben unverändert (#368)
+- Der Hinweis unter der Vorlaufzeit im Vertragsformular lautet jetzt schlicht „Standard: X Tage.“ statt „Leer lassen = Standard (X Tage).“. Das graue X im Feld ist nur ein Platzhalter, kein fester Wert; die alte Formulierung wirkte dadurch widersprüchlich, als ließe sich der voreingetragene Wert nicht löschen (#364)
+
 ## [1.4.0] - 2026-08-21
 
 ### Added
@@ -432,7 +441,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...v1.3.0
 [1.2.6]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...v1.2.5

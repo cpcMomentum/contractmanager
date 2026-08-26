@@ -34,6 +34,7 @@ class SettingsService {
 	private const KEY_DEFAULT_AMOUNT_TYPE = 'default_amount_type';
 
 	private const KEY_CUSTOM_FIELD_LABEL_PREFIX = 'custom_field_label_';
+	private const KEY_CUSTOM_FIELD_ENABLED_PREFIX = 'custom_field_enabled_';
 
 	private const KEY_DELETION_SUCCESSOR = 'deletion_successor';
 
@@ -41,6 +42,21 @@ class SettingsService {
 	private const KEY_AI_API_KEY = 'ai_api_key';
 	private const KEY_AI_API_URL = 'ai_api_url';
 	private const KEY_AI_MODEL = 'ai_model';
+
+	private const KEY_BACKUP_ENABLED = 'backup_enabled';
+	private const KEY_BACKUP_FOLDER = 'backup_folder';
+	private const KEY_BACKUP_INTERVAL = 'backup_interval';
+	private const KEY_BACKUP_LAST_RUN = 'backup_last_run';
+
+	public const BACKUP_INTERVAL_DAILY = 'daily';
+	public const BACKUP_INTERVAL_WEEKLY = 'weekly';
+	public const BACKUP_INTERVAL_MONTHLY = 'monthly';
+	private const ALLOWED_BACKUP_INTERVALS = [
+		self::BACKUP_INTERVAL_DAILY,
+		self::BACKUP_INTERVAL_WEEKLY,
+		self::BACKUP_INTERVAL_MONTHLY,
+	];
+	public const DEFAULT_BACKUP_FOLDER = '/VertragsWerk-Backup';
 
 	private const ALLOWED_AI_PROVIDERS = ['claude', 'openai_compatible'];
 	private const DEFAULT_AI_URLS = [
@@ -203,15 +219,58 @@ class SettingsService {
 	}
 
 	/**
-	 * Get all custom field labels
+	 * Whether a custom field (1-3) is active.
+	 *
+	 * The active state is a real flag, independent of the label. For contracts
+	 * created before this flag existed the value was never stored; we then fall
+	 * back to the historical rule "label not empty = active" so existing setups
+	 * keep working (#368).
+	 */
+	public function getCustomFieldEnabled(int $fieldNumber): bool {
+		if ($fieldNumber < 1 || $fieldNumber > 3) {
+			return false;
+		}
+		$stored = $this->config->getAppValue(
+			Application::APP_ID,
+			self::KEY_CUSTOM_FIELD_ENABLED_PREFIX . $fieldNumber,
+			''
+		);
+		if ($stored === '') {
+			// Never set: derive from the old label-based behaviour.
+			return $this->getCustomFieldLabel($fieldNumber) !== '';
+		}
+		return $stored === '1';
+	}
+
+	/**
+	 * Set the active state for a custom field (1-3)
+	 */
+	public function setCustomFieldEnabled(int $fieldNumber, bool $enabled): void {
+		if ($fieldNumber < 1 || $fieldNumber > 3) {
+			return;
+		}
+		$this->config->setAppValue(
+			Application::APP_ID,
+			self::KEY_CUSTOM_FIELD_ENABLED_PREFIX . $fieldNumber,
+			$enabled ? '1' : '0'
+		);
+	}
+
+	/**
+	 * Get the custom field labels a contract form should show.
+	 *
+	 * A field only appears in the contract form when it is active AND named, so a
+	 * deactivated field is gated out here (empty label). The contract form keys
+	 * its visibility off a non-empty label, so this keeps that view unchanged
+	 * while making it honour the active flag (#368).
 	 *
 	 * @return array{customFieldLabel1: string, customFieldLabel2: string, customFieldLabel3: string}
 	 */
 	public function getCustomFieldLabels(): array {
 		return [
-			'customFieldLabel1' => $this->getCustomFieldLabel(1),
-			'customFieldLabel2' => $this->getCustomFieldLabel(2),
-			'customFieldLabel3' => $this->getCustomFieldLabel(3),
+			'customFieldLabel1' => $this->getCustomFieldEnabled(1) ? $this->getCustomFieldLabel(1) : '',
+			'customFieldLabel2' => $this->getCustomFieldEnabled(2) ? $this->getCustomFieldLabel(2) : '',
+			'customFieldLabel3' => $this->getCustomFieldEnabled(3) ? $this->getCustomFieldLabel(3) : '',
 		];
 	}
 
@@ -461,6 +520,112 @@ class SettingsService {
 			Application::APP_ID,
 			self::KEY_DEFAULT_AMOUNT_TYPE,
 			$amountType
+		);
+	}
+
+	// ========================================
+	// Auto-Backup Settings (per user, #296)
+	// ========================================
+
+	public function getUserBackupEnabled(string $userId): bool {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_ENABLED,
+			'0'
+		) === '1';
+	}
+
+	public function setUserBackupEnabled(string $userId, bool $enabled): void {
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_ENABLED,
+			$enabled ? '1' : '0'
+		);
+	}
+
+	public function getUserBackupFolder(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_FOLDER,
+			self::DEFAULT_BACKUP_FOLDER
+		);
+	}
+
+	/**
+	 * Store the target folder. A blank value resets to the default rather than
+	 * an empty path (which would write into the user root).
+	 */
+	public function setUserBackupFolder(string $userId, string $folder): void {
+		$folder = trim($folder);
+		if ($folder === '') {
+			$folder = self::DEFAULT_BACKUP_FOLDER;
+		}
+		if ($folder[0] !== '/') {
+			$folder = '/' . $folder;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_FOLDER,
+			$folder
+		);
+	}
+
+	public function getUserBackupInterval(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_INTERVAL,
+			self::BACKUP_INTERVAL_WEEKLY
+		);
+	}
+
+	public function setUserBackupInterval(string $userId, string $interval): void {
+		if (!in_array($interval, self::ALLOWED_BACKUP_INTERVALS, true)) {
+			return;
+		}
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_INTERVAL,
+			$interval
+		);
+	}
+
+	/**
+	 * Unix timestamp of the last successful backup, or 0 if never run.
+	 */
+	public function getUserBackupLastRun(string $userId): int {
+		return (int)$this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_LAST_RUN,
+			'0'
+		);
+	}
+
+	public function setUserBackupLastRun(string $userId, int $timestamp): void {
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_LAST_RUN,
+			(string)$timestamp
+		);
+	}
+
+	/**
+	 * UIDs of all users who enabled the auto-backup.
+	 *
+	 * @return string[]
+	 */
+	public function getUsersWithBackupEnabled(): array {
+		return $this->config->getUsersForUserValue(
+			Application::APP_ID,
+			self::KEY_BACKUP_ENABLED,
+			'1'
 		);
 	}
 

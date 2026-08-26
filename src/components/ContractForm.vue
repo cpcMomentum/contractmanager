@@ -472,7 +472,7 @@
 								<span class="reminder-lead__suffix">{{ t('contractmanager', 'Tage vor Ablauf') }}</span>
 							</div>
 							<p class="cm-hint">
-								{{ t('contractmanager', 'Leer lassen = Standard ({days} Tage).', { days: defaultReminderDays }) }}
+								{{ t('contractmanager', 'Standard: {days} Tage.', { days: defaultReminderDays }) }}
 							</p>
 						</label>
 					</template>

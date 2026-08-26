@@ -419,4 +419,173 @@ class SettingsServiceTest extends TestCase {
 		$this->assertSame('Telekom', $filters['vendor']);
 		$this->assertSame(['cancelled'], $filters['statuses']);
 	}
+
+	// ========================================
+	// Custom Field Active Flag Tests (#368)
+	// ========================================
+
+	public function testGetCustomFieldEnabledReturnsStoredTrue(): void {
+		$this->config->expects($this->once())
+			->method('getAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_1', '')
+			->willReturn('1');
+
+		$this->assertTrue($this->service->getCustomFieldEnabled(1));
+	}
+
+	public function testGetCustomFieldEnabledReturnsStoredFalse(): void {
+		// Explicitly stored "0" wins even if a label exists — an active field may
+		// be blank, and a deactivated one may still keep its name.
+		$this->config->expects($this->once())
+			->method('getAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_2', '')
+			->willReturn('0');
+
+		$this->assertFalse($this->service->getCustomFieldEnabled(2));
+	}
+
+	public function testGetCustomFieldEnabledFallsBackToLabelWhenNeverSet(): void {
+		// Pre-#368 data: no flag stored, derive from "label not empty".
+		$this->config->method('getAppValue')
+			->willReturnMap([
+				[Application::APP_ID, 'custom_field_enabled_3', '', ''],
+				[Application::APP_ID, 'custom_field_label_3', '', 'Kostenstelle'],
+			]);
+
+		$this->assertTrue($this->service->getCustomFieldEnabled(3));
+	}
+
+	public function testGetCustomFieldEnabledFallbackIsFalseForEmptyLabel(): void {
+		$this->config->method('getAppValue')
+			->willReturnMap([
+				[Application::APP_ID, 'custom_field_enabled_1', '', ''],
+				[Application::APP_ID, 'custom_field_label_1', '', ''],
+			]);
+
+		$this->assertFalse($this->service->getCustomFieldEnabled(1));
+	}
+
+	public function testGetCustomFieldEnabledOutOfRange(): void {
+		$this->config->expects($this->never())->method('getAppValue');
+		$this->assertFalse($this->service->getCustomFieldEnabled(0));
+		$this->assertFalse($this->service->getCustomFieldEnabled(4));
+	}
+
+	public function testSetCustomFieldEnabledStoresFlag(): void {
+		$this->config->expects($this->once())
+			->method('setAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_2', '1');
+
+		$this->service->setCustomFieldEnabled(2, true);
+	}
+
+	public function testSetCustomFieldEnabledStoresFalse(): void {
+		$this->config->expects($this->once())
+			->method('setAppValue')
+			->with(Application::APP_ID, 'custom_field_enabled_3', '0');
+
+		$this->service->setCustomFieldEnabled(3, false);
+	}
+
+	public function testGetCustomFieldLabelsGatesDeactivatedFields(): void {
+		// A named-but-deactivated field is gated out of the contract-form labels
+		// (empty), while an active named field passes through.
+		$this->config->method('getAppValue')
+			->willReturnMap([
+				[Application::APP_ID, 'custom_field_enabled_1', '', '1'],
+				[Application::APP_ID, 'custom_field_label_1', '', 'Vertragsnummer'],
+				[Application::APP_ID, 'custom_field_enabled_2', '', '0'],
+				[Application::APP_ID, 'custom_field_label_2', '', 'Kostenstelle'],
+				[Application::APP_ID, 'custom_field_enabled_3', '', '0'],
+				[Application::APP_ID, 'custom_field_label_3', '', ''],
+			]);
+
+		$labels = $this->service->getCustomFieldLabels();
+
+		$this->assertSame('Vertragsnummer', $labels['customFieldLabel1']);
+		$this->assertSame('', $labels['customFieldLabel2'], 'Deaktiviert -> ausgeblendet');
+		$this->assertSame('', $labels['customFieldLabel3']);
+	}
+
+	// ========================================
+	// Auto-Backup Settings Tests (#296)
+	// ========================================
+
+	public function testGetUserBackupEnabledDefaultsFalse(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_enabled', '0')
+			->willReturn('0');
+
+		$this->assertFalse($this->service->getUserBackupEnabled('u'));
+	}
+
+	public function testGetUserBackupEnabledTrue(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_enabled', '0')
+			->willReturn('1');
+
+		$this->assertTrue($this->service->getUserBackupEnabled('u'));
+	}
+
+	public function testSetUserBackupEnabledStoresFlag(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_enabled', '1');
+
+		$this->service->setUserBackupEnabled('u', true);
+	}
+
+	public function testGetUserBackupFolderDefault(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_folder', '/VertragsWerk-Backup')
+			->willReturn('/VertragsWerk-Backup');
+
+		$this->assertSame('/VertragsWerk-Backup', $this->service->getUserBackupFolder('u'));
+	}
+
+	public function testSetUserBackupFolderBlankResetsToDefault(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_folder', '/VertragsWerk-Backup');
+
+		$this->service->setUserBackupFolder('u', '   ');
+	}
+
+	public function testSetUserBackupFolderAddsLeadingSlash(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_folder', '/Backups/Vertraege');
+
+		$this->service->setUserBackupFolder('u', 'Backups/Vertraege');
+	}
+
+	public function testSetUserBackupIntervalRejectsInvalid(): void {
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$this->service->setUserBackupInterval('u', 'hourly');
+	}
+
+	public function testSetUserBackupIntervalStoresValid(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'backup_interval', 'monthly');
+
+		$this->service->setUserBackupInterval('u', 'monthly');
+	}
+
+	public function testGetUserBackupLastRunReturnsInt(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'backup_last_run', '0')
+			->willReturn('1724000000');
+
+		$this->assertSame(1724000000, $this->service->getUserBackupLastRun('u'));
+	}
+
+	public function testGetUsersWithBackupEnabledDelegates(): void {
+		$this->config->method('getUsersForUserValue')
+			->with(Application::APP_ID, 'backup_enabled', '1')
+			->willReturn(['alice', 'bob']);
+
+		$this->assertSame(['alice', 'bob'], $this->service->getUsersWithBackupEnabled());
+	}
 }

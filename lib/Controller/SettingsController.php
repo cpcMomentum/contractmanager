@@ -52,6 +52,9 @@ class SettingsController extends Controller {
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
+			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
+			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
+			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
 			// App-globale Standard-Vorlaufzeiten. Das Frontend nutzt sie zur Berechnung
 			// von "Kündigungsfrist endet" und als Fallback-Anzeige, wenn der Nutzer keine
@@ -75,6 +78,9 @@ class SettingsController extends Controller {
 		?string $sortDirection = null,
 		?array $filters = null,
 		?string $defaultAmountType = null,
+		?bool $backupEnabled = null,
+		?string $backupFolder = null,
+		?string $backupInterval = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
@@ -108,6 +114,15 @@ class SettingsController extends Controller {
 		if ($defaultAmountType !== null) {
 			$this->settingsService->setUserDefaultAmountType($this->userId, $defaultAmountType);
 		}
+		if ($backupEnabled !== null) {
+			$this->settingsService->setUserBackupEnabled($this->userId, $backupEnabled);
+		}
+		if ($backupFolder !== null) {
+			$this->settingsService->setUserBackupFolder($this->userId, $backupFolder);
+		}
+		if ($backupInterval !== null) {
+			$this->settingsService->setUserBackupInterval($this->userId, $backupInterval);
+		}
 
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
@@ -119,6 +134,9 @@ class SettingsController extends Controller {
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
+			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
+			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
+			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
 		]);
 	}
 
@@ -140,6 +158,9 @@ class SettingsController extends Controller {
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
 			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
 			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
+			'customField1Enabled' => $this->settingsService->getCustomFieldEnabled(1),
+			'customField2Enabled' => $this->settingsService->getCustomFieldEnabled(2),
+			'customField3Enabled' => $this->settingsService->getCustomFieldEnabled(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),
@@ -216,6 +237,9 @@ class SettingsController extends Controller {
 		?string $customFieldLabel1 = null,
 		?string $customFieldLabel2 = null,
 		?string $customFieldLabel3 = null,
+		?bool $customField1Enabled = null,
+		?bool $customField2Enabled = null,
+		?bool $customField3Enabled = null,
 		?string $aiProvider = null,
 		?string $aiApiKey = null,
 		?string $aiApiUrl = null,
@@ -240,6 +264,18 @@ class SettingsController extends Controller {
 
 		if ($customFieldLabel3 !== null) {
 			$this->settingsService->setCustomFieldLabel(3, $customFieldLabel3);
+		}
+
+		if ($customField1Enabled !== null) {
+			$this->settingsService->setCustomFieldEnabled(1, $customField1Enabled);
+		}
+
+		if ($customField2Enabled !== null) {
+			$this->settingsService->setCustomFieldEnabled(2, $customField2Enabled);
+		}
+
+		if ($customField3Enabled !== null) {
+			$this->settingsService->setCustomFieldEnabled(3, $customField3Enabled);
 		}
 
 		if ($aiProvider !== null) {
@@ -272,6 +308,9 @@ class SettingsController extends Controller {
 			'customFieldLabel1' => $this->settingsService->getCustomFieldLabel(1),
 			'customFieldLabel2' => $this->settingsService->getCustomFieldLabel(2),
 			'customFieldLabel3' => $this->settingsService->getCustomFieldLabel(3),
+			'customField1Enabled' => $this->settingsService->getCustomFieldEnabled(1),
+			'customField2Enabled' => $this->settingsService->getCustomFieldEnabled(2),
+			'customField3Enabled' => $this->settingsService->getCustomFieldEnabled(3),
 			'aiProvider' => $this->settingsService->getAiProvider(),
 			'aiApiKey' => $this->settingsService->getAiApiKey() !== '' ? SettingsService::API_KEY_MASK : '',
 			'aiApiUrl' => $this->settingsService->getAiApiUrl(),

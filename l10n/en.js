@@ -264,7 +264,7 @@ OC.L10N.register(
     "Betrifft nur Ihre eigene Erinnerung, andere Berechtigte bleiben informiert." : "Affects your own reminder only, everyone else stays informed.",
     "Vorlaufzeit" : "Lead time",
     "Tage vor Ablauf" : "Days before expiry",
-    "Leer lassen = Standard ({days} Tage)." : "Leave empty for the default ({days} days).",
+    "Standard: {days} Tage." : "Default: {days} days.",
     "Zugriff & Zuständigkeit" : "Access & responsibility",
     "Bitte einen Betrag wie 10,50 eingeben" : "Please enter an amount such as 10.50",
     "Der Betrag darf höchstens 99.999.999,99 betragen" : "The amount must not exceed 99,999,999.99",
@@ -329,6 +329,15 @@ OC.L10N.register(
     "Fehler beim Speichern der KI-Einstellungen" : "Error saving the AI settings",
     "Kategorie entfernt" : "Category removed",
     "In Kategorie verschoben" : "Moved to category",
-    "Fehler beim Ändern der Kategorie" : "Error changing the category"
+    "Fehler beim Ändern der Kategorie" : "Error changing the category",
+    "Auto-Backup" : "Auto-backup",
+    "Automatisches Backup" : "Automatic backup",
+    "Sichert Ihre eigenen Vertragsdaten regelmäßig als JSON-Datei in einen Nextcloud-Ordner, damit der Stand in jedem normalen Nextcloud-Backup landet." : "Regularly saves your own contract data as a JSON file to a Nextcloud folder, so the current state is included in every normal Nextcloud backup.",
+    "Automatisches Backup aktivieren" : "Enable automatic backup",
+    "Zielordner" : "Target folder",
+    "Intervall" : "Interval",
+    "Täglich" : "Daily",
+    "Wöchentlich" : "Weekly",
+    "Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt." : "The last 30 backups are kept; older ones are removed automatically."
 },
 "nplurals=2; plural=(n != 1);");
