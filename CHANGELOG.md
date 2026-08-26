@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-26
+
 ### Added
 - Automatisches Backup: Auf Wunsch sichert VertragsWerk die eigenen Vertragsdaten regelmäßig als JSON-Datei in einen wählbaren Nextcloud-Ordner, damit der aktuelle Stand in jedem normalen Nextcloud-Backup landet, ohne jedes Mal einen vollen Account-Export anzustoßen. Aktivierbar in den Einstellungen (Ordner + Intervall täglich/wöchentlich/monatlich); es werden die letzten 30 Sicherungen behalten. Zusätzlich gibt es den Befehl `occ contractmanager:export` für Admin/Automatisierung. Das Serialisierungsformat ist identisch mit dem der Datenmigration (#296)
 
@@ -439,7 +441,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...v1.3.0
 [1.2.6]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.4...v1.2.5
