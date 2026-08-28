@@ -380,6 +380,7 @@ class ReminderService {
 	 * @return array<array{contract: Contract, deadline: DateTime}>
 	 */
 	public function getUpcomingDeadlinesForUser(string $userId): array {
+		$now = new DateTime();
 		$accessUsers = $this->permissionService->getAllUsersWithAccess();
 		$result = [];
 		foreach ($this->contractMapper->findByStatus(Contract::STATUS_ACTIVE) as $contract) {
@@ -388,6 +389,12 @@ class ReminderService {
 			}
 			$deadline = $this->getReminderDeadline($contract);
 			if ($deadline === null) {
+				continue;
+			}
+			// Match shouldSendFirstReminder()/shouldSendFinalReminder(): a deadline
+			// that has already passed (e.g. a fixed contract nobody archived yet)
+			// never triggers a notification, so it must not show up here either.
+			if ($deadline < $now) {
 				continue;
 			}
 			if (!in_array($userId, $this->getRecipients($contract, $accessUsers), true)) {

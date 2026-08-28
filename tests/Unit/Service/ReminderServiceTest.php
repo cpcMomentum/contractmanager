@@ -841,6 +841,23 @@ class ReminderServiceTest extends TestCase {
 		$this->assertSame([], $this->service->getUpcomingDeadlinesForUser('testuser'));
 	}
 
+	public function testGetUpcomingDeadlinesExcludesAlreadyPassedFixedDeadline(): void {
+		// A fixed contract whose end date is in the past but that nobody has
+		// archived yet must not appear — the notification path never fires for
+		// it either (shouldSendFirstReminder/shouldSendFinalReminder both bail
+		// out once "now > deadline"), so the feed must match that.
+		$contract = $this->createContract(new DateTime('2020-01-01'), '', 'fixed');
+		$contract->setId(1);
+
+		$this->contractMapper->method('findByStatus')->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+
+		$this->assertSame([], $this->service->getUpcomingDeadlinesForUser('testuser'));
+	}
+
 	private function createContract(
 		?DateTime $endDate,
 		string $cancellationPeriod,
