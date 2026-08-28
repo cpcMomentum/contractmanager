@@ -48,6 +48,13 @@ export default {
 		return response.data
 	},
 
+	// Generate/regenerate the calendar-feed URL (#68). Regenerating invalidates
+	// the previous URL.
+	async resetCalendarFeedToken(): Promise<{ calendarFeedUrl: string }> {
+		const response = await axios.post<{ calendarFeedUrl: string }>(`${baseUrl}/calendar-feed/reset`)
+		return response.data
+	},
+
 	// Admin Settings
 	async getAdminSettings(): Promise<AdminSettings> {
 		const response = await axios.get<AdminSettings>(`${baseUrl}/admin`)

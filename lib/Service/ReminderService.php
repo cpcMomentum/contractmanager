@@ -369,6 +369,43 @@ class ReminderService {
 	}
 
 	/**
+	 * Every upcoming deadline a given user would be reminded about — the exact
+	 * same eligibility, access and reminder-mode rules as the notifications, but
+	 * across ALL future deadlines rather than only the active reminder window.
+	 *
+	 * This is the single source of truth for the passive ICS calendar feed
+	 * (#68): the calendar shows precisely the dates the user is reminded about,
+	 * nothing more.
+	 *
+	 * @return array<array{contract: Contract, deadline: DateTime}>
+	 */
+	public function getUpcomingDeadlinesForUser(string $userId): array {
+		$now = new DateTime();
+		$accessUsers = $this->permissionService->getAllUsersWithAccess();
+		$result = [];
+		foreach ($this->contractMapper->findByStatus(Contract::STATUS_ACTIVE) as $contract) {
+			if (!$this->isContractEligibleForReminder($contract)) {
+				continue;
+			}
+			$deadline = $this->getReminderDeadline($contract);
+			if ($deadline === null) {
+				continue;
+			}
+			// Match shouldSendFirstReminder()/shouldSendFinalReminder(): a deadline
+			// that has already passed (e.g. a fixed contract nobody archived yet)
+			// never triggers a notification, so it must not show up here either.
+			if ($deadline < $now) {
+				continue;
+			}
+			if (!in_array($userId, $this->getRecipients($contract, $accessUsers), true)) {
+				continue;
+			}
+			$result[] = ['contract' => $contract, 'deadline' => $deadline];
+		}
+		return $result;
+	}
+
+	/**
 	 * Check if the first reminder should be sent to a recipient for this contract
 	 */
 	public function shouldSendFirstReminder(Contract $contract, string $userId): bool {

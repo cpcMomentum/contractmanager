@@ -789,6 +789,75 @@ class ReminderServiceTest extends TestCase {
 	 * Uses real Entity objects instead of mocks because Nextcloud's Entity
 	 * uses __call magic for getters/setters which PHPUnit cannot mock.
 	 */
+
+	// ========================================
+	// getUpcomingDeadlinesForUser (#68 — calendar feed)
+	// ========================================
+
+	public function testGetUpcomingDeadlinesReturnsEligibleContractWithDeadline(): void {
+		$endDate = new DateTime('2026-12-01');
+		$contract = $this->createContract($endDate, '', 'fixed');
+		$contract->setId(1);
+
+		$this->contractMapper->method('findByStatus')->with(Contract::STATUS_ACTIVE)->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+
+		$result = $this->service->getUpcomingDeadlinesForUser('testuser');
+
+		$this->assertCount(1, $result);
+		$this->assertSame($contract, $result[0]['contract']);
+		// Fixed contract: the deadline is the end date itself.
+		$this->assertEquals($endDate, $result[0]['deadline']);
+	}
+
+	public function testGetUpcomingDeadlinesExcludesContractWithRemindersDisabled(): void {
+		$contract = $this->createContract(new DateTime('2026-12-01'), '', 'fixed');
+		$contract->setId(1);
+		$contract->setReminderEnabled(0);
+
+		$this->contractMapper->method('findByStatus')->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+
+		$this->assertSame([], $this->service->getUpcomingDeadlinesForUser('testuser'));
+	}
+
+	public function testGetUpcomingDeadlinesExcludesUserWithModeNone(): void {
+		$contract = $this->createContract(new DateTime('2026-12-01'), '', 'fixed');
+		$contract->setId(1);
+
+		$this->contractMapper->method('findByStatus')->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		// The user switched reminders off entirely — the feed is empty for them.
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_NONE);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+
+		$this->assertSame([], $this->service->getUpcomingDeadlinesForUser('testuser'));
+	}
+
+	public function testGetUpcomingDeadlinesExcludesAlreadyPassedFixedDeadline(): void {
+		// A fixed contract whose end date is in the past but that nobody has
+		// archived yet must not appear — the notification path never fires for
+		// it either (shouldSendFirstReminder/shouldSendFinalReminder both bail
+		// out once "now > deadline"), so the feed must match that.
+		$contract = $this->createContract(new DateTime('2020-01-01'), '', 'fixed');
+		$contract->setId(1);
+
+		$this->contractMapper->method('findByStatus')->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+
+		$this->assertSame([], $this->service->getUpcomingDeadlinesForUser('testuser'));
+	}
+
 	private function createContract(
 		?DateTime $endDate,
 		string $cancellationPeriod,

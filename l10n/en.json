@@ -337,7 +337,23 @@
 		"Intervall": "Interval",
 		"Täglich": "Daily",
 		"Wöchentlich": "Weekly",
-		"Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.": "The last 30 backups are kept; older ones are removed automatically."
+		"Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.": "The last 30 backups are kept; older ones are removed automatically.",
+		"Kalender-Abo": "Calendar subscription",
+		"Abonnieren Sie Ihre Vertragsfristen als schreibgeschützten Kalender in der Nextcloud-Kalender-App. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die Sie Erinnerungen erhalten – so läuft der Kalender nicht über.": "Subscribe to your contract deadlines as a read-only calendar in the Nextcloud Calendar app. Each contract shows up as an all-day event on its cancellation deadline (or contract end). Only the contracts you receive reminders for are included, so the calendar does not overflow.",
+		"Abo-URL": "Subscription URL",
+		"Kopieren": "Copy",
+		"In der Kalender-App: „Neues Abonnement” bzw. „Abonnement aus Link” und diese URL einfügen.": "In the Calendar app: “New subscription” or “Subscription from link”, then paste this URL.",
+		"URL neu erzeugen": "Regenerate URL",
+		"Die bisherige URL wird dabei ungültig. Nutzen Sie das, falls die URL versehentlich geteilt wurde.": "The previous URL becomes invalid. Use this if the URL was shared by mistake.",
+		"Abo-URL erzeugen": "Generate subscription URL",
+		"Die URL enthält einen geheimen Zugangs-Token. Geben Sie sie nicht weiter.": "The URL contains a secret access token. Do not share it.",
+		"Abo-URL erzeugt": "Subscription URL generated",
+		"In die Zwischenablage kopiert": "Copied to clipboard",
+		"Kopieren nicht möglich – bitte manuell markieren": "Copying failed – please select manually",
+		"VertragsWerk – Fristen": "VertragsWerk – Deadlines",
+		"Kündigungsfrist: %s": "Cancellation deadline: %s",
+		"Vertragsende: %s": "Contract end: %s",
+		"Vertragspartner: %s": "Vendor: %s"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }

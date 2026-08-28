@@ -588,4 +588,46 @@ class SettingsServiceTest extends TestCase {
 
 		$this->assertSame(['alice', 'bob'], $this->service->getUsersWithBackupEnabled());
 	}
+
+	// ========================================
+	// Calendar feed token Tests (#68)
+	// ========================================
+
+	public function testGetCalendarFeedTokenDefaultsEmpty(): void {
+		$this->config->method('getUserValue')
+			->with('u', Application::APP_ID, 'calendar_feed_token', '')
+			->willReturn('');
+
+		$this->assertSame('', $this->service->getCalendarFeedToken('u'));
+	}
+
+	public function testSetCalendarFeedTokenStores(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('u', Application::APP_ID, 'calendar_feed_token', 'abc123');
+
+		$this->service->setCalendarFeedToken('u', 'abc123');
+	}
+
+	public function testGetUserByCalendarFeedTokenEmptyNeverResolves(): void {
+		// An empty token must never hit the lookup — otherwise everyone without a
+		// token would match and leak their feed.
+		$this->config->expects($this->never())->method('getUsersForUserValue');
+
+		$this->assertNull($this->service->getUserByCalendarFeedToken(''));
+	}
+
+	public function testGetUserByCalendarFeedTokenResolvesOwner(): void {
+		$this->config->method('getUsersForUserValue')
+			->with(Application::APP_ID, 'calendar_feed_token', 'sometoken')
+			->willReturn(['alice']);
+
+		$this->assertSame('alice', $this->service->getUserByCalendarFeedToken('sometoken'));
+	}
+
+	public function testGetUserByCalendarFeedTokenReturnsNullWhenNoMatch(): void {
+		$this->config->method('getUsersForUserValue')->willReturn([]);
+
+		$this->assertNull($this->service->getUserByCalendarFeedToken('unknown'));
+	}
 }
