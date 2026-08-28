@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Kalender-Abo: Vertragsfristen lassen sich als schreibgeschützter Kalender (ICS) in der Nextcloud-Kalender-App abonnieren. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die man ohnehin Erinnerungen erhält, damit der Kalender nicht überläuft. Die Abo-URL wird in den Einstellungen erzeugt, trägt einen geheimen Token und lässt sich bei Bedarf neu erzeugen (invalidiert die alte) (#68)
+
 ## [1.5.0] - 2026-08-26
 
 ### Added

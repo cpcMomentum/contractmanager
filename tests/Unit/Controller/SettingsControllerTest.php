@@ -11,7 +11,9 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use OCP\IUserManager;
+use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 
 class SettingsControllerTest extends TestCase {
@@ -22,6 +24,8 @@ class SettingsControllerTest extends TestCase {
 	private IUserManager $userManager;
 	private IGroupManager $groupManager;
 	private IL10N $l;
+	private IURLGenerator $urlGenerator;
+	private ISecureRandom $secureRandom;
 	private SettingsController $controller;
 
 	protected function setUp(): void {
@@ -33,6 +37,8 @@ class SettingsControllerTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->l = $this->createMock(IL10N::class);
 		$this->l->method('t')->willReturnArgument(0);
+		$this->urlGenerator = $this->createMock(IURLGenerator::class);
+		$this->secureRandom = $this->createMock(ISecureRandom::class);
 		$this->controller = new SettingsController(
 			$this->request,
 			'admin',
@@ -41,6 +47,8 @@ class SettingsControllerTest extends TestCase {
 			$this->userManager,
 			$this->groupManager,
 			$this->l,
+			$this->urlGenerator,
+			$this->secureRandom,
 		);
 	}
 
@@ -185,5 +193,36 @@ class SettingsControllerTest extends TestCase {
 		$this->assertTrue($data['customField1Enabled']);
 		$this->assertFalse($data['customField2Enabled']);
 		$this->assertTrue($data['customField3Enabled']);
+	}
+
+	// ========================================
+	// Calendar feed token (#68)
+	// ========================================
+
+	public function testResetCalendarFeedTokenGeneratesAndReturnsUrl(): void {
+		$this->secureRandom->method('generate')->willReturn('FRESHTOKEN123');
+		$this->settingsService->expects($this->once())
+			->method('setCalendarFeedToken')
+			->with('admin', 'FRESHTOKEN123');
+		$this->urlGenerator->method('linkToRouteAbsolute')
+			->with('contractmanager.calendar.feed', ['token' => 'FRESHTOKEN123'])
+			->willReturn('https://cloud.example.com/apps/contractmanager/feed/FRESHTOKEN123/contracts.ics');
+
+		$data = $this->controller->resetCalendarFeedToken()->getData();
+
+		$this->assertSame(
+			'https://cloud.example.com/apps/contractmanager/feed/FRESHTOKEN123/contracts.ics',
+			$data['calendarFeedUrl'],
+		);
+	}
+
+	public function testGetReturnsEmptyCalendarFeedUrlWhenNoToken(): void {
+		$this->settingsService->method('getCalendarFeedToken')->willReturn('');
+		// No token -> no URL is built (linkToRouteAbsolute must not be called).
+		$this->urlGenerator->expects($this->never())->method('linkToRouteAbsolute');
+
+		$data = $this->controller->get()->getData();
+
+		$this->assertSame('', $data['calendarFeedUrl']);
 	}
 }

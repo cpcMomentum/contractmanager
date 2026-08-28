@@ -27,6 +27,12 @@
 					@click="activeSection = 'backup'">
 					<BackupRestoreIcon :size="18" /> {{ t('contractmanager', 'Auto-Backup') }}
 				</button>
+				<button type="button"
+					class="settings-nav-item"
+					:class="{ active: activeSection === 'calendar' }"
+					@click="activeSection = 'calendar'">
+					<CalendarIcon :size="18" /> {{ t('contractmanager', 'Kalender-Abo') }}
+				</button>
 				<template v-if="$isAdmin">
 					<div class="settings-nav-group">
 						{{ t('contractmanager', 'Administration') }}
@@ -214,6 +220,51 @@
 							{{ t('contractmanager', 'Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.') }}
 						</p>
 					</template>
+				</div>
+
+				<!-- Kalender-Abo (#68) -->
+				<div v-show="activeSection === 'calendar'" class="settings-section">
+					<h3>{{ t('contractmanager', 'Kalender-Abo') }}</h3>
+					<p class="settings-description">
+						{{ t('contractmanager', 'Abonnieren Sie Ihre Vertragsfristen als schreibgeschützten Kalender in der Nextcloud-Kalender-App. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die Sie Erinnerungen erhalten – so läuft der Kalender nicht über.') }}
+					</p>
+					<template v-if="calendarFeedUrl">
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Abo-URL') }}</label>
+							<div class="calendar-feed-row">
+								<input ref="calendarFeedInput"
+									class="settings-input calendar-feed-url"
+									type="text"
+									readonly
+									:value="calendarFeedUrl">
+								<NcButton variant="secondary" @click="copyCalendarFeedUrl">
+									{{ t('contractmanager', 'Kopieren') }}
+								</NcButton>
+							</div>
+							<p class="settings-description">
+								{{ t('contractmanager', 'In der Kalender-App: „Neues Abonnement” bzw. „Abonnement aus Link” und diese URL einfügen.') }}
+							</p>
+						</div>
+						<div class="settings-item">
+							<NcButton variant="tertiary" @click="resetCalendarFeed">
+								{{ t('contractmanager', 'URL neu erzeugen') }}
+							</NcButton>
+							<p class="settings-description">
+								{{ t('contractmanager', 'Die bisherige URL wird dabei ungültig. Nutzen Sie das, falls die URL versehentlich geteilt wurde.') }}
+							</p>
+						</div>
+					</template>
+					<div v-else class="settings-item">
+						<NcButton variant="primary" :disabled="generatingCalendarFeed" @click="resetCalendarFeed">
+							<template #icon>
+								<NcLoadingIcon v-if="generatingCalendarFeed" :size="20" />
+							</template>
+							{{ t('contractmanager', 'Abo-URL erzeugen') }}
+						</NcButton>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Die URL enthält einen geheimen Zugangs-Token. Geben Sie sie nicht weiter.') }}
+						</p>
+					</div>
 				</div>
 
 				<!-- Admin Settings -->
@@ -663,6 +714,7 @@ import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline
 import BellIcon from 'vue-material-design-icons/Bell.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BackupRestoreIcon from 'vue-material-design-icons/BackupRestore.vue'
+import CalendarIcon from 'vue-material-design-icons/Calendar.vue'
 import SwapHorizontalIcon from 'vue-material-design-icons/SwapHorizontal.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
@@ -696,6 +748,7 @@ export default {
 		BellIcon,
 		CashMultipleIcon,
 		BackupRestoreIcon,
+		CalendarIcon,
 		SwapHorizontalIcon,
 		CogIcon,
 		TagIcon,
@@ -721,6 +774,8 @@ export default {
 			backupEnabled: false,
 			backupFolder: '/VertragsWerk-Backup',
 			backupInterval: 'weekly',
+			calendarFeedUrl: '',
+			generatingCalendarFeed: false,
 			savingAi: false,
 			adminSettings: {
 				reminderDays1: 14,
@@ -883,8 +938,38 @@ export default {
 				this.backupEnabled = settings.backupEnabled === true
 				this.backupFolder = settings.backupFolder || '/VertragsWerk-Backup'
 				this.backupInterval = settings.backupInterval || 'weekly'
+				this.calendarFeedUrl = settings.calendarFeedUrl || ''
 			} catch (error) {
 				console.error('Failed to load user settings:', error)
+			}
+		},
+
+		async resetCalendarFeed() {
+			this.generatingCalendarFeed = true
+			try {
+				const { calendarFeedUrl } = await SettingsService.resetCalendarFeedToken()
+				this.calendarFeedUrl = calendarFeedUrl
+				showSuccess(t('contractmanager', 'Abo-URL erzeugt'))
+			} catch (error) {
+				console.error('Failed to reset calendar feed token:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+			} finally {
+				this.generatingCalendarFeed = false
+			}
+		},
+
+		async copyCalendarFeedUrl() {
+			try {
+				await navigator.clipboard.writeText(this.calendarFeedUrl)
+				showSuccess(t('contractmanager', 'In die Zwischenablage kopiert'))
+			} catch (error) {
+				// Clipboard API can be blocked (e.g. non-secure context) — fall back
+				// to selecting the field so the user can copy manually.
+				const input = this.$refs.calendarFeedInput
+				if (input) {
+					input.select()
+				}
+				showError(t('contractmanager', 'Kopieren nicht möglich – bitte manuell markieren'))
 			}
 		},
 
@@ -1443,6 +1528,18 @@ export default {
 
 .settings-input {
 	max-width: 400px;
+}
+
+.calendar-feed-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 520px;
+
+	.calendar-feed-url {
+		flex: 1 1 auto;
+		max-width: none;
+	}
 }
 
 .reminder-days {

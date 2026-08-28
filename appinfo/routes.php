@@ -38,6 +38,10 @@ return [
         // User Settings API routes
         ['name' => 'settings#get', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#update', 'url' => '/api/settings', 'verb' => 'PUT'],
+        ['name' => 'settings#resetCalendarFeedToken', 'url' => '/api/settings/calendar-feed/reset', 'verb' => 'POST'],
+
+        // Public iCalendar feed (token-authenticated, #68)
+        ['name' => 'calendar#feed', 'url' => '/feed/{token}/contracts.ics', 'verb' => 'GET'],
 
         // Admin Settings API routes
         ['name' => 'settings#getAdmin', 'url' => '/api/settings/admin', 'verb' => 'GET'],

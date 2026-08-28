@@ -13,7 +13,9 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use OCP\IUserManager;
+use OCP\Security\ISecureRandom;
 
 class SettingsController extends Controller {
 
@@ -25,6 +27,8 @@ class SettingsController extends Controller {
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
 		private IL10N $l,
+		private IURLGenerator $urlGenerator,
+		private ISecureRandom $secureRandom,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -55,6 +59,9 @@ class SettingsController extends Controller {
 			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
 			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
+			// Empty until the user actively generates a feed URL — no token is
+			// minted for users who never subscribe (#68).
+			'calendarFeedUrl' => $this->calendarFeedUrl($this->settingsService->getCalendarFeedToken($this->userId)),
 			'customFieldLabels' => $this->settingsService->getCustomFieldLabels(),
 			// App-globale Standard-Vorlaufzeiten. Das Frontend nutzt sie zur Berechnung
 			// von "Kündigungsfrist endet" und als Fallback-Anzeige, wenn der Nutzer keine
@@ -138,6 +145,34 @@ class SettingsController extends Controller {
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
 			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
 		]);
+	}
+
+	/**
+	 * Generate (or regenerate) the user's calendar-feed token and return the new
+	 * subscription URL. Regenerating invalidates the old URL, so it doubles as a
+	 * revoke (#68).
+	 */
+	#[NoAdminRequired]
+	public function resetCalendarFeedToken(): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
+		}
+		$token = $this->secureRandom->generate(32, ISecureRandom::CHAR_ALPHANUMERIC);
+		$this->settingsService->setCalendarFeedToken($this->userId, $token);
+		return new JSONResponse(['calendarFeedUrl' => $this->calendarFeedUrl($token)]);
+	}
+
+	/**
+	 * Absolute subscription URL for a feed token, or '' when there is no token.
+	 */
+	private function calendarFeedUrl(string $token): string {
+		if ($token === '') {
+			return '';
+		}
+		return $this->urlGenerator->linkToRouteAbsolute(
+			Application::APP_ID . '.calendar.feed',
+			['token' => $token],
+		);
 	}
 
 	// ========================================
