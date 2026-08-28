@@ -337,7 +337,23 @@
 		"Intervall": "Intervall",
 		"Täglich": "Täglich",
 		"Wöchentlich": "Wöchentlich",
-		"Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.": "Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt."
+		"Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.": "Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.",
+		"Kalender-Abo": "Kalender-Abo",
+		"Abonnieren Sie Ihre Vertragsfristen als schreibgeschützten Kalender in der Nextcloud-Kalender-App. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die Sie Erinnerungen erhalten – so läuft der Kalender nicht über.": "Abonnieren Sie Ihre Vertragsfristen als schreibgeschützten Kalender in der Nextcloud-Kalender-App. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die Sie Erinnerungen erhalten – so läuft der Kalender nicht über.",
+		"Abo-URL": "Abo-URL",
+		"Kopieren": "Kopieren",
+		"In der Kalender-App: „Neues Abonnement” bzw. „Abonnement aus Link” und diese URL einfügen.": "In der Kalender-App: „Neues Abonnement” bzw. „Abonnement aus Link” und diese URL einfügen.",
+		"URL neu erzeugen": "URL neu erzeugen",
+		"Die bisherige URL wird dabei ungültig. Nutzen Sie das, falls die URL versehentlich geteilt wurde.": "Die bisherige URL wird dabei ungültig. Nutzen Sie das, falls die URL versehentlich geteilt wurde.",
+		"Abo-URL erzeugen": "Abo-URL erzeugen",
+		"Die URL enthält einen geheimen Zugangs-Token. Geben Sie sie nicht weiter.": "Die URL enthält einen geheimen Zugangs-Token. Geben Sie sie nicht weiter.",
+		"Abo-URL erzeugt": "Abo-URL erzeugt",
+		"In die Zwischenablage kopiert": "In die Zwischenablage kopiert",
+		"Kopieren nicht möglich – bitte manuell markieren": "Kopieren nicht möglich – bitte manuell markieren",
+		"VertragsWerk – Fristen": "VertragsWerk – Fristen",
+		"Kündigungsfrist: %s": "Kündigungsfrist: %s",
+		"Vertragsende: %s": "Vertragsende: %s",
+		"Vertragspartner: %s": "Vertragspartner: %s"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }

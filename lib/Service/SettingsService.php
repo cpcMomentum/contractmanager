@@ -48,6 +48,8 @@ class SettingsService {
 	private const KEY_BACKUP_INTERVAL = 'backup_interval';
 	private const KEY_BACKUP_LAST_RUN = 'backup_last_run';
 
+	private const KEY_CALENDAR_FEED_TOKEN = 'calendar_feed_token';
+
 	public const BACKUP_INTERVAL_DAILY = 'daily';
 	public const BACKUP_INTERVAL_WEEKLY = 'weekly';
 	public const BACKUP_INTERVAL_MONTHLY = 'monthly';
@@ -627,6 +629,50 @@ class SettingsService {
 			self::KEY_BACKUP_ENABLED,
 			'1'
 		);
+	}
+
+	// ========================================
+	// Calendar feed token (per user, #68)
+	// ========================================
+
+	/**
+	 * The user's calendar-feed token, or '' when none has been generated yet.
+	 * The token is the only secret in the public ICS feed URL, so it must stay
+	 * unguessable — generation happens in the controller via ISecureRandom.
+	 */
+	public function getCalendarFeedToken(string $userId): string {
+		return $this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_CALENDAR_FEED_TOKEN,
+			''
+		);
+	}
+
+	public function setCalendarFeedToken(string $userId, string $token): void {
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_CALENDAR_FEED_TOKEN,
+			$token
+		);
+	}
+
+	/**
+	 * Resolve a feed token back to its owner, or null when it matches nobody.
+	 * An empty token never resolves — otherwise every user without a token would
+	 * match and leak their contracts through the public feed.
+	 */
+	public function getUserByCalendarFeedToken(string $token): ?string {
+		if ($token === '') {
+			return null;
+		}
+		$users = $this->config->getUsersForUserValue(
+			Application::APP_ID,
+			self::KEY_CALENDAR_FEED_TOKEN,
+			$token
+		);
+		return $users[0] ?? null;
 	}
 
 	// ========================================

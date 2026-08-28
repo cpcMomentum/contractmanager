@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-28
+
+### Added
+- Kalender-Abo: Vertragsfristen lassen sich als schreibgeschützter Kalender (ICS) in der Nextcloud-Kalender-App abonnieren. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die man ohnehin Erinnerungen erhält, damit der Kalender nicht überläuft. Die Abo-URL wird in den Einstellungen erzeugt, trägt einen geheimen Token und lässt sich bei Bedarf neu erzeugen (invalidiert die alte) (#68)
+
 ## [1.5.0] - 2026-08-26
 
 ### Added
@@ -441,7 +446,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.2.6...v1.3.0

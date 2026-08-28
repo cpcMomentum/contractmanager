@@ -40,6 +40,12 @@ jobs:
         # Vergleich meldet immer (nc-app-tooling#1).
         run: npm ci
 
+      - name: Schema-Portabilitaet
+        run: npx nc-schema-check
+
+      - name: Notification-Vertraege
+        run: npx nc-notification-check
+
       - name: ESLint
         run: npm run lint
 
