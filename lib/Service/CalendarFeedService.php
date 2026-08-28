@@ -105,7 +105,10 @@ class CalendarFeedService {
 
 	/**
 	 * Fold content lines longer than 75 octets by inserting CRLF + a single
-	 * space, as required by RFC 5545 §3.1. Folding operates on bytes.
+	 * space, as required by RFC 5545 §3.1. Folds on octet boundaries but never
+	 * inside a multi-byte UTF-8 character, per §3.1's guidance — splitting mid-
+	 * character (common with German umlauts) would leave an invalid byte
+	 * sequence on either side of the fold.
 	 */
 	private function fold(string $line): string {
 		if (strlen($line) <= 75) {
@@ -113,8 +116,8 @@ class CalendarFeedService {
 		}
 		$folded = '';
 		$current = '';
-		foreach (str_split($line) as $char) {
-			if (strlen($current) + 1 > 75) {
+		foreach (mb_str_split($line) as $char) {
+			if (strlen($current) + strlen($char) > 75) {
 				$folded .= $current . "\r\n ";
 				$current = '';
 			}

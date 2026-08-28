@@ -102,4 +102,20 @@ class CalendarFeedServiceTest extends TestCase {
 		// Every line break must be CRLF; there must be no bare LF.
 		$this->assertSame(0, preg_match('/(?<!\r)\n/', $ics), 'ICS must use CRLF line endings only');
 	}
+
+	public function testFoldingNeverSplitsAMultiByteUtf8Character(): void {
+		// A long name padded so a multi-byte umlaut lands right on the 75-octet
+		// fold boundary — splitting it there would corrupt the byte sequence.
+		$name = str_repeat('a', 74 - strlen('SUMMARY:Kündigungsfrist: ')) . 'ü' . 'restrest';
+		$this->reminderService->method('getUpcomingDeadlinesForUser')->willReturn([
+			['contract' => $this->contract(14, $name, Contract::TYPE_AUTO_RENEWAL),
+				'deadline' => new \DateTime('2026-12-01')],
+		]);
+
+		$ics = $this->service->buildIcs('alice');
+
+		foreach (explode("\r\n", $ics) as $line) {
+			$this->assertTrue(mb_check_encoding(ltrim($line, ' '), 'UTF-8'), 'Folded line is not valid UTF-8: ' . $line);
+		}
+	}
 }
