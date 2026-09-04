@@ -44,7 +44,7 @@
         "@vitejs/plugin-vue": "^6.0.8",
         "@vue/test-utils": "^2.4.11",
         "@vue/tsconfig": "^0.9.1",
-        "eslint": "^8.57.0",
+        "eslint": "^10.9.1",
         "happy-dom": "^20.11.6",
         "nc-app-tooling": "github:cpcMomentum/nc-app-tooling#v1.14.0",
         "sass": "^1.103.1",
