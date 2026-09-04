@@ -17,11 +17,18 @@
 # entnehmen; nach derzeitigem Stand zielen sie weiter auf main. Solche PRs
 # werden wie bisher von Hand nach develop uebernommen.
 #
-# WARUM nur minor/patch gruppiert: Ohne Gruppierung entsteht pro Paket ein
-# eigener PR. Major-Spruenge bleiben bewusst einzeln — ein @nextcloud/vue- oder
-# vue-loader-Major kann den Build brechen (Vue-2-Apps) und gehoert einzeln
-# geprueft, nicht in einem Sammel-PR versteckt. Jeder PR durchlaeuft ohnehin die
-# CI samt Build- und Bundle-Frische-Pruefung; ein brechender Bump wird dort rot.
+# WARUM nur minor/patch: Ohne Gruppierung entsteht pro Paket ein eigener PR;
+# minor/patch werden daher gebuendelt. Major-Spruenge werden bewusst NICHT mehr
+# als PR geoeffnet (ignore-Block unten). Sie betreffen bei uns fast nur
+# Dev-Werkzeug (eslint/vite/typescript), bringen der App keinen Nutzen und
+# haben zuletzt nur Zeit gekostet (04.09.2026: #385/#386/#387/#388 zu). Ein
+# gewuenschter Major wird bei Bedarf von Hand angestossen.
+#
+# WICHTIG — Sicherheit bleibt: Der ignore-Block betrifft nur die geplanten
+# Versionsupdates. Sicherheits-Alerts (Security-Tab) feuern unabhaengig von
+# dieser Datei weiter und werden von Hand behoben (Beispiel: nanoid #393).
+# Sicherheitsfixes sind zudem meist patch/minor innerhalb des aktuellen Majors
+# und laufen ohnehin durch.
 
 version: 2
 
@@ -38,6 +45,12 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # Keine Major-Versionsupdates als PR (nur Dev-Werkzeug, kein App-Nutzen).
+      # Security-Alerts bleiben davon unberuehrt (siehe Kopf).
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
@@ -54,6 +67,11 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # Keine Major-Versionsupdates als PR (Security-Alerts bleiben unberuehrt).
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
