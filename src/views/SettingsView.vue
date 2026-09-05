@@ -710,6 +710,7 @@
 
 <script>
 import { mapState, mapActions } from 'pinia'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import { useCategoriesStore } from '../store/categories'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
@@ -853,13 +854,13 @@ export default {
 			if (!this.backupLastRun) {
 				return t('contractmanager', 'Noch nie')
 			}
-			return new Date(this.backupLastRun * 1000).toLocaleString()
+			return new Date(this.backupLastRun * 1000).toLocaleString(getCanonicalLocale())
 		},
 		nextBackupText() {
 			if (!this.backupNextRun) {
 				return t('contractmanager', 'Nach der ersten Sicherung')
 			}
-			return new Date(this.backupNextRun * 1000).toLocaleString()
+			return new Date(this.backupNextRun * 1000).toLocaleString(getCanonicalLocale())
 		},
 		aiProviderOptions() {
 			return [
