@@ -16,6 +16,7 @@ use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 class SettingsControllerTest extends TestCase {
 
@@ -28,6 +29,7 @@ class SettingsControllerTest extends TestCase {
 	private IL10N $l;
 	private IURLGenerator $urlGenerator;
 	private ISecureRandom $secureRandom;
+	private LoggerInterface $logger;
 	private SettingsController $controller;
 
 	protected function setUp(): void {
@@ -42,6 +44,7 @@ class SettingsControllerTest extends TestCase {
 		$this->l->method('t')->willReturnArgument(0);
 		$this->urlGenerator = $this->createMock(IURLGenerator::class);
 		$this->secureRandom = $this->createMock(ISecureRandom::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->controller = new SettingsController(
 			$this->request,
 			'admin',
@@ -53,6 +56,7 @@ class SettingsControllerTest extends TestCase {
 			$this->l,
 			$this->urlGenerator,
 			$this->secureRandom,
+			$this->logger,
 		);
 	}
 
@@ -291,6 +295,9 @@ class SettingsControllerTest extends TestCase {
 		$this->settingsService->method('getUserBackupEnabled')->willReturn(true);
 		$this->autoBackupService->method('backupNow')
 			->willThrowException(new \RuntimeException('disk full'));
+		// The failure must be logged, otherwise a manual backup failure is
+		// invisible to admins beyond the generic error shown to the user.
+		$this->logger->expects($this->once())->method('error');
 
 		$response = $this->controller->backupNow();
 

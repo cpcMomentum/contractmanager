@@ -17,6 +17,7 @@ use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\Security\ISecureRandom;
+use Psr\Log\LoggerInterface;
 
 class SettingsController extends Controller {
 
@@ -31,6 +32,7 @@ class SettingsController extends Controller {
 		private IL10N $l,
 		private IURLGenerator $urlGenerator,
 		private ISecureRandom $secureRandom,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -193,6 +195,11 @@ class SettingsController extends Controller {
 		try {
 			$lastRun = $this->autoBackupService->backupNow($this->userId);
 		} catch (\Throwable $e) {
+			$this->logger->error('Manual backup failed for user', [
+				'app' => Application::APP_ID,
+				'user' => $this->userId,
+				'exception' => $e,
+			]);
 			return new JSONResponse(['error' => $this->l->t('Sicherung fehlgeschlagen')], 500);
 		}
 		$interval = $this->settingsService->getUserBackupInterval($this->userId);
