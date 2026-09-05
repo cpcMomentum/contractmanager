@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-05
+
+### Added
+- Automatisches Backup: In den Einstellungen zeigt VertragsWerk jetzt, wann zuletzt gesichert wurde und wann die nächste Sicherung fällig ist. Ein Button „Jetzt sichern" löst eine Sicherung sofort aus, ohne auf den nächsten Intervall-Zeitpunkt zu warten (#397)
+
+### Fixed
+- Automatisches Backup: Der Sicherungsrhythmus wanderte Tag für Tag um bis zu einer Stunde nach hinten (z. B. rund 25 statt 24 Stunden bei täglicher Sicherung), weil als „zuletzt gesichert" der tatsächliche – durch die stündliche Prüfung leicht verspätete – Zeitpunkt gespeichert und zum neuen Ausgangspunkt wurde. Der Zeitplan wird jetzt an feste Intervalle verankert, sodass sich keine Verspätung mehr aufsummiert; verpasste Läufe (z. B. Server war aus) werden zu einer einzigen Nachhol-Sicherung zusammengefasst (#375)
+
 ## [1.6.0] - 2026-08-28
 
 ### Added
