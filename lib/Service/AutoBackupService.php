@@ -58,6 +58,36 @@ class AutoBackupService {
 	}
 
 	/**
+	 * The "last run" anchor to store after a due backup.
+	 *
+	 * Anchoring to the actual run time ($now) would let the hourly check cadence
+	 * push each backup up to one tick later, and that lateness accumulates day by
+	 * day into a visible drift (#375: ~25 h instead of 24 h). Instead we advance
+	 * the previous anchor by whole intervals to the latest scheduled slot at or
+	 * before $now. The spacing then stays pinned to the schedule (constant, non-
+	 * accumulating lateness of up to one check tick).
+	 *
+	 * The whole-interval step also collapses missed runs (e.g. server was off for
+	 * days) into a single catch-up: the anchor jumps straight to the last due slot
+	 * so exactly one snapshot is written, not one per missed interval.
+	 *
+	 * On the first run ($lastRun <= 0) there is no schedule to anchor to, so we
+	 * seed it with $now.
+	 */
+	public static function nextLastRun(string $interval, int $lastRun, int $now): int {
+		if ($lastRun <= 0) {
+			return $now;
+		}
+		$intervalSeconds = self::intervalSeconds($interval);
+		$periods = intdiv($now - $lastRun, $intervalSeconds);
+		if ($periods < 1) {
+			// Not actually due; leave the anchor where it is.
+			return $lastRun;
+		}
+		return $lastRun + ($periods * $intervalSeconds);
+	}
+
+	/**
 	 * Run backups for every user whose interval has elapsed.
 	 *
 	 * @return int number of users backed up this pass
@@ -73,7 +103,7 @@ class AutoBackupService {
 			}
 			try {
 				$this->backupForUser($uid);
-				$this->settingsService->setUserBackupLastRun($uid, $now);
+				$this->settingsService->setUserBackupLastRun($uid, self::nextLastRun($interval, $lastRun, $now));
 				$count++;
 			} catch (\Throwable $e) {
 				// One user's failure (e.g. missing home, quota) must not stop the
