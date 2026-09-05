@@ -11,6 +11,11 @@ export interface UserSettings {
 	talkChatToken?: string | null
 	reminderDays1?: number
 	reminderDays2?: number
+	backupEnabled?: boolean
+	backupFolder?: string
+	backupInterval?: 'daily' | 'weekly' | 'monthly'
+	backupLastRun?: number
+	backupNextRun?: number
 	[key: string]: unknown
 }
 
@@ -52,6 +57,13 @@ export default {
 	// the previous URL.
 	async resetCalendarFeedToken(): Promise<{ calendarFeedUrl: string }> {
 		const response = await axios.post<{ calendarFeedUrl: string }>(`${baseUrl}/calendar-feed/reset`)
+		return response.data
+	},
+
+	// Trigger an immediate backup ("back up now", #397). Returns the new last-run
+	// and next-run timestamps so the UI can refresh last/next without reload.
+	async triggerBackupNow(): Promise<{ backupLastRun: number, backupNextRun: number }> {
+		const response = await axios.post<{ backupLastRun: number, backupNextRun: number }>(`${baseUrl}/backup/now`)
 		return response.data
 	},
 

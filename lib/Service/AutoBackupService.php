@@ -103,7 +103,10 @@ class AutoBackupService {
 			}
 			try {
 				$this->backupForUser($uid);
+				// Anchor advances by whole intervals (drift-free schedule, #375);
+				// the success timestamp records the real write time for display (#397).
 				$this->settingsService->setUserBackupLastRun($uid, self::nextLastRun($interval, $lastRun, $now));
+				$this->settingsService->setUserBackupLastSuccess($uid, $now);
 				$count++;
 			} catch (\Throwable $e) {
 				// One user's failure (e.g. missing home, quota) must not stop the
@@ -116,6 +119,24 @@ class AutoBackupService {
 			}
 		}
 		return $count;
+	}
+
+	/**
+	 * Run a backup for a single user on demand (the "back up now" button, #397)
+	 * and record the run time. Unlike the scheduled path the anchor is set to the
+	 * actual moment: a manual snapshot legitimately restarts the interval, so the
+	 * next automatic backup follows one interval later.
+	 *
+	 * @return int the stored "last run" timestamp
+	 * @throws \Throwable if the snapshot could not be written
+	 */
+	public function backupNow(string $uid): int {
+		$this->backupForUser($uid);
+		$now = $this->timeFactory->getTime();
+		// Manual run restarts the interval, so anchor and success time coincide.
+		$this->settingsService->setUserBackupLastRun($uid, $now);
+		$this->settingsService->setUserBackupLastSuccess($uid, $now);
+		return $now;
 	}
 
 	/**

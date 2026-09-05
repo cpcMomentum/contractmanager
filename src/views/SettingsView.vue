@@ -219,6 +219,23 @@
 						<p class="settings-description">
 							{{ t('contractmanager', 'Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.') }}
 						</p>
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Zuletzt gesichert') }}</label>
+							<span class="settings-value">{{ lastBackupText }}</span>
+						</div>
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Nächste Sicherung') }}</label>
+							<span class="settings-value">{{ nextBackupText }}</span>
+						</div>
+						<div class="settings-item">
+							<NcButton variant="secondary" :disabled="backingUpNow" @click="triggerBackupNow">
+								<template #icon>
+									<NcLoadingIcon v-if="backingUpNow" :size="20" />
+									<BackupRestoreIcon v-else :size="20" />
+								</template>
+								{{ t('contractmanager', 'Jetzt sichern') }}
+							</NcButton>
+						</div>
 					</template>
 				</div>
 
@@ -774,6 +791,9 @@ export default {
 			backupEnabled: false,
 			backupFolder: '/VertragsWerk-Backup',
 			backupInterval: 'weekly',
+			backupLastRun: 0,
+			backupNextRun: 0,
+			backingUpNow: false,
 			calendarFeedUrl: '',
 			generatingCalendarFeed: false,
 			savingAi: false,
@@ -826,6 +846,20 @@ export default {
 				t('contractmanager', 'z.B. Zugeordnet an'),
 				t('contractmanager', 'z.B. Kostenstelle'),
 			]
+		},
+		// "Last / next backup" display (#397). Both are absolute Unix timestamps
+		// computed by the backend, so the frontend only formats them.
+		lastBackupText() {
+			if (!this.backupLastRun) {
+				return t('contractmanager', 'Noch nie')
+			}
+			return new Date(this.backupLastRun * 1000).toLocaleString()
+		},
+		nextBackupText() {
+			if (!this.backupNextRun) {
+				return t('contractmanager', 'Nach der ersten Sicherung')
+			}
+			return new Date(this.backupNextRun * 1000).toLocaleString()
 		},
 		aiProviderOptions() {
 			return [
@@ -938,6 +972,8 @@ export default {
 				this.backupEnabled = settings.backupEnabled === true
 				this.backupFolder = settings.backupFolder || '/VertragsWerk-Backup'
 				this.backupInterval = settings.backupInterval || 'weekly'
+				this.backupLastRun = settings.backupLastRun || 0
+				this.backupNextRun = settings.backupNextRun || 0
 				this.calendarFeedUrl = settings.calendarFeedUrl || ''
 			} catch (error) {
 				console.error('Failed to load user settings:', error)
@@ -1001,12 +1037,33 @@ export default {
 		async onBackupIntervalChange() {
 			const previous = this.backupInterval
 			try {
-				await SettingsService.updateUserSettings({ backupInterval: this.backupInterval })
+				const updated = await SettingsService.updateUserSettings({ backupInterval: this.backupInterval })
+				// "Nächste Sicherung" depends on the interval; take the server's
+				// freshly computed value so the two never diverge.
+				if (typeof updated.backupNextRun === 'number') {
+					this.backupNextRun = updated.backupNextRun
+				}
 				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
 			} catch (error) {
 				console.error('Failed to save backup interval:', error)
 				showError(t('contractmanager', 'Fehler beim Speichern'))
 				this.backupInterval = previous
+			}
+		},
+
+		// Manually trigger a backup ("Jetzt sichern", #397) and refresh last/next.
+		async triggerBackupNow() {
+			this.backingUpNow = true
+			try {
+				const { backupLastRun, backupNextRun } = await SettingsService.triggerBackupNow()
+				this.backupLastRun = backupLastRun
+				this.backupNextRun = backupNextRun
+				showSuccess(t('contractmanager', 'Sicherung erstellt'))
+			} catch (error) {
+				console.error('Failed to trigger backup:', error)
+				showError(t('contractmanager', 'Sicherung fehlgeschlagen'))
+			} finally {
+				this.backingUpNow = false
 			}
 		},
 
@@ -1518,6 +1575,10 @@ export default {
 	display: block;
 	font-weight: 600;
 	margin-bottom: 4px;
+}
+
+.settings-value {
+	color: var(--color-text-maxcontrast);
 }
 
 .settings-description {

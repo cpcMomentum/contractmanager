@@ -161,6 +161,32 @@ class AutoBackupServiceTest extends TestCase {
 		$this->assertSame(1, $count);
 	}
 
+	public function testBackupNowWritesSnapshotAndStampsCurrentTime(): void {
+		$now = 1_724_000_123;
+		$this->timeFactory->method('getTime')->willReturn($now);
+		$this->settingsService->method('getUserBackupFolder')->willReturn('/VertragsWerk-Backup');
+		$this->exportService->method('exportJson')->willReturn('{}');
+
+		$target = $this->createMock(Folder::class);
+		$target->method('getDirectoryListing')->willReturn([]);
+		$target->expects($this->once())->method('newFile')->willReturn($this->createMock(File::class));
+		$home = $this->createMock(Folder::class);
+		$home->method('nodeExists')->willReturn(true);
+		$home->method('get')->willReturn($target);
+		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($home);
+
+		// A manual run anchors to now (restarts the interval) and records the same
+		// time as the actual last-success timestamp; returns it.
+		$this->settingsService->expects($this->once())
+			->method('setUserBackupLastRun')
+			->with('alice', $now);
+		$this->settingsService->expects($this->once())
+			->method('setUserBackupLastSuccess')
+			->with('alice', $now);
+
+		$this->assertSame($now, $this->service->backupNow('alice'));
+	}
+
 	public function testNextLastRunSeedsFirstRunWithNow(): void {
 		$now = 1_700_000_000;
 		// No prior anchor to align to -> seed with now.
@@ -237,10 +263,15 @@ class AutoBackupServiceTest extends TestCase {
 		$home->method('get')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->willReturn($home);
 
-		// Anchor advances by three whole intervals, not to now.
+		// Anchor advances by three whole intervals, not to now...
 		$this->settingsService->expects($this->once())
 			->method('setUserBackupLastRun')
 			->with('alice', $lastRun + (3 * $day));
+		// ...but the user-facing "last success" is the real write time (#397): the
+		// two must diverge after a catch-up so the display is not stale.
+		$this->settingsService->expects($this->once())
+			->method('setUserBackupLastSuccess')
+			->with('alice', $now);
 
 		$this->assertSame(1, $this->service->runDueBackups());
 	}

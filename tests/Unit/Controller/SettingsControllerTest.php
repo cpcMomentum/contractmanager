@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\ContractManager\Tests\Unit\Controller;
 
 use OCA\ContractManager\Controller\SettingsController;
+use OCA\ContractManager\Service\AutoBackupService;
 use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\SettingsService;
 use OCP\AppFramework\Http\JSONResponse;
@@ -21,6 +22,7 @@ class SettingsControllerTest extends TestCase {
 	private IRequest $request;
 	private SettingsService $settingsService;
 	private PermissionService $permissionService;
+	private AutoBackupService $autoBackupService;
 	private IUserManager $userManager;
 	private IGroupManager $groupManager;
 	private IL10N $l;
@@ -33,6 +35,7 @@ class SettingsControllerTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->permissionService = $this->createMock(PermissionService::class);
+		$this->autoBackupService = $this->createMock(AutoBackupService::class);
 		$this->userManager = $this->createMock(IUserManager::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->l = $this->createMock(IL10N::class);
@@ -44,6 +47,7 @@ class SettingsControllerTest extends TestCase {
 			'admin',
 			$this->settingsService,
 			$this->permissionService,
+			$this->autoBackupService,
 			$this->userManager,
 			$this->groupManager,
 			$this->l,
@@ -224,5 +228,73 @@ class SettingsControllerTest extends TestCase {
 		$data = $this->controller->get()->getData();
 
 		$this->assertSame('', $data['calendarFeedUrl']);
+	}
+
+	// ========================================
+	// Backup visibility + manual trigger (#397)
+	// ========================================
+
+	public function testGetExposesActualLastRunAndNextRun(): void {
+		// Display shows the real last-success time, not the schedule anchor.
+		$this->settingsService->method('getUserBackupLastSuccess')->willReturn(1_700_050_000);
+		$this->settingsService->method('getUserBackupLastRun')->willReturn(1_700_000_000); // anchor
+		$this->settingsService->method('getUserBackupInterval')->willReturn('daily');
+
+		$data = $this->controller->get()->getData();
+
+		$this->assertSame(1_700_050_000, $data['backupLastRun']);
+		// next = anchor + one day
+		$this->assertSame(1_700_000_000 + 86400, $data['backupNextRun']);
+	}
+
+	public function testGetReturnsZeroNextRunWhenNeverRun(): void {
+		$this->settingsService->method('getUserBackupLastSuccess')->willReturn(0);
+		$this->settingsService->method('getUserBackupLastRun')->willReturn(0);
+		$this->settingsService->method('getUserBackupInterval')->willReturn('weekly');
+
+		$data = $this->controller->get()->getData();
+
+		$this->assertSame(0, $data['backupLastRun']);
+		$this->assertSame(0, $data['backupNextRun']);
+	}
+
+	public function testBackupNowRunsBackupAndReturnsLastAndNextRun(): void {
+		$this->settingsService->method('getUserBackupEnabled')->willReturn(true);
+		$this->autoBackupService->expects($this->once())
+			->method('backupNow')
+			->with('admin')
+			->willReturn(1_724_000_123);
+		$this->settingsService->method('getUserBackupInterval')->willReturn('weekly');
+		// After backupNow the anchor equals the run time.
+		$this->settingsService->method('getUserBackupLastRun')->willReturn(1_724_000_123);
+
+		$response = $this->controller->backupNow();
+		$data = $response->getData();
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame(1_724_000_123, $data['backupLastRun']);
+		$this->assertSame(1_724_000_123 + 604800, $data['backupNextRun']);
+	}
+
+	public function testBackupNowReturns400WhenBackupDisabled(): void {
+		$this->settingsService->method('getUserBackupEnabled')->willReturn(false);
+		// The backup must never run for a disabled user.
+		$this->autoBackupService->expects($this->never())->method('backupNow');
+
+		$response = $this->controller->backupNow();
+
+		$this->assertSame(400, $response->getStatus());
+		$this->assertArrayHasKey('error', $response->getData());
+	}
+
+	public function testBackupNowReturns500OnFailure(): void {
+		$this->settingsService->method('getUserBackupEnabled')->willReturn(true);
+		$this->autoBackupService->method('backupNow')
+			->willThrowException(new \RuntimeException('disk full'));
+
+		$response = $this->controller->backupNow();
+
+		$this->assertSame(500, $response->getStatus());
+		$this->assertArrayHasKey('error', $response->getData());
 	}
 }
