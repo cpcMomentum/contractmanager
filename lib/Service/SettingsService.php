@@ -46,7 +46,13 @@ class SettingsService {
 	private const KEY_BACKUP_ENABLED = 'backup_enabled';
 	private const KEY_BACKUP_FOLDER = 'backup_folder';
 	private const KEY_BACKUP_INTERVAL = 'backup_interval';
+	// Schedule anchor that drives due-checking; advanced by whole intervals so the
+	// rhythm does not drift (#375). NOT the actual snapshot time.
 	private const KEY_BACKUP_LAST_RUN = 'backup_last_run';
+	// Wall-clock time of the last snapshot actually written; shown to the user as
+	// "zuletzt gesichert" (#397). Kept separate from the schedule anchor so the
+	// display stays truthful even when catch-up shifts the anchor.
+	private const KEY_BACKUP_LAST_SUCCESS = 'backup_last_success';
 
 	private const KEY_CALENDAR_FEED_TOKEN = 'calendar_feed_token';
 
@@ -614,6 +620,28 @@ class SettingsService {
 			$userId,
 			Application::APP_ID,
 			self::KEY_BACKUP_LAST_RUN,
+			(string)$timestamp
+		);
+	}
+
+	/**
+	 * Unix timestamp of the last snapshot actually written, or 0 if never run.
+	 * Unlike getUserBackupLastRun this is the real wall-clock time, for display.
+	 */
+	public function getUserBackupLastSuccess(string $userId): int {
+		return (int)$this->config->getUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_LAST_SUCCESS,
+			'0'
+		);
+	}
+
+	public function setUserBackupLastSuccess(string $userId, int $timestamp): void {
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_BACKUP_LAST_SUCCESS,
 			(string)$timestamp
 		);
 	}
