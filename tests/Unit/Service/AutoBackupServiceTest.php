@@ -160,4 +160,119 @@ class AutoBackupServiceTest extends TestCase {
 
 		$this->assertSame(1, $count);
 	}
+
+	public function testBackupNowWritesSnapshotAndStampsCurrentTime(): void {
+		$now = 1_724_000_123;
+		$this->timeFactory->method('getTime')->willReturn($now);
+		$this->settingsService->method('getUserBackupFolder')->willReturn('/VertragsWerk-Backup');
+		$this->exportService->method('exportJson')->willReturn('{}');
+
+		$target = $this->createMock(Folder::class);
+		$target->method('getDirectoryListing')->willReturn([]);
+		$target->expects($this->once())->method('newFile')->willReturn($this->createMock(File::class));
+		$home = $this->createMock(Folder::class);
+		$home->method('nodeExists')->willReturn(true);
+		$home->method('get')->willReturn($target);
+		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($home);
+
+		// A manual run anchors to now (restarts the interval) and records the same
+		// time as the actual last-success timestamp; returns it.
+		$this->settingsService->expects($this->once())
+			->method('setUserBackupLastRun')
+			->with('alice', $now);
+		$this->settingsService->expects($this->once())
+			->method('setUserBackupLastSuccess')
+			->with('alice', $now);
+
+		$this->assertSame($now, $this->service->backupNow('alice'));
+	}
+
+	public function testNextLastRunSeedsFirstRunWithNow(): void {
+		$now = 1_700_000_000;
+		// No prior anchor to align to -> seed with now.
+		$this->assertSame($now, AutoBackupService::nextLastRun('daily', 0, $now));
+		$this->assertSame($now, AutoBackupService::nextLastRun('weekly', -5, $now));
+	}
+
+	public function testNextLastRunCatchesUpMissedIntervalsInOneJump(): void {
+		$day = 86400;
+		$anchor = 1_700_000_000;
+		// Server was off; three-and-a-bit intervals passed since the last anchor.
+		$now = $anchor + (3 * $day) + 5000;
+		// The anchor jumps to the last scheduled slot at or before now (3 whole
+		// intervals), never to now itself and never one interval at a time.
+		$this->assertSame($anchor + (3 * $day), AutoBackupService::nextLastRun('daily', $anchor, $now));
+	}
+
+	/**
+	 * Regression for #375: the hourly check cadence observes "now" a little past
+	 * each boundary tick. Anchoring to now (the old behaviour) slipped the daily
+	 * slot one hour later every cycle (~25 h instead of 24 h). Anchoring to the
+	 * schedule must keep consecutive slots exactly one interval apart.
+	 */
+	public function testNextLastRunKeepsScheduleAcrossHourlyChecks(): void {
+		$interval = 'daily';
+		$day = 86400;
+		$hour = 3600;
+		$jitter = 12; // cron fires a few seconds after the nominal hourly tick
+
+		$firstNow = 1_700_000_000 + $jitter;
+		$anchor = AutoBackupService::nextLastRun($interval, 0, $firstNow);
+		$this->assertSame($firstNow, $anchor);
+
+		$lastRun = $anchor;
+		$fireTimes = [$anchor];
+		$startTick = $anchor - ($anchor % $hour) + $hour;
+		for ($tick = $startTick; $tick <= $anchor + (5 * $day) + $hour; $tick += $hour) {
+			$now = $tick + $jitter;
+			if (!AutoBackupService::isDue($interval, $lastRun, $now)) {
+				continue;
+			}
+			$lastRun = AutoBackupService::nextLastRun($interval, $lastRun, $now);
+			$fireTimes[] = $lastRun;
+		}
+
+		$this->assertGreaterThanOrEqual(6, count($fireTimes), 'expected ~5 daily cycles to fire');
+		for ($i = 1, $n = count($fireTimes); $i < $n; $i++) {
+			$this->assertSame(
+				$day,
+				$fireTimes[$i] - $fireTimes[$i - 1],
+				"Cycle $i drifted from the 24h schedule",
+			);
+		}
+	}
+
+	public function testRunDueBackupsWritesSingleSnapshotWhenCatchingUp(): void {
+		$day = 86400;
+		$now = 1_724_000_000;
+		$lastRun = $now - ((3 * $day) + 5000); // three missed daily intervals
+		$this->timeFactory->method('getTime')->willReturn($now);
+
+		$this->settingsService->method('getUsersWithBackupEnabled')->willReturn(['alice']);
+		$this->settingsService->method('getUserBackupInterval')->willReturn('daily');
+		$this->settingsService->method('getUserBackupLastRun')->willReturn($lastRun);
+		$this->settingsService->method('getUserBackupFolder')->willReturn('/VertragsWerk-Backup');
+		$this->exportService->method('exportJson')->willReturn('{}');
+
+		$target = $this->createMock(Folder::class);
+		$target->method('getDirectoryListing')->willReturn([]);
+		// Exactly one snapshot despite three missed intervals.
+		$target->expects($this->once())->method('newFile')->willReturn($this->createMock(File::class));
+		$home = $this->createMock(Folder::class);
+		$home->method('nodeExists')->willReturn(true);
+		$home->method('get')->willReturn($target);
+		$this->rootFolder->method('getUserFolder')->willReturn($home);
+
+		// Anchor advances by three whole intervals, not to now...
+		$this->settingsService->expects($this->once())
+			->method('setUserBackupLastRun')
+			->with('alice', $lastRun + (3 * $day));
+		// ...but the user-facing "last success" is the real write time (#397): the
+		// two must diverge after a catch-up so the display is not stale.
+		$this->settingsService->expects($this->once())
+			->method('setUserBackupLastSuccess')
+			->with('alice', $now);
+
+		$this->assertSame(1, $this->service->runDueBackups());
+	}
 }

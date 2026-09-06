@@ -354,6 +354,14 @@ OC.L10N.register(
     "VertragsWerk – Fristen" : "VertragsWerk – Fristen",
     "Kündigungsfrist: %s" : "Kündigungsfrist: %s",
     "Vertragsende: %s" : "Vertragsende: %s",
-    "Vertragspartner: %s" : "Vertragspartner: %s"
+    "Vertragspartner: %s" : "Vertragspartner: %s",
+    "Zuletzt gesichert" : "Zuletzt gesichert",
+    "Nächste Sicherung" : "Nächste Sicherung",
+    "Jetzt sichern" : "Jetzt sichern",
+    "Noch nie" : "Noch nie",
+    "Nach der ersten Sicherung" : "Nach der ersten Sicherung",
+    "Sicherung erstellt" : "Sicherung erstellt",
+    "Sicherung fehlgeschlagen" : "Sicherung fehlgeschlagen",
+    "Automatisches Backup ist nicht aktiviert" : "Automatisches Backup ist nicht aktiviert"
 },
 "nplurals=2; plural=(n != 1);");

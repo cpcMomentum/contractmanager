@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\ContractManager\Controller;
 
 use OCA\ContractManager\AppInfo\Application;
+use OCA\ContractManager\Service\AutoBackupService;
 use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\SettingsService;
 use OCP\AppFramework\Controller;
@@ -16,6 +17,7 @@ use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\Security\ISecureRandom;
+use Psr\Log\LoggerInterface;
 
 class SettingsController extends Controller {
 
@@ -24,11 +26,13 @@ class SettingsController extends Controller {
 		private ?string $userId,
 		private SettingsService $settingsService,
 		private PermissionService $permissionService,
+		private AutoBackupService $autoBackupService,
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
 		private IL10N $l,
 		private IURLGenerator $urlGenerator,
 		private ISecureRandom $secureRandom,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -46,6 +50,8 @@ class SettingsController extends Controller {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
 		}
 
+		$backupInterval = $this->settingsService->getUserBackupInterval($this->userId);
+
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
 			'reminderMode' => $this->settingsService->getUserReminderMode($this->userId),
@@ -58,7 +64,12 @@ class SettingsController extends Controller {
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
-			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
+			'backupInterval' => $backupInterval,
+			// Actual time of the last snapshot (0 = never) and the next scheduled
+			// run, both as absolute Unix timestamps so the frontend just displays
+			// them without duplicating the interval math (#397).
+			'backupLastRun' => $this->settingsService->getUserBackupLastSuccess($this->userId),
+			'backupNextRun' => $this->nextBackupRun($this->userId, $backupInterval),
 			// Empty until the user actively generates a feed URL — no token is
 			// minted for users who never subscribe (#68).
 			'calendarFeedUrl' => $this->calendarFeedUrl($this->settingsService->getCalendarFeedToken($this->userId)),
@@ -131,6 +142,8 @@ class SettingsController extends Controller {
 			$this->settingsService->setUserBackupInterval($this->userId, $backupInterval);
 		}
 
+		$updatedInterval = $this->settingsService->getUserBackupInterval($this->userId);
+
 		return new JSONResponse([
 			'emailReminder' => $this->settingsService->getUserEmailReminder($this->userId),
 			'reminderMode' => $this->settingsService->getUserReminderMode($this->userId),
@@ -143,7 +156,10 @@ class SettingsController extends Controller {
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
 			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
-			'backupInterval' => $this->settingsService->getUserBackupInterval($this->userId),
+			'backupInterval' => $updatedInterval,
+			// Changing the interval moves the next scheduled run; return it so the
+			// UI can update "Nächste Sicherung" without a reload (#397).
+			'backupNextRun' => $this->nextBackupRun($this->userId, $updatedInterval),
 		]);
 	}
 
@@ -160,6 +176,50 @@ class SettingsController extends Controller {
 		$token = $this->secureRandom->generate(32, ISecureRandom::CHAR_ALPHANUMERIC);
 		$this->settingsService->setCalendarFeedToken($this->userId, $token);
 		return new JSONResponse(['calendarFeedUrl' => $this->calendarFeedUrl($token)]);
+	}
+
+	/**
+	 * Trigger an immediate backup for the current user ("back up now", #397) and
+	 * return the new last-run timestamp so the UI can refresh without a reload.
+	 */
+	#[NoAdminRequired]
+	public function backupNow(): JSONResponse {
+		if ($this->userId === null) {
+			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
+		}
+		// The button is only shown when auto-backup is enabled; guard the route
+		// too so a disabled user cannot trigger a snapshot or reset the anchor.
+		if (!$this->settingsService->getUserBackupEnabled($this->userId)) {
+			return new JSONResponse(['error' => $this->l->t('Automatisches Backup ist nicht aktiviert')], 400);
+		}
+		try {
+			$lastRun = $this->autoBackupService->backupNow($this->userId);
+		} catch (\Throwable $e) {
+			$this->logger->error('Manual backup failed for user', [
+				'app' => Application::APP_ID,
+				'user' => $this->userId,
+				'exception' => $e,
+			]);
+			return new JSONResponse(['error' => $this->l->t('Sicherung fehlgeschlagen')], 500);
+		}
+		$interval = $this->settingsService->getUserBackupInterval($this->userId);
+		return new JSONResponse([
+			'backupLastRun' => $lastRun,
+			'backupNextRun' => $this->nextBackupRun($this->userId, $interval),
+		]);
+	}
+
+	/**
+	 * Absolute Unix timestamp of the next scheduled backup, or 0 when none has
+	 * run yet (nothing to anchor from). Derived from the schedule anchor plus the
+	 * interval so "next" tracks the drift-free schedule, not the last write time.
+	 */
+	private function nextBackupRun(string $userId, string $interval): int {
+		$anchor = $this->settingsService->getUserBackupLastRun($userId);
+		if ($anchor <= 0) {
+			return 0;
+		}
+		return $anchor + AutoBackupService::intervalSeconds($interval);
 	}
 
 	/**
