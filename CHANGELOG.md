@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-09-21
+
+### Changed
+- VertragsWerk ist jetzt für Nextcloud 35 freigegeben (unterstützt werden NC 32 bis 35). Die Unit-Suite läuft grün gegen die OCP-Schnittstellen von NC 35. Keine der von der App genutzten APIs wurde entfernt oder geändert. Die PHP-Untergrenze der App bleibt bei 8.2. Nextcloud 35 selbst verlangt mindestens PHP 8.3; für Nextcloud 32 bis 34 ändert sich nichts (#414)
+
+### Fixed
+- Wartung: Der wöchentliche Kompatibilitäts-Wächter und die Unit-Test-Läufe scheiterten an einem neuen Nextcloud-Major, sobald dieses die PHP-Untergrenze anhob. Das geschah noch bevor ein einziger Test lief, gemeldet wurde es aber fälschlich als „API-Änderung". Die Test-Läufe wählen die geprüften Nextcloud-Versionen jetzt passend zur jeweiligen PHP-Version aus, und der Wächter benennt beide Fehlerursachen getrennt. Zusätzlich wird gegen PHP 8.5 getestet (#414)
+
 ## [1.7.0] - 2026-09-05
 
 ### Added
@@ -454,7 +462,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.0...v1.7.1
+[1.7.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.3.0...v1.4.0

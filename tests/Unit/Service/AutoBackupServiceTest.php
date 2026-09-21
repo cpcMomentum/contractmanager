@@ -11,6 +11,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -72,7 +73,7 @@ class AutoBackupServiceTest extends TestCase {
 			)
 			->willReturn($this->createMock(File::class));
 
-		$home = $this->createMock(Folder::class);
+		$home = $this->mockUserHome();
 		$home->method('nodeExists')->with('VertragsWerk-Backup')->willReturn(true);
 		$home->method('get')->with('VertragsWerk-Backup')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($home);
@@ -88,7 +89,7 @@ class AutoBackupServiceTest extends TestCase {
 		$target->method('getDirectoryListing')->willReturn([]);
 		$target->method('newFile')->willReturn($this->createMock(File::class));
 
-		$home = $this->createMock(Folder::class);
+		$home = $this->mockUserHome();
 		$home->method('nodeExists')->willReturn(false);
 		$home->expects($this->once())->method('newFolder')->with('VertragsWerk-Backup')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->willReturn($home);
@@ -121,7 +122,7 @@ class AutoBackupServiceTest extends TestCase {
 		$target->method('newFile')->willReturn($this->createMock(File::class));
 		$target->method('getDirectoryListing')->willReturn($existing);
 
-		$home = $this->createMock(Folder::class);
+		$home = $this->mockUserHome();
 		$home->method('nodeExists')->willReturn(true);
 		$home->method('get')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->willReturn($home);
@@ -146,7 +147,7 @@ class AutoBackupServiceTest extends TestCase {
 		$target = $this->createMock(Folder::class);
 		$target->method('getDirectoryListing')->willReturn([]);
 		$target->method('newFile')->willReturn($this->createMock(File::class));
-		$home = $this->createMock(Folder::class);
+		$home = $this->mockUserHome();
 		$home->method('nodeExists')->willReturn(true);
 		$home->method('get')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->with('due')->willReturn($home);
@@ -170,7 +171,7 @@ class AutoBackupServiceTest extends TestCase {
 		$target = $this->createMock(Folder::class);
 		$target->method('getDirectoryListing')->willReturn([]);
 		$target->expects($this->once())->method('newFile')->willReturn($this->createMock(File::class));
-		$home = $this->createMock(Folder::class);
+		$home = $this->mockUserHome();
 		$home->method('nodeExists')->willReturn(true);
 		$home->method('get')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($home);
@@ -258,7 +259,7 @@ class AutoBackupServiceTest extends TestCase {
 		$target->method('getDirectoryListing')->willReturn([]);
 		// Exactly one snapshot despite three missed intervals.
 		$target->expects($this->once())->method('newFile')->willReturn($this->createMock(File::class));
-		$home = $this->createMock(Folder::class);
+		$home = $this->mockUserHome();
 		$home->method('nodeExists')->willReturn(true);
 		$home->method('get')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->willReturn($home);
@@ -274,5 +275,28 @@ class AutoBackupServiceTest extends TestCase {
 			->with('alice', $now);
 
 		$this->assertSame(1, $this->service->runDueBackups());
+	}
+
+	/**
+	 * Ein Mock des Home-Ordners, wie ihn `IRootFolder::getUserFolder()` liefert.
+	 *
+	 * **Plattformabhaengig, wegen des Rueckgabetyps.** NC dev-master (Canary,
+	 * #406) engt `getUserFolder()` von `Folder` auf `IUserFolder` ein; NC 32-34
+	 * kennen das Interface noch nicht. Ein fest auf `Folder` gemocktes `$home`
+	 * scheitert auf dev-master an PHPUnits Rueckgabetyp-Pruefung, ein fest auf
+	 * `IUserFolder` gemocktes an der fehlenden Klasse auf NC 32-34. Der Mock
+	 * traegt deshalb je nach Plattform die passende Klasse -- `IUserFolder`
+	 * erweitert `Folder`, die in den Tests konfigurierten Methoden bleiben
+	 * dieselben. Fleet-Muster aus projektwerk#275.
+	 *
+	 * `IUserFolder::class` ist eine Konstante zur Uebersetzungszeit und laedt die
+	 * Klasse nicht; `interface_exists()` entscheidet zur Laufzeit.
+	 */
+	private function mockUserHome(): MockObject {
+		$class = interface_exists(\OCP\Files\IUserFolder::class)
+			? \OCP\Files\IUserFolder::class
+			: Folder::class;
+
+		return $this->createMock($class);
 	}
 }
