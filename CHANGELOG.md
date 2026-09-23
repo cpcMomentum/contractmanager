@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Mindestversion auf **Nextcloud 33** angehoben (`min-version`; `max-version` bleibt 35). Ohne `<database>`-Deklaration begrenzte NC bei min-version 32 Bezeichnernamen auf die scharfen Oracle-11-Grenzen (30/27/22 Zeichen); seit NC 33 gilt stattdessen eine einheitliche Grenze von 63 Zeichen (nextcloud/server#51593), zudem korrigiert NC 33 die NOT-NULL-Boolean-Behandlung selbst. Oracle bleibt installierbar (kein `<database>`-Ausschluss). Nutzerinnen und Nutzer auf NC 32 erhalten kein Update mehr; die Produktivinstanzen laufen auf NC 34 (nc-app-tooling#15)
+
 ## [1.7.1] - 2026-09-21
 
 ### Changed
