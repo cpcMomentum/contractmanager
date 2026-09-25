@@ -19,7 +19,7 @@ Verwalten Sie Ihre Verträge zentral in Nextcloud:
 Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     ]]></description>
 
-    <version>1.7.1</version>
+    <version>1.8.0</version>
     <licence>AGPL-3.0-or-later</licence>
 
     <author mail="axel.deffner@cpcmomentum.com" homepage="https://github.com/cpcMomentum">Axel Deffner</author>
@@ -39,7 +39,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     <screenshot>https://raw.githubusercontent.com/cpcMomentum/contractmanager/main/screenshots/screenshot-settings.png</screenshot>
 
     <dependencies>
-        <nextcloud min-version="32" max-version="35"/>
+        <nextcloud min-version="33" max-version="35"/>
         <php min-version="8.2"/>
     </dependencies>
 
@@ -57,6 +57,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
     <repair-steps>
         <post-migration>
             <step>OCA\ContractManager\Migration\CleanupExtraFiles</step>
+            <step>OCA\ContractManager\Migration\WhatsNewBootstrap</step>
         </post-migration>
     </repair-steps>
 

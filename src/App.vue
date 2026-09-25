@@ -101,6 +101,10 @@
 			<TrashView v-else-if="currentView === 'trash'" />
 			<SettingsView v-else-if="currentView === 'settings'" />
 		</NcAppContent>
+
+		<!-- „Was ist neu?"-Fenster (#415): meldet sich selbst, wenn es etwas zu
+		     berichten gibt, und bleibt sonst unsichtbar. -->
+		<WhatsNewDialog />
 	</NcContent>
 </template>
 
@@ -121,6 +125,7 @@ import ContractList from './views/ContractList.vue'
 import ArchiveView from './views/ArchiveView.vue'
 import TrashView from './views/TrashView.vue'
 import SettingsView from './views/SettingsView.vue'
+import WhatsNewDialog from './components/WhatsNewDialog.vue'
 import { mapState, mapActions } from 'pinia'
 import { useContractsStore } from './store/contracts'
 import { useCategoriesStore } from './store/categories'
@@ -146,6 +151,7 @@ export default {
 		ArchiveView,
 		TrashView,
 		SettingsView,
+		WhatsNewDialog,
 	},
 	data() {
 		return {

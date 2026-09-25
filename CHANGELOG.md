@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-25
+
+### Added
+- **„Was ist neu?"-Fenster**: Nach einem Update zeigt VertragsWerk einmalig, was sich geändert hat — einmal je Person und Version, wegklickbar per Knopf, X oder Escape. Die Inhalte liegen als Datei im App-Paket, es wird nichts nachgeladen. Bei einer Neuinstallation bleibt das Fenster aus, niemand wird mit einer Änderungsliste begrüßt. Fällt etwas aus, bleibt es ebenfalls aus und blockiert die App nie (#415)
+
+### Changed
+- Mindestversion auf **Nextcloud 33** angehoben (`min-version`; `max-version` bleibt 35). Ohne `<database>`-Deklaration begrenzte NC bei min-version 32 Bezeichnernamen auf die scharfen Oracle-11-Grenzen (30/27/22 Zeichen); seit NC 33 gilt stattdessen eine einheitliche Grenze von 63 Zeichen (nextcloud/server#51593), zudem korrigiert NC 33 die NOT-NULL-Boolean-Behandlung selbst. Oracle bleibt installierbar (kein `<database>`-Ausschluss). Nutzerinnen und Nutzer auf NC 32 erhalten kein Update mehr; die Produktivinstanzen laufen auf NC 34 (nc-app-tooling#15)
+
 ## [1.7.1] - 2026-09-21
 
 ### Changed
@@ -462,7 +470,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.1...v1.8.0
 [1.7.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.5.0...v1.6.0

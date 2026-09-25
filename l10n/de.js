@@ -362,6 +362,12 @@ OC.L10N.register(
     "Nach der ersten Sicherung" : "Nach der ersten Sicherung",
     "Sicherung erstellt" : "Sicherung erstellt",
     "Sicherung fehlgeschlagen" : "Sicherung fehlgeschlagen",
-    "Automatisches Backup ist nicht aktiviert" : "Automatisches Backup ist nicht aktiviert"
+    "Automatisches Backup ist nicht aktiviert" : "Automatisches Backup ist nicht aktiviert",
+    "Version {version}" : "Version {version}",
+    "Zu finden unter" : "Zu finden unter",
+    "(nur für Administratoren)" : "(nur für Administratoren)",
+    "Mehr zu WerkPlus" : "Mehr zu WerkPlus",
+    "Alles klar" : "Alles klar",
+    "Was ist neu in VertragsWerk" : "Was ist neu in VertragsWerk"
 },
 "nplurals=2; plural=(n != 1);");
