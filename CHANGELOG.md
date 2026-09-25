@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **„Was ist neu?"-Fenster**: Nach einem Update zeigt VertragsWerk einmalig, was sich geändert hat — einmal je Person und Version, wegklickbar per Knopf, X oder Escape. Die Inhalte liegen als Datei im App-Paket, es wird nichts nachgeladen. Bei einer Neuinstallation bleibt das Fenster aus, niemand wird mit einer Änderungsliste begrüßt. Fällt etwas aus, bleibt es ebenfalls aus und blockiert die App nie (#415)
+
 ### Changed
 - Mindestversion auf **Nextcloud 33** angehoben (`min-version`; `max-version` bleibt 35). Ohne `<database>`-Deklaration begrenzte NC bei min-version 32 Bezeichnernamen auf die scharfen Oracle-11-Grenzen (30/27/22 Zeichen); seit NC 33 gilt stattdessen eine einheitliche Grenze von 63 Zeichen (nextcloud/server#51593), zudem korrigiert NC 33 die NOT-NULL-Boolean-Behandlung selbst. Oracle bleibt installierbar (kein `<database>`-Ausschluss). Nutzerinnen und Nutzer auf NC 32 erhalten kein Update mehr; die Produktivinstanzen laufen auf NC 34 (nc-app-tooling#15)
 

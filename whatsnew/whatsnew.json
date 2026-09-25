@@ -1,0 +1,16 @@
+{
+	"1.8.0": [
+		{
+			"title": {
+				"de": "Neuerungen erscheinen ab jetzt in diesem Fenster",
+				"en": "From now on new features appear in this window"
+			},
+			"text": {
+				"de": "Nach einem Update zeigt VertragsWerk hier kurz, was sich geändert hat. Einmal je Version, wegklickbar, danach kommt es nicht wieder.",
+				"en": "After an update VertragsWerk briefly shows you what has changed. Once per version, dismissable, and it will not come back."
+			},
+			"icon": "star",
+			"plus": false
+		}
+	]
+}

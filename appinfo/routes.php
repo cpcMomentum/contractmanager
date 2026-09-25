@@ -53,6 +53,10 @@ return [
         ['name' => 'settings#updatePermissions', 'url' => '/api/settings/permissions', 'verb' => 'PUT'],
         ['name' => 'settings#searchPrincipals', 'url' => '/api/settings/search-principals', 'verb' => 'GET'],
 
+        // „Was ist neu?"-Fenster (#415)
+        ['name' => 'whatsNew#index', 'url' => '/api/whatsnew',      'verb' => 'GET'],
+        ['name' => 'whatsNew#seen',  'url' => '/api/whatsnew/seen', 'verb' => 'POST'],
+
         // AI Extraction API routes
         ['name' => 'extraction#status', 'url' => '/api/extraction/status', 'verb' => 'GET'],
         ['name' => 'extraction#extract', 'url' => '/api/extraction/extract', 'verb' => 'POST'],
