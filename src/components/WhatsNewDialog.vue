@@ -9,39 +9,45 @@
 			<h2 id="whatsnew-title">
 				{{ title }}
 			</h2>
-			<p class="whatsnew__version">
-				{{ t('contractmanager', 'Version {version}', { version }) }}
+			<p v-if="archive && groups.length === 0" class="whatsnew__empty">
+				{{ t('contractmanager', 'Noch keine Neuerungen.') }}
 			</p>
 
-			<div v-for="(entry, index) in entries" :key="index" class="whatsnew__entry">
-				<div class="whatsnew__icon">
-					<component :is="iconFor(entry.icon)" :size="22" />
-				</div>
-				<div class="whatsnew__body">
-					<h3 class="whatsnew__entry-title">
-						{{ entry.title }}
-						<span v-if="entry.plus" class="whatsnew__badge">WerkPlus</span>
-					</h3>
-					<p class="whatsnew__entry-text">
-						{{ entry.text }}
-					</p>
-					<p v-if="entry.where" class="whatsnew__where">
-						{{ t('contractmanager', 'Zu finden unter') }}
-						<b>{{ entry.where }}</b><span v-if="entry.adminOnly">{{ ' ' + t('contractmanager', '(nur für Administratoren)') }}</span>
-					</p>
-					<a v-if="entry.plus"
-						class="whatsnew__link"
-						:href="WERKPLUS_URL"
-						target="_blank"
-						rel="noreferrer noopener">
-						{{ t('contractmanager', 'Mehr zu WerkPlus') }}
-					</a>
+			<div v-for="group in groups" :key="group.version" class="whatsnew__group">
+				<p class="whatsnew__version">
+					{{ t('contractmanager', 'Version {version}', { version: group.version }) }}
+				</p>
+
+				<div v-for="(entry, index) in group.entries" :key="group.version + '-' + index" class="whatsnew__entry">
+					<div class="whatsnew__icon">
+						<component :is="iconFor(entry.icon)" :size="22" />
+					</div>
+					<div class="whatsnew__body">
+						<h3 class="whatsnew__entry-title">
+							{{ entry.title }}
+							<span v-if="entry.plus" class="whatsnew__badge">WerkPlus</span>
+						</h3>
+						<p class="whatsnew__entry-text">
+							{{ entry.text }}
+						</p>
+						<p v-if="entry.where" class="whatsnew__where">
+							{{ t('contractmanager', 'Zu finden unter') }}
+							<b>{{ entry.where }}</b><span v-if="entry.adminOnly">{{ ' ' + t('contractmanager', '(nur für Administratoren)') }}</span>
+						</p>
+						<a v-if="entry.plus"
+							class="whatsnew__link"
+							:href="WERKPLUS_URL"
+							target="_blank"
+							rel="noreferrer noopener">
+							{{ t('contractmanager', 'Mehr zu WerkPlus') }}
+						</a>
+					</div>
 				</div>
 			</div>
 
 			<div class="actions">
 				<NcButton variant="primary" @click="dismiss">
-					{{ t('contractmanager', 'Alles klar') }}
+					{{ archive ? t('contractmanager', 'Schließen') : t('contractmanager', 'Alles klar') }}
 				</NcButton>
 			</div>
 		</div>
@@ -71,7 +77,7 @@ import MagnifyIcon from 'vue-material-design-icons/Magnify.vue'
 import StarIcon from 'vue-material-design-icons/Star.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
 import TranslateIcon from 'vue-material-design-icons/Translate.vue'
-import WhatsNewService, { type WhatsNewEntry } from '../services/WhatsNewService'
+import WhatsNewService, { type WhatsNewGroup } from '../services/WhatsNewService'
 
 /** Zielseite der WerkPlus-Eintraege (Konzept v1.1, Abschnitt 2). */
 const WERKPLUS_URL = 'https://werkwolke.de'
@@ -101,8 +107,14 @@ const ICONS: Record<string, Component> = {
 }
 
 const open = ref(false)
-const version = ref('')
-const entries = ref<WhatsNewEntry[]>([])
+/**
+ * Die anzuzeigenden Versionsgruppen. Im Popup genau eine (die neueste
+ * ungesehene), im Archiv alle. Ein gemeinsames Format haelt Vorlage und
+ * Anzeige einfach.
+ */
+const groups = ref<WhatsNewGroup[]>([])
+/** Archiv-Modus (#427): ueber das Menue aufgerufen, nicht das Auto-Popup. */
+const archive = ref(false)
 // Anzeigename aus info.xml, nicht die App-ID: die App heisst VertragsWerk.
 const title = t('contractmanager', 'Was ist neu in VertragsWerk')
 
@@ -111,12 +123,15 @@ function iconFor(name: string): Component {
 	return ICONS[name] ?? StarIcon
 }
 
+// Auto-Popup: einmal je Nutzer und Version die neueste ungesehene Version.
 onMounted(async () => {
 	try {
 		const payload = await WhatsNewService.getWhatsNew()
-		if (payload.entries.length > 0) {
-			version.value = payload.version
-			entries.value = payload.entries
+		// Hat der Nutzer waehrend des Abrufs schon das Archiv geoeffnet, nicht
+		// ueberschreiben — sonst quittierte „Schliessen" ungefragt das Popup.
+		if (payload.entries.length > 0 && !open.value) {
+			groups.value = [{ version: payload.version, entries: payload.entries }]
+			archive.value = false
 			open.value = true
 		}
 	} catch {
@@ -125,14 +140,34 @@ onMounted(async () => {
 })
 
 /**
+ * Das Archiv oeffnen (#427) — alle bisherigen Neuerungen, ueber den Menueeintrag.
+ * Beruehrt keine Marke; Nachlesen ist kein Quittieren.
+ */
+async function openArchive(): Promise<void> {
+	try {
+		const payload = await WhatsNewService.getWhatsNewArchive()
+		groups.value = payload.versions
+		archive.value = true
+		open.value = true
+	} catch {
+		// Kein Fenster ist besser als eine Fehlermeldung ueber Neuerungen.
+	}
+}
+
+/**
  * Knopf, X und Escape laufen hier zusammen. Escape meldet NcModal zusaetzlich
  * als `close`, deshalb der Riegel: sonst ginge dieselbe Quittung zweimal raus.
+ * Im Popup-Modus wird die laufende Version quittiert, im Archiv-Modus nicht —
+ * es war nur Nachlesen.
  */
 async function dismiss(): Promise<void> {
 	if (!open.value) {
 		return
 	}
 	open.value = false
+	if (archive.value) {
+		return
+	}
 	try {
 		await WhatsNewService.markWhatsNewSeen()
 	} catch {
@@ -140,6 +175,9 @@ async function dismiss(): Promise<void> {
 		// Das ist die harmlosere Seite des Fehlers.
 	}
 }
+
+// Der Menueeintrag „Neuerungen" in App.vue ruft dies ueber eine Template-Referenz.
+defineExpose({ openArchive })
 </script>
 
 <style scoped>
@@ -156,6 +194,16 @@ async function dismiss(): Promise<void> {
 	margin: 2px 0 4px;
 	color: var(--color-text-maxcontrast);
 	font-size: 0.9em;
+}
+.whatsnew__empty {
+	margin: 8px 0;
+	color: var(--color-text-maxcontrast);
+}
+/* Im Archiv trennt eine Linie die Versionsbloecke; im Popup gibt es nur einen. */
+.whatsnew__group + .whatsnew__group {
+	margin-top: 16px;
+	padding-top: 10px;
+	border-top: 1px solid var(--color-border);
 }
 .whatsnew__entry {
 	display: flex;

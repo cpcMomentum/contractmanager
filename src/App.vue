@@ -92,6 +92,15 @@
 						<CogIcon :size="20" />
 					</template>
 				</NcAppNavigationItem>
+				<!-- Dauerhafter Zugang zu den Neuerungen (#427): oeffnet das
+				     „Was ist neu?"-Fenster im Archiv-Modus (alle bisherigen Punkte).
+				     Kein eigener View, nur ein Knopf. -->
+				<NcAppNavigationItem :name="t('contractmanager', 'Neuerungen')"
+					@click="openWhatsNew">
+					<template #icon>
+						<BullhornOutlineIcon :size="20" />
+					</template>
+				</NcAppNavigationItem>
 			</template>
 		</NcAppNavigation>
 
@@ -104,7 +113,7 @@
 
 		<!-- „Was ist neu?"-Fenster (#415): meldet sich selbst, wenn es etwas zu
 		     berichten gibt, und bleibt sonst unsichtbar. -->
-		<WhatsNewDialog />
+		<WhatsNewDialog ref="whatsNew" />
 	</NcContent>
 </template>
 
@@ -118,6 +127,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import MagnifyIcon from 'vue-material-design-icons/Magnify.vue'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
+import BullhornOutlineIcon from 'vue-material-design-icons/BullhornOutline.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
@@ -144,6 +154,7 @@ export default {
 		FileDocumentIcon,
 		MagnifyIcon,
 		ArchiveIcon,
+		BullhornOutlineIcon,
 		CogIcon,
 		TagIcon,
 		DeleteIcon,
@@ -225,6 +236,11 @@ export default {
 		filterByCategory(categoryId) {
 			this.currentView = 'contracts'
 			this.selectedCategoryId = categoryId
+		},
+		// „Was ist neu?"-Fenster im Archiv-Modus oeffnen (#427). Der Dialog stellt
+		// openArchive per defineExpose bereit.
+		openWhatsNew() {
+			this.$refs.whatsNew?.openArchive()
 		},
 		getCategoryContractCount(categoryId) {
 			return this.allContracts.filter(
