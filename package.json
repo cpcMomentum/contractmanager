@@ -13,7 +13,8 @@
         "l10n:check": "nc-l10n-check",
         "l10n:fix": "nc-l10n-check --fix",
         "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
-        "prepare": "git config core.hooksPath .githooks || true"
+        "prepare": "git config core.hooksPath .githooks || true",
+        "whatsnew:check": "nc-whatsnew-check"
     },
     "repository": {
         "type": "git",
