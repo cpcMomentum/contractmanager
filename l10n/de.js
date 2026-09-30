@@ -368,6 +368,8 @@ OC.L10N.register(
     "(nur für Administratoren)" : "(nur für Administratoren)",
     "Mehr zu WerkPlus" : "Mehr zu WerkPlus",
     "Alles klar" : "Alles klar",
-    "Was ist neu in VertragsWerk" : "Was ist neu in VertragsWerk"
+    "Was ist neu in VertragsWerk" : "Was ist neu in VertragsWerk",
+    "Neuerungen" : "Neuerungen",
+    "Noch keine Neuerungen." : "Noch keine Neuerungen."
 },
 "nplurals=2; plural=(n != 1);");

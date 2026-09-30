@@ -380,6 +380,57 @@ class WhatsNewServiceTest extends TestCase {
 		self::assertSame('1.8.0', $written['alice/' . WhatsNewService::KEY_LAST_SEEN] ?? null);
 	}
 
+	public function testArchivLiefertAlleVersionenNeuesteZuerst(): void {
+		$this->writeCatalogue($this->catalogueFixture());
+		$written = [];
+		$service = $this->buildService('1.8.0', [], $written);
+
+		$result = $service->getAll();
+
+		self::assertSame(
+			['1.8.0', '1.7.0'],
+			array_map(static fn (array $g): string => $g['version'], $result['versions']),
+			'Alle Versionen, neueste zuerst',
+		);
+		self::assertCount(2, $result['versions'][0]['entries']);
+		self::assertCount(1, $result['versions'][1]['entries']);
+		self::assertSame('Kategorien per Ziehen', $result['versions'][0]['entries'][0]['title']);
+		// Nachlesen ist kein Quittieren: der Archiv-Aufruf beruehrt keine Marke.
+		self::assertSame([], $written, 'getAll darf keine Marke schreiben');
+	}
+
+	public function testArchivLaesstZukuenftigeVersionenAus(): void {
+		$this->writeCatalogue($this->catalogueFixture());
+		$written = [];
+		// Installiert ist erst 1.7.5 — die 1.8.0-Eintraege duerfen nicht vorab erscheinen.
+		$service = $this->buildService('1.7.5', [], $written);
+
+		$result = $service->getAll();
+
+		self::assertSame(
+			['1.7.0'],
+			array_map(static fn (array $g): string => $g['version'], $result['versions']),
+		);
+	}
+
+	public function testArchivUebersetztInDieNutzersprache(): void {
+		$this->writeCatalogue($this->catalogueFixture());
+		$written = [];
+		$service = $this->buildService('1.8.0', [], $written, 'en');
+
+		$result = $service->getAll();
+
+		self::assertSame('Older EN', $result['versions'][1]['entries'][0]['title']);
+		self::assertSame('Contracts', $result['versions'][0]['entries'][0]['where']);
+	}
+
+	public function testArchivOhneDateiIstLeer(): void {
+		$written = [];
+		$service = $this->buildService('1.8.0', [], $written);
+
+		self::assertSame(['versions' => []], $service->getAll());
+	}
+
 	/**
 	 * Nur noch das App-Spezifische. Das Schema (de/en-Pflicht, `where`
 	 * zweisprachig, Versionsschluessel `x.y.z`, `plus` boolean) prueft seit

@@ -55,6 +55,7 @@ return [
 
         // „Was ist neu?"-Fenster (#415)
         ['name' => 'whatsNew#index', 'url' => '/api/whatsnew',      'verb' => 'GET'],
+        ['name' => 'whatsNew#all',   'url' => '/api/whatsnew/all',  'verb' => 'GET'],
         ['name' => 'whatsNew#seen',  'url' => '/api/whatsnew/seen', 'verb' => 'POST'],
 
         // AI Extraction API routes
