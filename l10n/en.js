@@ -154,7 +154,6 @@ OC.L10N.register(
     "Papierkorb leer" : "Trash empty",
     "Gelöschte Verträge werden hier angezeigt." : "Deleted contracts will be displayed here.",
     "Papierkorb leeren" : "Empty trash",
-    "Verträge werden nach 30 Tagen automatisch endgültig gelöscht." : "Contracts will be permanently deleted automatically after 30 days.",
     "Als Admin werden Ihre gelöschten Verträge nicht automatisch gelöscht." : "As admin, your deleted contracts are not automatically deleted.",
     "Gelöscht:" : "Deleted:",
     "Endgültig löschen" : "Delete permanently",
@@ -176,7 +175,6 @@ OC.L10N.register(
     "Keine Berechtigung zum Erstellen" : "No permission to create",
     "Keine Berechtigung zum Bearbeiten" : "No permission to edit",
     "Kein Zugriff auf diesen privaten Vertrag" : "No access to this private contract",
-    "Nur eigene Verträge können wiederhergestellt werden" : "Only own contracts can be restored",
     "Berechtigungen" : "Permissions",
     "Editor-Berechtigung" : "Editor permission",
     "Viewer-Berechtigung" : "Viewer permission",
@@ -370,6 +368,11 @@ OC.L10N.register(
     "Alles klar" : "Got it",
     "Was ist neu in VertragsWerk" : "What's new in VertragsWerk",
     "Neuerungen" : "What's new",
-    "Noch keine Neuerungen." : "No news yet."
+    "Noch keine Neuerungen." : "No news yet.",
+    "Gelöscht von" : "Deleted by",
+    "Verträge, die ihr Eigentümer selbst gelöscht hat, werden nach 30 Tagen endgültig gelöscht. Von anderen gelöschte Verträge bleiben, bis sie wiederhergestellt oder von einem Administrator gelöscht werden." : "Contracts deleted by their owner are permanently deleted after 30 days. Contracts deleted by someone else stay until they are restored or deleted by an administrator.",
+    "%1$s hat deinen Vertrag „%2$s“ in den Papierkorb gelegt" : "%1$s moved your contract “%2$s” to the trash",
+    "Du kannst ihn im Papierkorb wiederherstellen." : "You can restore it from the trash.",
+    "Keine Berechtigung, diesen Vertrag wiederherzustellen" : "No permission to restore this contract"
 },
 "nplurals=2; plural=(n != 1);");

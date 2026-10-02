@@ -9,6 +9,7 @@ use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
+use OCA\ContractManager\Notification\NotificationService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\L10N\IFactory;
@@ -36,6 +37,7 @@ class ContractService {
 		private ContractMapper $mapper,
 		private ReminderOptOutMapper $optOutMapper,
 		private IFactory $l10nFactory,
+		private NotificationService $notificationService,
 	) {
 	}
 
@@ -207,21 +209,31 @@ class ContractService {
 	}
 
 	/**
-	 * Check if a user can restore a contract from trash
+	 * Check if a user can restore a contract from trash (#438)
 	 *
-	 * Admin can restore any contract.
-	 * Others can only restore their own deleted contracts.
+	 * Whoever could have deleted it may bring it back: admins, and editors for
+	 * every contract they can see. Creator and responsible user may always
+	 * restore, even without the editor role, so a deletion by someone else never
+	 * locks the owner out. Restoring only undoes a deletion, so the rule is
+	 * deliberately generous. ContractMapper::findDeletedRestorableBy() lists
+	 * exactly these contracts.
 	 *
 	 * @throws ForbiddenException
 	 */
-	public function checkRestoreAccess(Contract $contract, string $userId, bool $isAdmin): void {
+	public function checkRestoreAccess(Contract $contract, string $userId, bool $isAdmin, bool $isEditor): void {
 		if ($isAdmin) {
 			return;
 		}
 
-		if ($contract->getCreatedBy() !== $userId) {
-			throw new ForbiddenException($this->l()->t('Nur eigene Verträge können wiederhergestellt werden'));
+		if ($contract->getCreatedBy() === $userId || $contract->getResponsibleUser() === $userId) {
+			return;
 		}
+
+		if ($isEditor && !$contract->getIsPrivate()) {
+			return;
+		}
+
+		throw new ForbiddenException($this->l()->t('Keine Berechtigung, diesen Vertrag wiederherzustellen'));
 	}
 
 	/**
@@ -264,12 +276,12 @@ class ContractService {
     }
 
     /**
-     * Find deleted contracts for a user (their trash)
+     * Trashed contracts a non-admin may restore — their trash view (#438)
      *
      * @return Contract[]
      */
-    public function findDeletedByUser(string $userId): array {
-        return $this->mapper->findDeletedByUser($userId);
+    public function findDeletedRestorableBy(string $userId, bool $isEditor): array {
+        return $this->mapper->findDeletedRestorableBy($userId, $isEditor);
     }
 
     /**
@@ -474,11 +486,14 @@ class ContractService {
     /**
      * Soft-delete a contract (move to trash)
      *
+     * Records who deleted it (#438). When that is not the owner, the owner is
+     * notified — otherwise the contract would simply vanish from their list.
+     *
      * Note: Access check must be done by caller using checkWriteAccess()
      *
      * @throws NotFoundException
      */
-    public function softDelete(int $id): Contract {
+    public function softDelete(int $id, string $userId): Contract {
         try {
             $contract = $this->mapper->find($id);
         } catch (DoesNotExistException|MultipleObjectsReturnedException $e) {
@@ -486,9 +501,16 @@ class ContractService {
         }
 
         $contract->setDeletedAt(new DateTime());
+        $contract->setDeletedBy($userId);
         $contract->setUpdatedAt(new DateTime());
 
-        return $this->mapper->update($contract);
+        $contract = $this->mapper->update($contract);
+
+        if ($contract->getEffectiveOwner() !== $userId) {
+            $this->notificationService->notifyOwnerAboutTrashedContract($contract, $userId);
+        }
+
+        return $contract;
     }
 
     /**
@@ -506,6 +528,7 @@ class ContractService {
         }
 
         $contract->setDeletedAt(null);
+        $contract->setDeletedBy(null);
         $contract->setUpdatedAt(new DateTime());
 
         return $this->mapper->update($contract);
