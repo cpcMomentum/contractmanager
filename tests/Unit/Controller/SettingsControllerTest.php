@@ -338,4 +338,3 @@ class SettingsControllerTest extends TestCase {
 		$this->controller->update(backupInterval: 'daily');
 	}
 }
-

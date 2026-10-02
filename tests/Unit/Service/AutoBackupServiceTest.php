@@ -440,4 +440,3 @@ class AutoBackupServiceTest extends TestCase {
 		$this->assertSame(0, $this->service->nextScheduledRun('alice', 'daily', 0));
 	}
 }
-

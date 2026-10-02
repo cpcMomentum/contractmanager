@@ -662,4 +662,3 @@ class SettingsServiceTest extends TestCase {
 		$this->service->setUserBackupHour('alice', -2);
 	}
 }
-
