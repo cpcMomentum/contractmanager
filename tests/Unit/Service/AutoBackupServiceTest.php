@@ -11,6 +11,8 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
+use OCP\IDateTimeZone;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -37,6 +39,7 @@ class AutoBackupServiceTest extends TestCase {
 			$this->rootFolder,
 			$this->timeFactory,
 			$this->createMock(LoggerInterface::class),
+			$this->berlin(),
 		);
 	}
 
@@ -299,4 +302,142 @@ class AutoBackupServiceTest extends TestCase {
 
 		return $this->createMock($class);
 	}
+
+	// ========================================
+	// Fixed backup hour (#399), user in Europe/Berlin
+	// ========================================
+
+	private function berlin(): IDateTimeZone {
+		$tz = $this->createMock(IDateTimeZone::class);
+		$tz->method('getTimeZone')->willReturn(new \DateTimeZone('Europe/Berlin'));
+		return $tz;
+	}
+
+	/** Unix timestamp for a Berlin wall-clock time. */
+	private static function at(string $berlin): int {
+		return (new \DateTimeImmutable($berlin, new \DateTimeZone('Europe/Berlin')))->getTimestamp();
+	}
+
+	private static function asBerlin(int $ts): string {
+		return (new \DateTimeImmutable('@' . $ts))->setTimezone(new \DateTimeZone('Europe/Berlin'))->format('Y-m-d H:i');
+	}
+
+	/**
+	 * @return array<string, array{0: string, 1: string, 2: string}>
+	 */
+	public static function nextSlotCases(): array {
+		// interval, last run (Berlin), expected next run (Berlin) — hour 03
+		return [
+			'täglich nach planmäßigem Lauf' => ['daily', '2026-10-01 03:00', '2026-10-02 03:00'],
+			'täglich nach manuellem Lauf am Nachmittag' => ['daily', '2026-10-01 14:00', '2026-10-02 03:00'],
+			'täglich nach manuellem Lauf vor der Uhrzeit' => ['daily', '2026-10-01 01:00', '2026-10-01 03:00'],
+			'wöchentlich' => ['weekly', '2026-09-28 03:00', '2026-10-05 03:00'],
+			'monatlich (30 Tage)' => ['monthly', '2026-09-01 03:00', '2026-10-01 03:00'],
+			'über die Zeitumstellung hinweg' => ['daily', '2026-10-24 03:00', '2026-10-25 03:00'],
+		];
+	}
+
+	#[DataProvider('nextSlotCases')]
+	public function testNextSlotAfter(string $interval, string $lastRun, string $expected): void {
+		$next = AutoBackupService::nextSlotAfter($interval, self::at($lastRun), 3, new \DateTimeZone('Europe/Berlin'));
+
+		$this->assertSame($expected, self::asBerlin($next));
+	}
+
+	public function testDaylightSavingKeepsTheWallClockHour(): void {
+		// 24 Oct is still summer time, 25 Oct winter time: one day = 25 hours.
+		$next = AutoBackupService::nextSlotAfter('daily', self::at('2026-10-24 03:00'), 3, new \DateTimeZone('Europe/Berlin'));
+
+		$this->assertSame(25 * 3600, $next - self::at('2026-10-24 03:00'));
+	}
+
+	public function testLatestSlot(): void {
+		$tz = new \DateTimeZone('Europe/Berlin');
+
+		$this->assertSame('2026-10-01 03:00', self::asBerlin(AutoBackupService::latestSlot(self::at('2026-10-02 02:30'), 3, $tz)));
+		$this->assertSame('2026-10-02 03:00', self::asBerlin(AutoBackupService::latestSlot(self::at('2026-10-02 03:30'), 3, $tz)));
+	}
+
+	/**
+	 * Runs the scheduler once for a single user with hour 03 and returns the
+	 * stored anchor, or null when nothing was backed up.
+	 */
+	private function runWithHour(string $interval, int $lastRun, int $now): ?int {
+		$this->timeFactory->method('getTime')->willReturn($now);
+		$this->settingsService->method('getUsersWithBackupEnabled')->willReturn(['alice']);
+		$this->settingsService->method('getUserBackupInterval')->willReturn($interval);
+		$this->settingsService->method('getUserBackupLastRun')->willReturn($lastRun);
+		$this->settingsService->method('getUserBackupHour')->willReturn(3);
+		$this->settingsService->method('getUserBackupFolder')->willReturn('/VertragsWerk-Backup');
+		$this->exportService->method('exportJson')->willReturn('{}');
+
+		$target = $this->createMock(Folder::class);
+		$target->method('getDirectoryListing')->willReturn([]);
+		$target->method('newFile')->willReturn($this->createMock(File::class));
+		$home = $this->mockUserHome();
+		$home->method('nodeExists')->willReturn(true);
+		$home->method('get')->willReturn($target);
+		$this->rootFolder->method('getUserFolder')->willReturn($home);
+
+		$anchor = null;
+		$this->settingsService->method('setUserBackupLastRun')->willReturnCallback(
+			static function (string $uid, int $ts) use (&$anchor): void {
+				$anchor = $ts;
+			}
+		);
+
+		$this->service->runDueBackups();
+		return $anchor;
+	}
+
+	public function testFixedHourIsNotDueBeforeTheHour(): void {
+		$this->assertNull($this->runWithHour('daily', self::at('2026-10-01 03:00'), self::at('2026-10-02 02:30')));
+	}
+
+	public function testFixedHourRunsAtTheHourAndAnchorsOnTheSlot(): void {
+		// The hourly job fires at 03:40; the anchor is 03:00, not the run time,
+		// so the hour does not creep later day by day.
+		$anchor = $this->runWithHour('daily', self::at('2026-10-01 03:00'), self::at('2026-10-02 03:40'));
+
+		$this->assertSame('2026-10-02 03:00', self::asBerlin((int)$anchor));
+	}
+
+	public function testFixedHourCatchesUpMissedDaysWithOneSnapshot(): void {
+		$anchor = $this->runWithHour('daily', self::at('2026-09-25 03:00'), self::at('2026-10-02 10:00'));
+
+		$this->assertSame('2026-10-02 03:00', self::asBerlin((int)$anchor));
+	}
+
+	public function testFixedHourRunsNextMorningAfterAnAfternoonBackup(): void {
+		// "Jetzt sichern" at 14:00: the plain interval would wait until 14:00
+		// the next day, the fixed hour runs at 03:00 already.
+		$anchor = $this->runWithHour('daily', self::at('2026-10-01 14:00'), self::at('2026-10-02 03:10'));
+
+		$this->assertSame('2026-10-02 03:00', self::asBerlin((int)$anchor));
+	}
+
+	public function testWeeklyFixedHourWaitsTheFullWeek(): void {
+		$this->assertNull($this->runWithHour('weekly', self::at('2026-09-28 03:00'), self::at('2026-10-04 23:00')));
+	}
+
+	public function testNextScheduledRunWithoutHourKeepsThePlainInterval(): void {
+		$this->settingsService->method('getUserBackupHour')->willReturn(null);
+
+		$this->assertSame(1_700_000_000 + 86400, $this->service->nextScheduledRun('alice', 'daily', 1_700_000_000));
+	}
+
+	public function testNextScheduledRunWithHourFollowsTheSchedule(): void {
+		$this->settingsService->method('getUserBackupHour')->willReturn(3);
+
+		$next = $this->service->nextScheduledRun('alice', 'daily', self::at('2026-10-01 14:00'));
+
+		$this->assertSame('2026-10-02 03:00', self::asBerlin($next));
+	}
+
+	public function testNextScheduledRunIsZeroBeforeTheFirstBackup(): void {
+		$this->settingsService->method('getUserBackupHour')->willReturn(3);
+
+		$this->assertSame(0, $this->service->nextScheduledRun('alice', 'daily', 0));
+	}
 }
+

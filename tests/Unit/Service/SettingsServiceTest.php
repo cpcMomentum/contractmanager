@@ -630,4 +630,36 @@ class SettingsServiceTest extends TestCase {
 
 		$this->assertNull($this->service->getUserByCalendarFeedToken('unknown'));
 	}
+
+	// ----- Fixed backup hour (#399) -----
+
+	public function testBackupHourParsesStoredValue(): void {
+		$this->config->method('getUserValue')->willReturnOnConsecutiveCalls('', '7', '0', '24', 'x');
+
+		$this->assertNull($this->service->getUserBackupHour('alice'));
+		$this->assertSame(7, $this->service->getUserBackupHour('alice'));
+		$this->assertSame(0, $this->service->getUserBackupHour('alice'));
+		$this->assertNull($this->service->getUserBackupHour('alice'), 'out of range');
+		$this->assertNull($this->service->getUserBackupHour('alice'), 'not a number');
+	}
+
+	public function testSetBackupHourStoresIt(): void {
+		$this->config->expects($this->once())->method('setUserValue')->with('alice', 'contractmanager', 'backup_hour', '22');
+
+		$this->service->setUserBackupHour('alice', 22);
+	}
+
+	public function testSetBackupHourNullClearsIt(): void {
+		$this->config->expects($this->once())->method('deleteUserValue')->with('alice', 'contractmanager', 'backup_hour');
+
+		$this->service->setUserBackupHour('alice', null);
+	}
+
+	public function testSetBackupHourIgnoresOutOfRange(): void {
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$this->service->setUserBackupHour('alice', 24);
+		$this->service->setUserBackupHour('alice', -2);
+	}
 }
+

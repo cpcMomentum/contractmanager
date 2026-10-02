@@ -46,6 +46,8 @@ class SettingsService {
 	private const KEY_BACKUP_ENABLED = 'backup_enabled';
 	private const KEY_BACKUP_FOLDER = 'backup_folder';
 	private const KEY_BACKUP_INTERVAL = 'backup_interval';
+	// Full hour (0-23) in the user's timezone; unset = plain interval as before (#399).
+	private const KEY_BACKUP_HOUR = 'backup_hour';
 	// Schedule anchor that drives due-checking; advanced by whole intervals so the
 	// rhythm does not drift (#375). NOT the actual snapshot time.
 	private const KEY_BACKUP_LAST_RUN = 'backup_last_run';
@@ -601,6 +603,34 @@ class SettingsService {
 			self::KEY_BACKUP_INTERVAL,
 			$interval
 		);
+	}
+
+	/**
+	 * Fixed hour of day (0-23, user's timezone) for the automatic backup, or
+	 * null when none is set and the plain interval applies (#399).
+	 */
+	public function getUserBackupHour(string $userId): ?int {
+		$value = $this->config->getUserValue($userId, Application::APP_ID, self::KEY_BACKUP_HOUR, '');
+		if ($value === '' || !ctype_digit($value)) {
+			return null;
+		}
+		$hour = (int)$value;
+		return $hour <= 23 ? $hour : null;
+	}
+
+	/**
+	 * Set the fixed backup hour, or clear it with null. Values outside 0-23
+	 * are ignored.
+	 */
+	public function setUserBackupHour(string $userId, ?int $hour): void {
+		if ($hour === null) {
+			$this->config->deleteUserValue($userId, Application::APP_ID, self::KEY_BACKUP_HOUR);
+			return;
+		}
+		if ($hour < 0 || $hour > 23) {
+			return;
+		}
+		$this->config->setUserValue($userId, Application::APP_ID, self::KEY_BACKUP_HOUR, (string)$hour);
 	}
 
 	/**

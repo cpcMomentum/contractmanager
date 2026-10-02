@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Feste Uhrzeit für das automatische Backup**: In den Backup-Einstellungen lässt sich zusätzlich zum Intervall eine volle Stunde wählen (00 bis 23 Uhr, in der eigenen Zeitzone). Die Sicherung läuft dann täglich, wöchentlich oder monatlich zu dieser Uhrzeit und wandert nicht mehr mit dem Zeitpunkt der letzten Sicherung mit, auch nicht über die Zeitumstellung. Ohne Uhrzeit bleibt alles wie bisher (#399)
+
 ### Fixed
 - **Zugriff nur mit Rolle**: Verträge, Archiv, Papierkorb, Vertragspartner und Kategorien liefert VertragsWerk nur noch an Konten mit einer Rolle (Administrator, Editor oder Betrachter). Bisher erhielt jedes Konto, für das die App freigeschaltet ist, auch ohne Rolle alle nicht-privaten Verträge. Das KI-Auslesen von PDFs setzt jetzt Bearbeitungsrechte voraus. Wer keine Rolle hat, sieht statt einer leeren App den Hinweis, sich an die Nextcloud-Administration zu wenden
 

@@ -375,6 +375,8 @@ OC.L10N.register(
     "Du kannst ihn im Papierkorb wiederherstellen." : "Du kannst ihn im Papierkorb wiederherstellen.",
     "Keine Berechtigung, diesen Vertrag wiederherzustellen" : "Keine Berechtigung, diesen Vertrag wiederherzustellen",
     "Kein Zugriff auf VertragsWerk" : "Kein Zugriff auf VertragsWerk",
-    "Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration." : "Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration."
+    "Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration." : "Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration.",
+    "Uhrzeit" : "Uhrzeit",
+    "Keine feste Uhrzeit" : "Keine feste Uhrzeit"
 },
 "nplurals=2; plural=(n != 1);");
