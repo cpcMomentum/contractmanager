@@ -114,7 +114,7 @@ class ContractController extends Controller {
 	}
 
 	/**
-	 * Get contracts in trash (user sees own, admin sees all)
+	 * Get contracts in trash: admin sees all, others what they may restore (#438)
 	 */
 	#[NoAdminRequired]
 	public function trash(): JSONResponse {
@@ -124,7 +124,8 @@ class ContractController extends Controller {
 			return new JSONResponse($this->service->findAllDeleted());
 		}
 
-		return new JSONResponse($this->service->findDeletedByUser($this->userId));
+		$isEditor = $this->permissionService->isEditor($this->userId);
+		return new JSONResponse($this->service->findDeletedRestorableBy($this->userId, $isEditor));
 	}
 
 	/**
@@ -404,7 +405,7 @@ class ContractController extends Controller {
 			$isEditor = $this->permissionService->isEditor($this->userId);
 
 			$this->service->checkWriteAccess($contract, $this->userId, $isAdmin, $isEditor);
-			$this->service->softDelete($id);
+			$this->service->softDelete($id, $this->userId);
 
 			return new JSONResponse(['success' => true]);
 		} catch (NotFoundException $e) {
@@ -415,15 +416,16 @@ class ContractController extends Controller {
 	}
 
 	/**
-	 * Restore a contract from trash (user can restore own, admin can restore all)
+	 * Restore a contract from trash (#438: admin, creator, responsible user, or an editor for non-private contracts)
 	 */
 	#[NoAdminRequired]
 	public function restoreFromTrash(int $id): JSONResponse {
 		try {
 			$contract = $this->service->find($id);
 			$isAdmin = $this->permissionService->isAdmin($this->userId);
+			$isEditor = $this->permissionService->isEditor($this->userId);
 
-			$this->service->checkRestoreAccess($contract, $this->userId, $isAdmin);
+			$this->service->checkRestoreAccess($contract, $this->userId, $isAdmin, $isEditor);
 			$restoredContract = $this->service->restoreFromTrash($id);
 
 			return new JSONResponse($restoredContract);

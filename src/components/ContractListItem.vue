@@ -22,6 +22,10 @@
 					<span class="sep">·</span>
 					<span>{{ t('contractmanager', 'Gelöscht:') }} {{ formatDate(contract.deletedAt) }}</span>
 				</template>
+				<template v-if="mode === 'trash' && contract.deletedBy">
+					<span class="sep">·</span>
+					<span>{{ t('contractmanager', 'Gelöscht von') }}: {{ contract.deletedBy }}</span>
+				</template>
 				<template v-if="showCreator && contract.createdBy">
 					<span class="sep">·</span>
 					<span>{{ t('contractmanager', 'Erstellt von') }}: {{ contract.createdBy }}</span>
@@ -73,7 +77,10 @@
 					</template>
 					{{ t('contractmanager', 'Archivieren') }}
 				</NcActionButton>
-				<NcActionButton v-if="(contract.archived || mode === 'trash') && canEdit"
+				<!-- In the trash the server lists only what this user may restore
+				     (#438), so the action does not depend on the editor role there:
+				     a responsible viewer must be able to undo a deletion too. -->
+				<NcActionButton v-if="mode === 'trash' || (contract.archived && canEdit)"
 					:close-after-click="true"
 					@click="$emit('restore', contract)">
 					<template #icon>

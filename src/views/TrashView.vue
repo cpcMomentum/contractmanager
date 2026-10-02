@@ -12,12 +12,11 @@
 			</NcButton>
 		</div>
 
-		<NcNoteCard v-if="!isAdmin && trashedContracts.length > 0" type="info">
-			{{ t('contractmanager', 'Verträge werden nach 30 Tagen automatisch endgültig gelöscht.') }}
-		</NcNoteCard>
-
-		<NcNoteCard v-if="isAdmin && trashedContracts.length > 0" type="info">
-			{{ t('contractmanager', 'Als Admin werden Ihre gelöschten Verträge nicht automatisch gelöscht.') }}
+		<NcNoteCard v-if="trashedContracts.length > 0" type="info">
+			<p>{{ t('contractmanager', 'Verträge, die ihr Eigentümer selbst gelöscht hat, werden nach 30 Tagen endgültig gelöscht. Von anderen gelöschte Verträge bleiben, bis sie wiederhergestellt oder von einem Administrator gelöscht werden.') }}</p>
+			<p v-if="isAdmin">
+				{{ t('contractmanager', 'Als Admin werden Ihre gelöschten Verträge nicht automatisch gelöscht.') }}
+			</p>
 		</NcNoteCard>
 
 		<div v-if="loading" class="trash-view__loading">

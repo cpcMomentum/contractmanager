@@ -72,7 +72,9 @@
 				</template>
 			</NcAppNavigationItem>
 
-			<NcAppNavigationItem v-if="canEdit"
+			<!-- Also shown to non-editors when something of theirs lies in the
+			     trash (#438): an owner notified about a deletion must find it. -->
+			<NcAppNavigationItem v-if="canEdit || trashedCount > 0"
 				:name="t('contractmanager', 'Papierkorb')"
 				:class="{ active: currentView === 'trash' }"
 				@click="currentView = 'trash'; selectedCategoryId = null">
