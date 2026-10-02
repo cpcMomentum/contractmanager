@@ -37,7 +37,7 @@
 				</NcAppNavigationItem>
 
 				<!-- Category filters. Double as drop targets: dragging a contract row
-			     onto one reassigns its category (#359). -->
+				     onto one reassigns its category (#359). -->
 				<NcAppNavigationItem v-for="category in allCategories"
 					:key="category.id"
 					:name="category.name"
@@ -85,7 +85,7 @@
 				</NcAppNavigationItem>
 
 				<!-- Also shown to non-editors when something of theirs lies in the
-			     trash (#438): an owner notified about a deletion must find it. -->
+				     trash (#438): an owner notified about a deletion must find it. -->
 				<NcAppNavigationItem v-if="canEdit || trashedCount > 0"
 					:name="t('contractmanager', 'Papierkorb')"
 					:class="{ active: currentView === 'trash' }"
@@ -107,8 +107,8 @@
 						</template>
 					</NcAppNavigationItem>
 					<!-- Dauerhafter Zugang zu den Neuerungen (#427): oeffnet das
-				     „Was ist neu?"-Fenster im Archiv-Modus (alle bisherigen Punkte).
-				     Kein eigener View, nur ein Knopf. -->
+					     „Was ist neu?"-Fenster im Archiv-Modus (alle bisherigen Punkte).
+					     Kein eigener View, nur ein Knopf. -->
 					<NcAppNavigationItem :name="t('contractmanager', 'Neuerungen')"
 						@click="openWhatsNew">
 						<template #icon>
@@ -126,7 +126,7 @@
 			</NcAppContent>
 
 			<!-- „Was ist neu?"-Fenster (#415): meldet sich selbst, wenn es etwas zu
-		     berichten gibt, und bleibt sonst unsichtbar. -->
+			     berichten gibt, und bleibt sonst unsichtbar. -->
 			<WhatsNewDialog ref="whatsNew" />
 		</template>
 	</NcContent>
