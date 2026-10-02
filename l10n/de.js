@@ -154,7 +154,6 @@ OC.L10N.register(
     "Papierkorb leer" : "Papierkorb leer",
     "Gelöschte Verträge werden hier angezeigt." : "Gelöschte Verträge werden hier angezeigt.",
     "Papierkorb leeren" : "Papierkorb leeren",
-    "Verträge werden nach 30 Tagen automatisch endgültig gelöscht." : "Verträge werden nach 30 Tagen automatisch endgültig gelöscht.",
     "Als Admin werden Ihre gelöschten Verträge nicht automatisch gelöscht." : "Als Admin werden Ihre gelöschten Verträge nicht automatisch gelöscht.",
     "Gelöscht:" : "Gelöscht:",
     "Endgültig löschen" : "Endgültig löschen",
@@ -176,7 +175,6 @@ OC.L10N.register(
     "Keine Berechtigung zum Erstellen" : "Keine Berechtigung zum Erstellen",
     "Keine Berechtigung zum Bearbeiten" : "Keine Berechtigung zum Bearbeiten",
     "Kein Zugriff auf diesen privaten Vertrag" : "Kein Zugriff auf diesen privaten Vertrag",
-    "Nur eigene Verträge können wiederhergestellt werden" : "Nur eigene Verträge können wiederhergestellt werden",
     "Berechtigungen" : "Berechtigungen",
     "Editor-Berechtigung" : "Editor-Berechtigung",
     "Viewer-Berechtigung" : "Viewer-Berechtigung",
@@ -370,6 +368,11 @@ OC.L10N.register(
     "Alles klar" : "Alles klar",
     "Was ist neu in VertragsWerk" : "Was ist neu in VertragsWerk",
     "Neuerungen" : "Neuerungen",
-    "Noch keine Neuerungen." : "Noch keine Neuerungen."
+    "Noch keine Neuerungen." : "Noch keine Neuerungen.",
+    "Gelöscht von" : "Gelöscht von",
+    "Verträge, die ihr Eigentümer selbst gelöscht hat, werden nach 30 Tagen endgültig gelöscht. Von anderen gelöschte Verträge bleiben, bis sie wiederhergestellt oder von einem Administrator gelöscht werden." : "Verträge, die ihr Eigentümer selbst gelöscht hat, werden nach 30 Tagen endgültig gelöscht. Von anderen gelöschte Verträge bleiben, bis sie wiederhergestellt oder von einem Administrator gelöscht werden.",
+    "%1$s hat deinen Vertrag „%2$s“ in den Papierkorb gelegt" : "%1$s hat deinen Vertrag „%2$s“ in den Papierkorb gelegt",
+    "Du kannst ihn im Papierkorb wiederherstellen." : "Du kannst ihn im Papierkorb wiederherstellen.",
+    "Keine Berechtigung, diesen Vertrag wiederherzustellen" : "Keine Berechtigung, diesen Vertrag wiederherzustellen"
 },
 "nplurals=2; plural=(n != 1);");

@@ -44,6 +44,8 @@ export interface Contract {
 	archived?: boolean
 	isPrivate?: boolean
 	deletedAt?: string | null
+	/** Who moved it to the trash (#438); null when unknown or not trashed. */
+	deletedBy?: string | null
 	createdBy?: string
 	responsibleUser?: string | null
 	createdAt?: string

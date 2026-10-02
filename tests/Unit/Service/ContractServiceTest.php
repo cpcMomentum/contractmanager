@@ -8,6 +8,7 @@ use DateTime;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
+use OCA\ContractManager\Notification\NotificationService;
 use OCA\ContractManager\Service\ContractService;
 use OCA\ContractManager\Service\ForbiddenException;
 use OCA\ContractManager\Service\NotFoundException;
@@ -15,6 +16,7 @@ use OCA\ContractManager\Service\ValidationException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ContractServiceTest extends TestCase {
@@ -22,6 +24,7 @@ class ContractServiceTest extends TestCase {
 	private ContractMapper $mapper;
 	private ReminderOptOutMapper $optOutMapper;
 	private IFactory $l10nFactory;
+	private NotificationService $notificationService;
 	private ContractService $service;
 
 	protected function setUp(): void {
@@ -32,7 +35,8 @@ class ContractServiceTest extends TestCase {
 		$l = $this->createMock(IL10N::class);
 		$l->method('t')->willReturnArgument(0);
 		$this->l10nFactory->method('get')->willReturn($l);
-		$this->service = new ContractService($this->mapper, $this->optOutMapper, $this->l10nFactory);
+		$this->notificationService = $this->createMock(NotificationService::class);
+		$this->service = new ContractService($this->mapper, $this->optOutMapper, $this->l10nFactory, $this->notificationService);
 	}
 
 	// ========================================
@@ -525,5 +529,104 @@ class ContractServiceTest extends TestCase {
 		$contract->setStatus(Contract::STATUS_ACTIVE);
 		$contract->setArchived(0);
 		return $contract;
+	}
+
+	// ========================================
+	// Trash (#438)
+	// ========================================
+
+	private function trashable(string $createdBy = 'alice', ?string $responsible = null, bool $private = false): Contract {
+		$contract = new Contract();
+		$contract->setId(7);
+		$contract->setName('Mobilfunk');
+		$contract->setCreatedBy($createdBy);
+		$contract->setResponsibleUser($responsible);
+		$contract->setIsPrivate($private);
+		return $contract;
+	}
+
+	public function testSoftDeleteRecordsWhoDeleted(): void {
+		$contract = $this->trashable();
+		$this->mapper->method('find')->willReturn($contract);
+		$this->mapper->method('update')->willReturnArgument(0);
+
+		$result = $this->service->softDelete(7, 'bob');
+
+		$this->assertSame('bob', $result->getDeletedBy());
+		$this->assertNotNull($result->getDeletedAt());
+	}
+
+	public function testSoftDeleteByOtherUserNotifiesTheOwner(): void {
+		$this->mapper->method('find')->willReturn($this->trashable('alice'));
+		$this->mapper->method('update')->willReturnArgument(0);
+
+		$this->notificationService->expects($this->once())
+			->method('notifyOwnerAboutTrashedContract')
+			->with($this->isInstanceOf(Contract::class), 'bob');
+
+		$this->service->softDelete(7, 'bob');
+	}
+
+	public function testSoftDeleteByOwnerDoesNotNotify(): void {
+		$this->mapper->method('find')->willReturn($this->trashable('alice'));
+		$this->mapper->method('update')->willReturnArgument(0);
+
+		$this->notificationService->expects($this->never())->method('notifyOwnerAboutTrashedContract');
+
+		$this->service->softDelete(7, 'alice');
+	}
+
+	public function testSoftDeleteByCreatorNotifiesTheResponsibleUser(): void {
+		// The creator is not the owner once someone else is responsible.
+		$this->mapper->method('find')->willReturn($this->trashable('alice', 'carol'));
+		$this->mapper->method('update')->willReturnArgument(0);
+
+		$this->notificationService->expects($this->once())->method('notifyOwnerAboutTrashedContract');
+
+		$this->service->softDelete(7, 'alice');
+	}
+
+	public function testRestoreFromTrashClearsDeleter(): void {
+		$contract = $this->trashable();
+		$contract->setDeletedAt(new DateTime());
+		$contract->setDeletedBy('bob');
+		$this->mapper->method('find')->willReturn($contract);
+		$this->mapper->method('update')->willReturnArgument(0);
+
+		$result = $this->service->restoreFromTrash(7);
+
+		$this->assertNull($result->getDeletedBy());
+		$this->assertNull($result->getDeletedAt());
+	}
+
+	/**
+	 * @return array<string, array{0: string, 1: ?string, 2: bool, 3: string, 4: bool, 5: bool, 6: bool}>
+	 */
+	public static function restoreAccessCases(): array {
+		// creator, responsible, private, user, isAdmin, isEditor, allowed
+		return [
+			'admin, fremder privater Vertrag' => ['alice', null, true, 'root', true, false, true],
+			'Ersteller ohne Editor-Rolle' => ['alice', null, false, 'alice', false, false, true],
+			'Zuständiger ohne Editor-Rolle' => ['alice', 'carol', false, 'carol', false, false, true],
+			'Editor, fremder offener Vertrag' => ['alice', null, false, 'bob', false, true, true],
+			'Editor, fremder privater Vertrag' => ['alice', null, true, 'bob', false, true, false],
+			'Viewer, fremder offener Vertrag' => ['alice', null, false, 'bob', false, false, false],
+			'Ersteller, Zuständiger ist ein anderer' => ['alice', 'carol', true, 'alice', false, false, true],
+		];
+	}
+
+	#[DataProvider('restoreAccessCases')]
+	public function testCheckRestoreAccess(string $creator, ?string $responsible, bool $private, string $user, bool $isAdmin, bool $isEditor, bool $allowed): void {
+		$contract = $this->trashable($creator, $responsible, $private);
+
+		if (!$allowed) {
+			$this->expectException(ForbiddenException::class);
+		}
+
+		$this->service->checkRestoreAccess($contract, $user, $isAdmin, $isEditor);
+
+		if ($allowed) {
+			$this->addToAssertionCount(1);
+		}
 	}
 }
