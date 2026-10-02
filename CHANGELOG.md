@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Zugriff nur mit Rolle**: Verträge, Archiv, Papierkorb, Vertragspartner und Kategorien liefert VertragsWerk nur noch an Konten mit einer Rolle (Administrator, Editor oder Betrachter). Bisher erhielt jedes Konto, für das die App freigeschaltet ist, auch ohne Rolle alle nicht-privaten Verträge. Das KI-Auslesen von PDFs setzt jetzt Bearbeitungsrechte voraus. Wer keine Rolle hat, sieht statt einer leeren App den Hinweis, sich an die Nextcloud-Administration zu wenden
+
 ### Changed
 - **Papierkorb sichert Löschungen durch andere ab**: VertragsWerk merkt sich jetzt, wer einen Vertrag in den Papierkorb gelegt hat, und zeigt es dort als „Gelöscht von" an. Legt jemand einen fremden Vertrag in den Papierkorb, bekommt der Eigentümer (Zuständiger, sonst Ersteller) eine Nextcloud-Benachrichtigung; sie verschwindet von selbst, sobald der Vertrag wiederhergestellt oder endgültig gelöscht ist. Wiederherstellen darf jetzt, wer den Vertrag auch hätte löschen dürfen, dazu Ersteller und Zuständiger; der Papierkorb zeigt jedem genau diese Verträge. Endgültig nach 30 Tagen gelöscht werden nur noch Verträge, die ihr Eigentümer selbst gelöscht hat. Von anderen gelöschte Verträge bleiben, bis jemand sie wiederherstellt oder ein Administrator sie endgültig löscht (#438)
 - **Hinweis zum Update:** Verträge, die schon vor diesem Update im Papierkorb lagen, werden nicht mehr automatisch gelöscht, weil nicht bekannt ist, wer sie gelöscht hat. Ein Administrator kann sie über „Papierkorb leeren" entfernen (#438)

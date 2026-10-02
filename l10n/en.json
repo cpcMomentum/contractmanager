@@ -372,7 +372,9 @@
 		"Verträge, die ihr Eigentümer selbst gelöscht hat, werden nach 30 Tagen endgültig gelöscht. Von anderen gelöschte Verträge bleiben, bis sie wiederhergestellt oder von einem Administrator gelöscht werden.": "Contracts deleted by their owner are permanently deleted after 30 days. Contracts deleted by someone else stay until they are restored or deleted by an administrator.",
 		"%1$s hat deinen Vertrag „%2$s“ in den Papierkorb gelegt": "%1$s moved your contract “%2$s” to the trash",
 		"Du kannst ihn im Papierkorb wiederherstellen.": "You can restore it from the trash.",
-		"Keine Berechtigung, diesen Vertrag wiederherzustellen": "No permission to restore this contract"
+		"Keine Berechtigung, diesen Vertrag wiederherzustellen": "No permission to restore this contract",
+		"Kein Zugriff auf VertragsWerk": "No access to VertragsWerk",
+		"Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration.": "You have not been assigned a role in VertragsWerk yet. Please contact your Nextcloud administration."
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }

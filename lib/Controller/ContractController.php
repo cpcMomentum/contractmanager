@@ -32,6 +32,20 @@ class ContractController extends Controller {
 	}
 
 	/**
+	 * Reading contracts requires a VertragsWerk role (admin, editor or viewer).
+	 *
+	 * The app is enabled for every Nextcloud account by default, so being able
+	 * to open it is no permission on its own. Returns the 403 response to send,
+	 * or null when the user may read.
+	 */
+	private function denyWithoutRole(): ?JSONResponse {
+		if ($this->userId === null || !$this->permissionService->hasAccess($this->userId)) {
+			return new JSONResponse(['error' => $this->l->t('Kein Zugriff')], Http::STATUS_FORBIDDEN);
+		}
+		return null;
+	}
+
+	/**
 	 * Search users for the "responsible" picker. Available to anyone who may
 	 * edit contracts (not just admins, unlike the settings principal search).
 	 */
@@ -57,6 +71,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse(
 			$this->withOwnerStatus($this->service->findAllVisible($this->userId, $isAdmin), $isAdmin)
@@ -107,6 +124,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function archived(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse(
 			$this->withOwnerStatus($this->service->findArchivedVisible($this->userId, $isAdmin), $isAdmin)
@@ -118,6 +138,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function trash(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 
 		if ($isAdmin) {
@@ -142,6 +165,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function vendors(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse($this->service->findVisibleVendors($this->userId, $isAdmin));
 	}
@@ -151,6 +177,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(int $id): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		try {
 			$contract = $this->service->find($id);
 			$isAdmin = $this->permissionService->isAdmin($this->userId);
@@ -171,6 +200,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function getReminderOptOut(int $id): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
@@ -192,6 +224,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function setReminderOptOut(int $id, bool $optedOut): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
