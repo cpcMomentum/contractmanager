@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Controller;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Service\CategoryService;
 use OCA\ContractManager\Service\NotFoundException;
+use OCA\ContractManager\Service\PermissionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -21,12 +22,16 @@ class CategoryController extends Controller {
         private CategoryService $service,
         private ?string $userId,
         private IL10N $l,
+        private PermissionService $permissionService,
     ) {
         parent::__construct(Application::APP_ID, $request);
     }
 
     #[NoAdminRequired]
     public function index(): JSONResponse {
+        if ($this->userId === null || !$this->permissionService->hasAccess($this->userId)) {
+            return new JSONResponse(['error' => $this->l->t('Kein Zugriff')], Http::STATUS_FORBIDDEN);
+        }
         return new JSONResponse($this->service->findAll());
     }
 

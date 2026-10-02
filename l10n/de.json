@@ -372,7 +372,9 @@
 		"Verträge, die ihr Eigentümer selbst gelöscht hat, werden nach 30 Tagen endgültig gelöscht. Von anderen gelöschte Verträge bleiben, bis sie wiederhergestellt oder von einem Administrator gelöscht werden.": "Verträge, die ihr Eigentümer selbst gelöscht hat, werden nach 30 Tagen endgültig gelöscht. Von anderen gelöschte Verträge bleiben, bis sie wiederhergestellt oder von einem Administrator gelöscht werden.",
 		"%1$s hat deinen Vertrag „%2$s“ in den Papierkorb gelegt": "%1$s hat deinen Vertrag „%2$s“ in den Papierkorb gelegt",
 		"Du kannst ihn im Papierkorb wiederherstellen.": "Du kannst ihn im Papierkorb wiederherstellen.",
-		"Keine Berechtigung, diesen Vertrag wiederherzustellen": "Keine Berechtigung, diesen Vertrag wiederherzustellen"
+		"Keine Berechtigung, diesen Vertrag wiederherzustellen": "Keine Berechtigung, diesen Vertrag wiederherzustellen",
+		"Kein Zugriff auf VertragsWerk": "Kein Zugriff auf VertragsWerk",
+		"Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration.": "Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration."
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }

@@ -105,4 +105,39 @@ describe('contracts store', () => {
 		expect(store.error).toBe('permissions backend down')
 		expect(store.isAdmin).toBe(false)
 	})
+
+	describe('Rolle (Lesezugriff)', () => {
+		const perms = (teil: Record<string, boolean>) => ({
+			isAdmin: false, isEditor: false, isViewer: false, canEdit: false, canDeletePermanently: false, ...teil,
+		})
+
+		it('meldet ohne Rolle hasRole=false, sobald die Rechte geladen sind', async () => {
+			mockedService.getPermissions.mockResolvedValue(perms({}))
+			const store = useContractsStore()
+			expect(store.permissionsLoaded).toBe(false)
+
+			await store.fetchPermissions()
+
+			expect(store.permissionsLoaded).toBe(true)
+			expect(store.hasRole).toBe(false)
+		})
+
+		it.each([['isAdmin'], ['isEditor'], ['isViewer']])('zaehlt %s als Rolle', async (rolle) => {
+			mockedService.getPermissions.mockResolvedValue(perms({ [rolle]: true }))
+			const store = useContractsStore()
+
+			await store.fetchPermissions()
+
+			expect(store.hasRole).toBe(true)
+		})
+
+		it('gilt nach fehlgeschlagenem Abruf nicht als geladen', async () => {
+			mockedService.getPermissions.mockRejectedValue(new Error('500'))
+			const store = useContractsStore()
+
+			await store.fetchPermissions()
+
+			expect(store.permissionsLoaded).toBe(false)
+		})
+	})
 })
