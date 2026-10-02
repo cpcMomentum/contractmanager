@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Controller;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Service\AiExtractionService;
 use OCA\ContractManager\Service\PdfTextService;
+use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -26,6 +27,7 @@ class ExtractionController extends Controller {
 		private IL10N $l,
 		private LoggerInterface $logger,
 		private ?string $userId,
+		private PermissionService $permissionService,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -42,6 +44,12 @@ class ExtractionController extends Controller {
 				['error' => $this->l->t('Nicht angemeldet')],
 				Http::STATUS_UNAUTHORIZED
 			);
+		}
+
+		// Only needed when creating a contract; each call spends the
+		// administrator's AI provider quota.
+		if (!$this->permissionService->canEdit($this->userId)) {
+			return new JSONResponse(['error' => $this->l->t('Kein Zugriff')], Http::STATUS_FORBIDDEN);
 		}
 
 		if (!$this->settingsService->isAiConfigured()) {

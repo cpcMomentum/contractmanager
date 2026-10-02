@@ -9,6 +9,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
+use OCP\IDateTimeZone;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -30,12 +31,20 @@ class AutoBackupService {
 		SettingsService::BACKUP_INTERVAL_MONTHLY => 2592000, // 30 days
 	];
 
+	/** Same intervals in calendar days, for the fixed-hour schedule (#399). */
+	private const INTERVAL_DAYS = [
+		SettingsService::BACKUP_INTERVAL_DAILY => 1,
+		SettingsService::BACKUP_INTERVAL_WEEKLY => 7,
+		SettingsService::BACKUP_INTERVAL_MONTHLY => 30,
+	];
+
 	public function __construct(
 		private ContractExportService $exportService,
 		private SettingsService $settingsService,
 		private IRootFolder $rootFolder,
 		private ITimeFactory $timeFactory,
 		private LoggerInterface $logger,
+		private IDateTimeZone $dateTimeZone,
 	) {
 	}
 
@@ -88,6 +97,54 @@ class AutoBackupService {
 	}
 
 	/**
+	 * Most recent occurrence of the fixed hour at or before $now, in the
+	 * user's timezone (#399).
+	 */
+	public static function latestSlot(int $now, int $hour, \DateTimeZone $tz): int {
+		$slot = (new \DateTimeImmutable('@' . $now))->setTimezone($tz)->setTime($hour, 0);
+		if ($slot->getTimestamp() > $now) {
+			$slot = $slot->modify('-1 day')->setTime($hour, 0);
+		}
+		return $slot->getTimestamp();
+	}
+
+	/**
+	 * Next run on the fixed-hour schedule (#399): the first occurrence of the
+	 * hour after "last run + (interval - 1) days". Daily therefore means the
+	 * next occurrence after the last run, weekly the one six days later.
+	 * Calendar days in the user's timezone keep the wall-clock hour across
+	 * daylight saving changes.
+	 */
+	public static function nextSlotAfter(string $interval, int $lastRun, int $hour, \DateTimeZone $tz): int {
+		$days = self::INTERVAL_DAYS[$interval] ?? self::INTERVAL_DAYS[SettingsService::BACKUP_INTERVAL_WEEKLY];
+		$earliest = (new \DateTimeImmutable('@' . $lastRun))->setTimezone($tz);
+		if ($days > 1) {
+			$earliest = $earliest->modify('+' . ($days - 1) . ' days');
+		}
+		$slot = $earliest->setTime($hour, 0);
+		if ($slot <= $earliest) {
+			$slot = $slot->modify('+1 day')->setTime($hour, 0);
+		}
+		return $slot->getTimestamp();
+	}
+
+	/**
+	 * Absolute time of the next scheduled backup, or 0 when none has run yet
+	 * (nothing to anchor from). With a fixed hour it follows the hour schedule,
+	 * otherwise the drift-free interval anchor.
+	 */
+	public function nextScheduledRun(string $uid, string $interval, int $lastRun): int {
+		if ($lastRun <= 0) {
+			return 0;
+		}
+		$hour = $this->settingsService->getUserBackupHour($uid);
+		if ($hour === null) {
+			return $lastRun + self::intervalSeconds($interval);
+		}
+		return self::nextSlotAfter($interval, $lastRun, $hour, $this->dateTimeZone->getTimeZone(false, $uid));
+	}
+
+	/**
 	 * Run backups for every user whose interval has elapsed.
 	 *
 	 * @return int number of users backed up this pass
@@ -98,14 +155,22 @@ class AutoBackupService {
 		foreach ($this->settingsService->getUsersWithBackupEnabled() as $uid) {
 			$interval = $this->settingsService->getUserBackupInterval($uid);
 			$lastRun = $this->settingsService->getUserBackupLastRun($uid);
-			if (!self::isDue($interval, $lastRun, $now)) {
+			$hour = $this->settingsService->getUserBackupHour($uid);
+			$tz = $hour === null ? null : $this->dateTimeZone->getTimeZone(false, $uid);
+			$due = $tz === null
+				? self::isDue($interval, $lastRun, $now)
+				: $lastRun <= 0 || $now >= self::nextSlotAfter($interval, $lastRun, $hour, $tz);
+			if (!$due) {
 				continue;
 			}
 			try {
 				$this->backupForUser($uid);
-				// Anchor advances by whole intervals (drift-free schedule, #375);
-				// the success timestamp records the real write time for display (#397).
-				$this->settingsService->setUserBackupLastRun($uid, self::nextLastRun($interval, $lastRun, $now));
+				// The anchor stays on the schedule, never on the actual run time:
+				// whole intervals without a fixed hour (#375), the hour's latest
+				// slot with one (#399). Missed runs collapse into one catch-up.
+				// The success timestamp records the real write time for display (#397).
+				$anchor = $tz === null ? self::nextLastRun($interval, $lastRun, $now) : self::latestSlot($now, $hour, $tz);
+				$this->settingsService->setUserBackupLastRun($uid, $anchor);
 				$this->settingsService->setUserBackupLastSuccess($uid, $now);
 				$count++;
 			} catch (\Throwable $e) {

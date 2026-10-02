@@ -14,6 +14,8 @@ export interface UserSettings {
 	backupEnabled?: boolean
 	backupFolder?: string
 	backupInterval?: 'daily' | 'weekly' | 'monthly'
+	/** Fixed full hour 0-23 in the user's timezone; null = plain interval. Send -1 to clear. */
+	backupHour?: number | null
 	backupLastRun?: number
 	backupNextRun?: number
 	[key: string]: unknown

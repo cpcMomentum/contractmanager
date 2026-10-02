@@ -216,6 +216,17 @@
 								<option value="monthly">{{ t('contractmanager', 'Monatlich') }}</option>
 							</select>
 						</div>
+						<div class="settings-item">
+							<label class="settings-label">{{ t('contractmanager', 'Uhrzeit') }}</label>
+							<select v-model="backupHour" class="settings-input" @change="onBackupHourChange">
+								<option value="">
+									{{ t('contractmanager', 'Keine feste Uhrzeit') }}
+								</option>
+								<option v-for="hour in 24" :key="hour" :value="String(hour - 1)">
+									{{ String(hour - 1).padStart(2, '0') }}:00
+								</option>
+							</select>
+						</div>
 						<p class="settings-description">
 							{{ t('contractmanager', 'Es werden die letzten 30 Sicherungen behalten; ältere werden automatisch entfernt.') }}
 						</p>
@@ -792,6 +803,9 @@ export default {
 			backupEnabled: false,
 			backupFolder: '/VertragsWerk-Backup',
 			backupInterval: 'weekly',
+			// '' = no fixed hour; select values are strings.
+			backupHour: '',
+			savedBackupHour: '',
 			backupLastRun: 0,
 			backupNextRun: 0,
 			backingUpNow: false,
@@ -973,6 +987,8 @@ export default {
 				this.backupEnabled = settings.backupEnabled === true
 				this.backupFolder = settings.backupFolder || '/VertragsWerk-Backup'
 				this.backupInterval = settings.backupInterval || 'weekly'
+				this.backupHour = typeof settings.backupHour === 'number' ? String(settings.backupHour) : ''
+				this.savedBackupHour = this.backupHour
 				this.backupLastRun = settings.backupLastRun || 0
 				this.backupNextRun = settings.backupNextRun || 0
 				this.calendarFeedUrl = settings.calendarFeedUrl || ''
@@ -1049,6 +1065,23 @@ export default {
 				console.error('Failed to save backup interval:', error)
 				showError(t('contractmanager', 'Fehler beim Speichern'))
 				this.backupInterval = previous
+			}
+		},
+
+		async onBackupHourChange() {
+			try {
+				const updated = await SettingsService.updateUserSettings({
+					backupHour: this.backupHour === '' ? -1 : Number(this.backupHour),
+				})
+				if (typeof updated.backupNextRun === 'number') {
+					this.backupNextRun = updated.backupNextRun
+				}
+				this.savedBackupHour = this.backupHour
+				showSuccess(t('contractmanager', 'Einstellung gespeichert'))
+			} catch (error) {
+				console.error('Failed to save backup hour:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.backupHour = this.savedBackupHour
 			}
 		},
 

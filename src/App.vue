@@ -1,110 +1,134 @@
 <template>
 	<NcContent app-name="contractmanager">
-		<NcAppNavigation>
-			<div class="nav-search">
-				<NcTextField v-model="searchQuery"
-					:label="t('contractmanager', 'Verträge durchsuchen …')"
-					:show-trailing-button="searchQuery !== ''"
-					trailing-button-icon="close"
-					@trailing-button-click="searchQuery = ''">
-					<template #icon>
-						<MagnifyIcon :size="20" />
-					</template>
-				</NcTextField>
-			</div>
-
-			<NcAppNavigationItem :name="t('contractmanager', 'Verträge')"
-				:class="{ active: currentView === 'contracts' && selectedCategoryId === null }"
-				@click="showAllContracts">
+		<!-- Account without a VertragsWerk role: the server refuses all
+		     contract data, so explain why instead of showing an empty app. -->
+		<NcAppContent v-if="noAccess">
+			<NcEmptyContent :name="t('contractmanager', 'Kein Zugriff auf VertragsWerk')"
+				:description="t('contractmanager', 'Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration.')">
 				<template #icon>
-					<FileDocumentIcon :size="20" />
+					<AccountLockOutlineIcon :size="64" />
 				</template>
-				<template #counter>
-					<NcCounterBubble v-if="contractCount > 0" :count="contractCount" />
-				</template>
-			</NcAppNavigationItem>
-
-			<!-- Category filters. Double as drop targets: dragging a contract row
-			     onto one reassigns its category (#359). -->
-			<NcAppNavigationItem v-for="category in allCategories"
-				:key="category.id"
-				:name="category.name"
-				:class="{ active: currentView === 'contracts' && selectedCategoryId === category.id, 'nav-drop-target': dropTargetKey === category.id }"
-				class="category-item"
-				@click="filterByCategory(category.id)"
-				@dragover.prevent="dropTargetKey = category.id"
-				@dragenter.prevent="dropTargetKey = category.id"
-				@dragleave="onCategoryDragLeave(category.id, $event)"
-				@drop.prevent="onCategoryDrop(category.id, $event)">
-				<template #icon>
-					<TagIcon :size="20" />
-				</template>
-				<template #counter>
-					<NcCounterBubble v-if="getCategoryContractCount(category.id) > 0" :count="getCategoryContractCount(category.id)" />
-				</template>
-			</NcAppNavigationItem>
-
-			<NcAppNavigationItem v-if="uncategorizedCount > 0"
-				:name="t('contractmanager', 'Ohne Kategorie')"
-				:class="{ active: currentView === 'contracts' && selectedCategoryId === 'uncategorized', 'nav-drop-target': dropTargetKey === 'uncategorized' }"
-				class="category-item"
-				@click="filterByCategory('uncategorized')"
-				@dragover.prevent="dropTargetKey = 'uncategorized'"
-				@dragenter.prevent="dropTargetKey = 'uncategorized'"
-				@dragleave="onCategoryDragLeave('uncategorized', $event)"
-				@drop.prevent="onCategoryDrop('uncategorized', $event)">
-				<template #icon>
-					<TagIcon :size="20" />
-				</template>
-				<template #counter>
-					<NcCounterBubble :count="uncategorizedCount" />
-				</template>
-			</NcAppNavigationItem>
-
-			<NcAppNavigationItem :name="t('contractmanager', 'Archiv')"
-				:class="{ active: currentView === 'archive' }"
-				@click="currentView = 'archive'; selectedCategoryId = null">
-				<template #icon>
-					<ArchiveIcon :size="20" />
-				</template>
-				<template #counter>
-					<NcCounterBubble v-if="archivedCount > 0" :count="archivedCount" />
-				</template>
-			</NcAppNavigationItem>
-
-			<NcAppNavigationItem v-if="canEdit"
-				:name="t('contractmanager', 'Papierkorb')"
-				:class="{ active: currentView === 'trash' }"
-				@click="currentView = 'trash'; selectedCategoryId = null">
-				<template #icon>
-					<DeleteIcon :size="20" />
-				</template>
-				<template #counter>
-					<NcCounterBubble v-if="trashedCount > 0" :count="trashedCount" />
-				</template>
-			</NcAppNavigationItem>
-
-			<template #footer>
-				<NcAppNavigationItem :name="t('contractmanager', 'Einstellungen')"
-					:class="{ active: currentView === 'settings' }"
-					@click="currentView = 'settings'; selectedCategoryId = null">
-					<template #icon>
-						<CogIcon :size="20" />
-					</template>
-				</NcAppNavigationItem>
-			</template>
-		</NcAppNavigation>
-
-		<NcAppContent>
-			<ContractList v-if="currentView === 'contracts'" :category-filter="selectedCategoryId" :search-query="searchQuery" />
-			<ArchiveView v-else-if="currentView === 'archive'" />
-			<TrashView v-else-if="currentView === 'trash'" />
-			<SettingsView v-else-if="currentView === 'settings'" />
+			</NcEmptyContent>
 		</NcAppContent>
 
-		<!-- „Was ist neu?"-Fenster (#415): meldet sich selbst, wenn es etwas zu
-		     berichten gibt, und bleibt sonst unsichtbar. -->
-		<WhatsNewDialog />
+		<template v-else-if="permissionsChecked">
+			<NcAppNavigation>
+				<div class="nav-search">
+					<NcTextField v-model="searchQuery"
+						:label="t('contractmanager', 'Verträge durchsuchen …')"
+						:show-trailing-button="searchQuery !== ''"
+						trailing-button-icon="close"
+						@trailing-button-click="searchQuery = ''">
+						<template #icon>
+							<MagnifyIcon :size="20" />
+						</template>
+					</NcTextField>
+				</div>
+
+				<NcAppNavigationItem :name="t('contractmanager', 'Verträge')"
+					:class="{ active: currentView === 'contracts' && selectedCategoryId === null }"
+					@click="showAllContracts">
+					<template #icon>
+						<FileDocumentIcon :size="20" />
+					</template>
+					<template #counter>
+						<NcCounterBubble v-if="contractCount > 0" :count="contractCount" />
+					</template>
+				</NcAppNavigationItem>
+
+				<!-- Category filters. Double as drop targets: dragging a contract row
+				     onto one reassigns its category (#359). -->
+				<NcAppNavigationItem v-for="category in allCategories"
+					:key="category.id"
+					:name="category.name"
+					:class="{ active: currentView === 'contracts' && selectedCategoryId === category.id, 'nav-drop-target': dropTargetKey === category.id }"
+					class="category-item"
+					@click="filterByCategory(category.id)"
+					@dragover.prevent="dropTargetKey = category.id"
+					@dragenter.prevent="dropTargetKey = category.id"
+					@dragleave="onCategoryDragLeave(category.id, $event)"
+					@drop.prevent="onCategoryDrop(category.id, $event)">
+					<template #icon>
+						<TagIcon :size="20" />
+					</template>
+					<template #counter>
+						<NcCounterBubble v-if="getCategoryContractCount(category.id) > 0" :count="getCategoryContractCount(category.id)" />
+					</template>
+				</NcAppNavigationItem>
+
+				<NcAppNavigationItem v-if="uncategorizedCount > 0"
+					:name="t('contractmanager', 'Ohne Kategorie')"
+					:class="{ active: currentView === 'contracts' && selectedCategoryId === 'uncategorized', 'nav-drop-target': dropTargetKey === 'uncategorized' }"
+					class="category-item"
+					@click="filterByCategory('uncategorized')"
+					@dragover.prevent="dropTargetKey = 'uncategorized'"
+					@dragenter.prevent="dropTargetKey = 'uncategorized'"
+					@dragleave="onCategoryDragLeave('uncategorized', $event)"
+					@drop.prevent="onCategoryDrop('uncategorized', $event)">
+					<template #icon>
+						<TagIcon :size="20" />
+					</template>
+					<template #counter>
+						<NcCounterBubble :count="uncategorizedCount" />
+					</template>
+				</NcAppNavigationItem>
+
+				<NcAppNavigationItem :name="t('contractmanager', 'Archiv')"
+					:class="{ active: currentView === 'archive' }"
+					@click="currentView = 'archive'; selectedCategoryId = null">
+					<template #icon>
+						<ArchiveIcon :size="20" />
+					</template>
+					<template #counter>
+						<NcCounterBubble v-if="archivedCount > 0" :count="archivedCount" />
+					</template>
+				</NcAppNavigationItem>
+
+				<!-- Also shown to non-editors when something of theirs lies in the
+				     trash (#438): an owner notified about a deletion must find it. -->
+				<NcAppNavigationItem v-if="canEdit || trashedCount > 0"
+					:name="t('contractmanager', 'Papierkorb')"
+					:class="{ active: currentView === 'trash' }"
+					@click="currentView = 'trash'; selectedCategoryId = null">
+					<template #icon>
+						<DeleteIcon :size="20" />
+					</template>
+					<template #counter>
+						<NcCounterBubble v-if="trashedCount > 0" :count="trashedCount" />
+					</template>
+				</NcAppNavigationItem>
+
+				<template #footer>
+					<NcAppNavigationItem :name="t('contractmanager', 'Einstellungen')"
+						:class="{ active: currentView === 'settings' }"
+						@click="currentView = 'settings'; selectedCategoryId = null">
+						<template #icon>
+							<CogIcon :size="20" />
+						</template>
+					</NcAppNavigationItem>
+					<!-- Dauerhafter Zugang zu den Neuerungen (#427): oeffnet das
+					     „Was ist neu?"-Fenster im Archiv-Modus (alle bisherigen Punkte).
+					     Kein eigener View, nur ein Knopf. -->
+					<NcAppNavigationItem :name="t('contractmanager', 'Neuerungen')"
+						@click="openWhatsNew">
+						<template #icon>
+							<BullhornOutlineIcon :size="20" />
+						</template>
+					</NcAppNavigationItem>
+				</template>
+			</NcAppNavigation>
+
+			<NcAppContent>
+				<ContractList v-if="currentView === 'contracts'" :category-filter="selectedCategoryId" :search-query="searchQuery" />
+				<ArchiveView v-else-if="currentView === 'archive'" />
+				<TrashView v-else-if="currentView === 'trash'" />
+				<SettingsView v-else-if="currentView === 'settings'" />
+			</NcAppContent>
+
+			<!-- „Was ist neu?"-Fenster (#415): meldet sich selbst, wenn es etwas zu
+			     berichten gibt, und bleibt sonst unsichtbar. -->
+			<WhatsNewDialog ref="whatsNew" />
+		</template>
 	</NcContent>
 </template>
 
@@ -114,10 +138,13 @@ import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
 import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import MagnifyIcon from 'vue-material-design-icons/Magnify.vue'
+import AccountLockOutlineIcon from 'vue-material-design-icons/AccountLockOutline.vue'
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
+import BullhornOutlineIcon from 'vue-material-design-icons/BullhornOutline.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
@@ -140,10 +167,13 @@ export default {
 		NcAppNavigationItem,
 		NcAppContent,
 		NcCounterBubble,
+		NcEmptyContent,
 		NcTextField,
+		AccountLockOutlineIcon,
 		FileDocumentIcon,
 		MagnifyIcon,
 		ArchiveIcon,
+		BullhornOutlineIcon,
 		CogIcon,
 		TagIcon,
 		DeleteIcon,
@@ -155,6 +185,7 @@ export default {
 	},
 	data() {
 		return {
+			permissionsChecked: false,
 			currentView: 'contracts',
 			selectedCategoryId: null,
 			searchQuery: '',
@@ -164,7 +195,10 @@ export default {
 	},
 	computed: {
 		...mapState(useCategoriesStore, ['allCategories']),
-		...mapState(useContractsStore, ['allContracts', 'archivedContracts', 'trashedContracts', 'canEdit']),
+		...mapState(useContractsStore, ['allContracts', 'archivedContracts', 'trashedContracts', 'canEdit', 'hasRole', 'permissionsLoaded']),
+		noAccess() {
+			return this.permissionsLoaded && !this.hasRole
+		},
 		contractCount() {
 			return this.allContracts.filter(c => c.status !== 'archived').length
 		},
@@ -178,9 +212,15 @@ export default {
 			return this.trashedContracts.length
 		},
 	},
-	created() {
+	async created() {
+		// Permissions first: without a role every contract request is refused.
+		// If the check itself fails, fall back to loading the app as before.
+		await this.fetchPermissions()
+		this.permissionsChecked = true
+		if (this.noAccess) {
+			return
+		}
 		this.fetchArchivedContracts()
-		this.fetchPermissions()
 		this.fetchTrashedContracts()
 	},
 	methods: {
@@ -225,6 +265,11 @@ export default {
 		filterByCategory(categoryId) {
 			this.currentView = 'contracts'
 			this.selectedCategoryId = categoryId
+		},
+		// „Was ist neu?"-Fenster im Archiv-Modus oeffnen (#427). Der Dialog stellt
+		// openArchive per defineExpose bereit.
+		openWhatsNew() {
+			this.$refs.whatsNew?.openArchive()
 		},
 		getCategoryContractCount(categoryId) {
 			return this.allContracts.filter(

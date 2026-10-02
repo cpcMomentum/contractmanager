@@ -65,6 +65,7 @@ class SettingsController extends Controller {
 			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
 			'backupInterval' => $backupInterval,
+			'backupHour' => $this->settingsService->getUserBackupHour($this->userId),
 			// Actual time of the last snapshot (0 = never) and the next scheduled
 			// run, both as absolute Unix timestamps so the frontend just displays
 			// them without duplicating the interval math (#397).
@@ -99,6 +100,9 @@ class SettingsController extends Controller {
 		?bool $backupEnabled = null,
 		?string $backupFolder = null,
 		?string $backupInterval = null,
+		// -1 clears the fixed hour: Nextcloud turns a JSON null into the
+		// parameter default, so null cannot mean "remove" here (#399).
+		?int $backupHour = null,
 	): JSONResponse {
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], 401);
@@ -141,6 +145,9 @@ class SettingsController extends Controller {
 		if ($backupInterval !== null) {
 			$this->settingsService->setUserBackupInterval($this->userId, $backupInterval);
 		}
+		if ($backupHour !== null) {
+			$this->settingsService->setUserBackupHour($this->userId, $backupHour < 0 ? null : $backupHour);
+		}
 
 		$updatedInterval = $this->settingsService->getUserBackupInterval($this->userId);
 
@@ -157,7 +164,8 @@ class SettingsController extends Controller {
 			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
 			'backupInterval' => $updatedInterval,
-			// Changing the interval moves the next scheduled run; return it so the
+			'backupHour' => $this->settingsService->getUserBackupHour($this->userId),
+			// Changing the interval or hour moves the next scheduled run; return it so the
 			// UI can update "Nächste Sicherung" without a reload (#397).
 			'backupNextRun' => $this->nextBackupRun($this->userId, $updatedInterval),
 		]);
@@ -211,15 +219,15 @@ class SettingsController extends Controller {
 
 	/**
 	 * Absolute Unix timestamp of the next scheduled backup, or 0 when none has
-	 * run yet (nothing to anchor from). Derived from the schedule anchor plus the
-	 * interval so "next" tracks the drift-free schedule, not the last write time.
+	 * run yet. Follows the drift-free schedule, not the last write time, and the
+	 * fixed hour when one is set (#399).
 	 */
 	private function nextBackupRun(string $userId, string $interval): int {
-		$anchor = $this->settingsService->getUserBackupLastRun($userId);
-		if ($anchor <= 0) {
-			return 0;
-		}
-		return $anchor + AutoBackupService::intervalSeconds($interval);
+		return $this->autoBackupService->nextScheduledRun(
+			$userId,
+			$interval,
+			$this->settingsService->getUserBackupLastRun($userId),
+		);
 	}
 
 	/**

@@ -21,7 +21,8 @@ use OCP\IRequest;
 
 /**
  * „Was ist neu?"-Fenster (#415). Liefert die noch nicht gesehenen Eintraege der
- * laufenden Version und nimmt die Quittung entgegen.
+ * laufenden Version, das Archiv aller bisherigen (#427) und nimmt die
+ * Quittung entgegen.
  */
 class WhatsNewController extends Controller {
 
@@ -48,6 +49,21 @@ class WhatsNewController extends Controller {
 			return new DataResponse(['error' => $this->l->t('Kein Zugriff')], Http::STATUS_FORBIDDEN);
 		}
 		return new DataResponse($this->whatsNewService->getPending($this->userId));
+	}
+
+	/**
+	 * Alle bisherigen Neuerungen, nach Version gruppiert (#427) — fuer den
+	 * dauerhaften Menue-Eintrag „Neuerungen". Beruehrt keine Marke.
+	 */
+	#[NoAdminRequired]
+	public function all(): DataResponse {
+		if ($this->userId === null) {
+			return new DataResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
+		}
+		if (!$this->permissionService->hasAccess($this->userId)) {
+			return new DataResponse(['error' => $this->l->t('Kein Zugriff')], Http::STATUS_FORBIDDEN);
+		}
+		return new DataResponse($this->whatsNewService->getAll());
 	}
 
 	/** Quittiert das Fenster: die laufende Version gilt als gesehen. */

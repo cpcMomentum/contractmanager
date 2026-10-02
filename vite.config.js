@@ -1,7 +1,28 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { readFileSync } from 'fs'
 import { resolve } from 'path'
+
+// `appName` und `appVersion` sind globale Bezeichner, die @nextcloud/vue liest
+// (dist/chunks/appName.mjs) — ohne Ersetzung protokolliert die Bibliothek einen
+// Fehler. Beide standen hier bis 09/2026 als Literal: der Name in Grossbuchstaben
+// und die Version fest auf '0.5.4' (die App war da bei 1.8.0).
+//
+// Der Name muss die APP-ID sein, nicht ein Anzeigename: `useLocalizedAppName()`
+// sucht damit in der App-Liste (`apps.find(({ id }) => id === appName)`) und fand
+// mit 'CONTRACTMANAGER' nie etwas.
+//
+// Die Version kommt aus `appinfo/info.xml`, der fuehrenden Quelle beim Release
+// (der Release-Skill bumpt sie). package.json wird hier zwar ebenfalls gepflegt,
+// aber so gibt es nur eine Wahrheit statt zweier, die auseinanderlaufen koennen.
+// NcAppSettingsDialog zeigt beides als "<Name> <Version>" an.
+const appName = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8')).name
+const appVersion = readFileSync(resolve(__dirname, 'appinfo/info.xml'), 'utf8')
+  .match(/<version>([^<]+)<\/version>/)?.[1]
+if (!appVersion) {
+  throw new Error('vite.config.js: <version> nicht in appinfo/info.xml gefunden')
+}
 
 export default defineConfig(({ mode }) => ({
   plugins: [vue()],
@@ -25,8 +46,8 @@ export default defineConfig(({ mode }) => ({
     '__VUE_OPTIONS_API__': true,
     '__VUE_PROD_DEVTOOLS__': false,
     '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': false,
-    'appName': JSON.stringify('CONTRACTMANAGER'),
-    'appVersion': JSON.stringify('0.5.4'),
+    appName: JSON.stringify(appName),
+    appVersion: JSON.stringify(appVersion),
   },
   resolve: {
     alias: {

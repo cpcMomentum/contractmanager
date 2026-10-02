@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-02
+
+### Added
+- **Menü „Neuerungen“**: Unten in der Seitenleiste öffnet ein dauerhafter Eintrag das „Was ist neu?“-Fenster mit allen bisherigen Neuerungen, nach Version gruppiert. Das automatische Fenster nach einem Update bleibt unverändert; Nachlesen markiert nichts als gesehen (#427)
+- **Feste Uhrzeit für das automatische Backup**: In den Backup-Einstellungen lässt sich zusätzlich zum Intervall eine volle Stunde wählen (00 bis 23 Uhr, in der eigenen Zeitzone). Die Sicherung läuft dann täglich, wöchentlich oder monatlich zu dieser Uhrzeit und wandert nicht mehr mit dem Zeitpunkt der letzten Sicherung mit, auch nicht über die Zeitumstellung. Ohne Uhrzeit bleibt alles wie bisher (#399)
+
+### Changed
+- **Papierkorb sichert Löschungen durch andere ab**: VertragsWerk merkt sich jetzt, wer einen Vertrag in den Papierkorb gelegt hat, und zeigt es dort als „Gelöscht von" an. Legt jemand einen fremden Vertrag in den Papierkorb, bekommt der Eigentümer (Zuständiger, sonst Ersteller) eine Nextcloud-Benachrichtigung; sie verschwindet von selbst, sobald der Vertrag wiederhergestellt oder endgültig gelöscht ist. Wiederherstellen darf jetzt, wer den Vertrag auch hätte löschen dürfen, dazu Ersteller und Zuständiger; der Papierkorb zeigt jedem genau diese Verträge. Endgültig nach 30 Tagen gelöscht werden nur noch Verträge, die ihr Eigentümer selbst gelöscht hat. Von anderen gelöschte Verträge bleiben, bis jemand sie wiederherstellt oder ein Administrator sie endgültig löscht (#438)
+- **Hinweis zum Update:** Verträge, die schon vor diesem Update im Papierkorb lagen, werden nicht mehr automatisch gelöscht, weil nicht bekannt ist, wer sie gelöscht hat. Ein Administrator kann sie über „Papierkorb leeren" entfernen (#438)
+- Wartung: nc-app-tooling auf v1.17.0; die Prüfung der `whatsnew.json` läuft jetzt zentral in der CI (#431). Abhängigkeiten aktualisiert (`@nextcloud/vue` 9.13.1, axios 1.20.0, dompurify 3.4.16, sass)
+
+### Fixed
+- **Zugriff nur mit Rolle**: Verträge, Archiv, Papierkorb, Vertragspartner und Kategorien liefert VertragsWerk nur noch an Konten mit einer Rolle (Administrator, Editor oder Betrachter). Bisher erhielt jedes Konto, für das die App freigeschaltet ist, auch ohne Rolle alle nicht-privaten Verträge. Das KI-Auslesen von PDFs setzt jetzt Bearbeitungsrechte voraus. Wer keine Rolle hat, sieht statt einer leeren App den Hinweis, sich an die Nextcloud-Administration zu wenden
+- Der App-Name und die Version, die VertragsWerk an die Nextcloud-Oberflächenbibliothek meldet, stammen jetzt aus `package.json` und `appinfo/info.xml` statt aus festen Werten (bisher „CONTRACTMANAGER“ und „0.5.4“). Heute ohne sichtbare Wirkung, verhindert falsche Angaben, sobald ein Einstellungsdialog dazukommt (#428)
+
 ## [1.8.0] - 2026-09-25
 
 ### Added
@@ -470,7 +485,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.1...v1.8.0
 [1.7.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.6.0...v1.7.0

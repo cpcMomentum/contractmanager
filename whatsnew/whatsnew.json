@@ -1,4 +1,54 @@
 {
+	"1.9.0": [
+		{
+			"title": {
+				"de": "Neuerungen jederzeit nachlesen",
+				"en": "Read what's new at any time"
+			},
+			"text": {
+				"de": "Unten in der Seitenleiste finden Sie jetzt den Eintrag „Neuerungen“. Er zeigt alle bisherigen Neuerungen, auch die, die Sie im Fenster verpasst haben.",
+				"en": "At the bottom of the sidebar you now find “What's new”. It lists all earlier updates, including the ones you missed in this window."
+			},
+			"icon": "star",
+			"where": {
+				"de": "Seitenleiste unten",
+				"en": "Bottom of the sidebar"
+			},
+			"plus": false
+		},
+		{
+			"title": {
+				"de": "Papierkorb zeigt, wer gelöscht hat",
+				"en": "Trash shows who deleted a contract"
+			},
+			"text": {
+				"de": "Legt jemand Ihren Vertrag in den Papierkorb, bekommen Sie eine Benachrichtigung und können ihn selbst wiederherstellen. Von anderen gelöschte Verträge werden nicht mehr automatisch nach 30 Tagen entfernt.",
+				"en": "If someone moves your contract to the trash, you get a notification and can restore it yourself. Contracts deleted by someone else are no longer removed automatically after 30 days."
+			},
+			"icon": "bell-ring",
+			"where": {
+				"de": "Papierkorb",
+				"en": "Trash"
+			},
+			"plus": false
+		},
+		{
+			"title": {
+				"de": "Feste Uhrzeit für das Backup",
+				"en": "Fixed time for the backup"
+			},
+			"text": {
+				"de": "Das automatische Backup läuft auf Wunsch immer zur selben Uhrzeit, zum Beispiel täglich um 3 Uhr.",
+				"en": "If you like, the automatic backup now always runs at the same time, for example daily at 3 am."
+			},
+			"icon": "calendar",
+			"where": {
+				"de": "Einstellungen → Auto-Backup",
+				"en": "Settings → Auto-backup"
+			},
+			"plus": false
+		}
+	],
 	"1.8.0": [
 		{
 			"title": {

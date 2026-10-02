@@ -32,6 +32,20 @@ class ContractController extends Controller {
 	}
 
 	/**
+	 * Reading contracts requires a VertragsWerk role (admin, editor or viewer).
+	 *
+	 * The app is enabled for every Nextcloud account by default, so being able
+	 * to open it is no permission on its own. Returns the 403 response to send,
+	 * or null when the user may read.
+	 */
+	private function denyWithoutRole(): ?JSONResponse {
+		if ($this->userId === null || !$this->permissionService->hasAccess($this->userId)) {
+			return new JSONResponse(['error' => $this->l->t('Kein Zugriff')], Http::STATUS_FORBIDDEN);
+		}
+		return null;
+	}
+
+	/**
 	 * Search users for the "responsible" picker. Available to anyone who may
 	 * edit contracts (not just admins, unlike the settings principal search).
 	 */
@@ -57,6 +71,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse(
 			$this->withOwnerStatus($this->service->findAllVisible($this->userId, $isAdmin), $isAdmin)
@@ -107,6 +124,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function archived(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse(
 			$this->withOwnerStatus($this->service->findArchivedVisible($this->userId, $isAdmin), $isAdmin)
@@ -114,17 +134,21 @@ class ContractController extends Controller {
 	}
 
 	/**
-	 * Get contracts in trash (user sees own, admin sees all)
+	 * Get contracts in trash: admin sees all, others what they may restore (#438)
 	 */
 	#[NoAdminRequired]
 	public function trash(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 
 		if ($isAdmin) {
 			return new JSONResponse($this->service->findAllDeleted());
 		}
 
-		return new JSONResponse($this->service->findDeletedByUser($this->userId));
+		$isEditor = $this->permissionService->isEditor($this->userId);
+		return new JSONResponse($this->service->findDeletedRestorableBy($this->userId, $isEditor));
 	}
 
 	/**
@@ -141,6 +165,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function vendors(): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		$isAdmin = $this->permissionService->isAdmin($this->userId);
 		return new JSONResponse($this->service->findVisibleVendors($this->userId, $isAdmin));
 	}
@@ -150,6 +177,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(int $id): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		try {
 			$contract = $this->service->find($id);
 			$isAdmin = $this->permissionService->isAdmin($this->userId);
@@ -170,6 +200,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function getReminderOptOut(int $id): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
@@ -191,6 +224,9 @@ class ContractController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function setReminderOptOut(int $id, bool $optedOut): JSONResponse {
+		if ($denied = $this->denyWithoutRole()) {
+			return $denied;
+		}
 		if ($this->userId === null) {
 			return new JSONResponse(['error' => $this->l->t('Nicht angemeldet')], Http::STATUS_UNAUTHORIZED);
 		}
@@ -404,7 +440,7 @@ class ContractController extends Controller {
 			$isEditor = $this->permissionService->isEditor($this->userId);
 
 			$this->service->checkWriteAccess($contract, $this->userId, $isAdmin, $isEditor);
-			$this->service->softDelete($id);
+			$this->service->softDelete($id, $this->userId);
 
 			return new JSONResponse(['success' => true]);
 		} catch (NotFoundException $e) {
@@ -415,15 +451,16 @@ class ContractController extends Controller {
 	}
 
 	/**
-	 * Restore a contract from trash (user can restore own, admin can restore all)
+	 * Restore a contract from trash (#438: admin, creator, responsible user, or an editor for non-private contracts)
 	 */
 	#[NoAdminRequired]
 	public function restoreFromTrash(int $id): JSONResponse {
 		try {
 			$contract = $this->service->find($id);
 			$isAdmin = $this->permissionService->isAdmin($this->userId);
+			$isEditor = $this->permissionService->isEditor($this->userId);
 
-			$this->service->checkRestoreAccess($contract, $this->userId, $isAdmin);
+			$this->service->checkRestoreAccess($contract, $this->userId, $isAdmin, $isEditor);
 			$restoredContract = $this->service->restoreFromTrash($id);
 
 			return new JSONResponse($restoredContract);

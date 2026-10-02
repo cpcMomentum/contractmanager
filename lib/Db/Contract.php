@@ -51,6 +51,7 @@ use OCP\AppFramework\Db\Entity;
  * @method void setNotes(?string $notes)
  * @method string getCreatedBy()
  * @method void setCreatedBy(string $createdBy)
+ * @method string|null getDeletedBy()
  * @method string|null getResponsibleUser()
  * @method void setResponsibleUser(?string $responsibleUser)
  * @method DateTime getCreatedAt()
@@ -117,6 +118,7 @@ class Contract extends Entity implements JsonSerializable {
     protected int $archived = 0;
     protected int $isPrivate = 0;
     protected ?DateTime $deletedAt = null;
+    protected ?string $deletedBy = null;
     protected string $createdBy = '';
     protected ?string $responsibleUser = null;
     protected ?DateTime $createdAt = null;
@@ -181,6 +183,26 @@ class Contract extends Entity implements JsonSerializable {
     }
 
     /**
+     * Custom setter for deletedBy (#438): who moved the contract to the trash.
+     * NULL when it is not in the trash, or when it was trashed before the
+     * column existed.
+     */
+    public function setDeletedBy(?string $deletedBy): void {
+        $this->deletedBy = $deletedBy;
+        $this->markFieldUpdated('deletedBy');
+    }
+
+    /**
+     * The effective owner: the responsible user if one is set, otherwise the
+     * creator (#174). Reminders, the trash cleanup and the trash notification
+     * all follow this one definition.
+     */
+    public function getEffectiveOwner(): string {
+        $responsible = $this->responsibleUser;
+        return ($responsible !== null && $responsible !== '') ? $responsible : $this->createdBy;
+    }
+
+    /**
      * Check if contract is in trash
      */
     public function isDeleted(): bool {
@@ -241,6 +263,7 @@ class Contract extends Entity implements JsonSerializable {
             'archived' => (bool) $this->archived,
             'isPrivate' => (bool) $this->isPrivate,
             'deletedAt' => $this->deletedAt?->format('c'),
+            'deletedBy' => $this->deletedBy,
             'createdBy' => $this->createdBy,
             'responsibleUser' => $this->responsibleUser,
             'createdAt' => $this->createdAt?->format('c'),

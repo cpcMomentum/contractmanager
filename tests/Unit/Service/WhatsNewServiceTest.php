@@ -380,6 +380,67 @@ class WhatsNewServiceTest extends TestCase {
 		self::assertSame('1.8.0', $written['alice/' . WhatsNewService::KEY_LAST_SEEN] ?? null);
 	}
 
+	public function testArchivLiefertAlleVersionenNeuesteZuerst(): void {
+		$this->writeCatalogue($this->catalogueFixture());
+		$written = [];
+		$service = $this->buildService('1.8.0', [], $written);
+
+		$result = $service->getAll();
+
+		self::assertSame(
+			['1.8.0', '1.7.0'],
+			array_map(static fn (array $g): string => $g['version'], $result['versions']),
+			'Alle Versionen, neueste zuerst',
+		);
+		self::assertCount(2, $result['versions'][0]['entries']);
+		self::assertCount(1, $result['versions'][1]['entries']);
+		self::assertSame('Kategorien per Ziehen', $result['versions'][0]['entries'][0]['title']);
+		// Nachlesen ist kein Quittieren: der Archiv-Aufruf beruehrt keine Marke.
+		self::assertSame([], $written, 'getAll darf keine Marke schreiben');
+	}
+
+	public function testArchivLaesstZukuenftigeVersionenAus(): void {
+		$this->writeCatalogue($this->catalogueFixture());
+		$written = [];
+		// Installiert ist erst 1.7.5 — die 1.8.0-Eintraege duerfen nicht vorab erscheinen.
+		$service = $this->buildService('1.7.5', [], $written);
+
+		$result = $service->getAll();
+
+		self::assertSame(
+			['1.7.0'],
+			array_map(static fn (array $g): string => $g['version'], $result['versions']),
+		);
+	}
+
+	public function testArchivUebersetztInDieNutzersprache(): void {
+		$this->writeCatalogue($this->catalogueFixture());
+		$written = [];
+		$service = $this->buildService('1.8.0', [], $written, 'en');
+
+		$result = $service->getAll();
+
+		self::assertSame('Older EN', $result['versions'][1]['entries'][0]['title']);
+		self::assertSame('Contracts', $result['versions'][0]['entries'][0]['where']);
+	}
+
+	public function testArchivOhneDateiIstLeer(): void {
+		$written = [];
+		$service = $this->buildService('1.8.0', [], $written);
+
+		self::assertSame(['versions' => []], $service->getAll());
+	}
+
+	/**
+	 * Nur noch das App-Spezifische. Das Schema (de/en-Pflicht, `where`
+	 * zweisprachig, Versionsschluessel `x.y.z`, `plus` boolean) prueft seit
+	 * nc-app-tooling#27 zentral `nc-whatsnew-check` (`npm run whatsnew:check`,
+	 * in der node-CI). Hier bleibt, was der zentrale Check bewusst nicht prueft:
+	 *
+	 * - die **Icon-Whitelist** (`BEKANNTE_SYMBOLE` kennt nur `WhatsNewDialog.vue`);
+	 * - dass `plus` in dieser App **Pflicht** ist — der zentrale Check prueft nur
+	 *   „wenn `plus` da, dann boolean", nicht Pflicht.
+	 */
 	public function testDieAusgelieferteDateiIstGueltig(): void {
 		$file = dirname(__DIR__, 3) . '/whatsnew/whatsnew.json';
 		self::assertFileExists($file);
@@ -389,25 +450,11 @@ class WhatsNewServiceTest extends TestCase {
 		self::assertNotEmpty($catalogue);
 
 		foreach ($catalogue as $version => $entries) {
-			self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', (string)$version);
 			self::assertIsArray($entries);
 			foreach ($entries as $entry) {
-				// de und en sind Pflicht (Konzept v1.1, Abschnitt 2).
-				foreach (['title', 'text'] as $field) {
-					self::assertArrayHasKey($field, $entry);
-					self::assertArrayHasKey('de', $entry[$field], "$version: $field braucht de");
-					self::assertArrayHasKey('en', $entry[$field], "$version: $field braucht en");
-					self::assertNotSame('', trim((string)$entry[$field]['de']));
-					self::assertNotSame('', trim((string)$entry[$field]['en']));
-				}
-				self::assertArrayHasKey('plus', $entry);
+				self::assertArrayHasKey('plus', $entry, "$version: plus ist in dieser App Pflicht");
 				self::assertIsBool($entry['plus']);
 
-				// Fundort ist optional, aber wenn da, dann zweisprachig.
-				if (isset($entry['where'])) {
-					self::assertArrayHasKey('de', $entry['where'], "$version: where braucht de");
-					self::assertArrayHasKey('en', $entry['where'], "$version: where braucht en");
-				}
 				// Symbol muss der Dialog kennen, sonst erscheint stumm der Stern.
 				if (isset($entry['icon'])) {
 					self::assertContains($entry['icon'], self::BEKANNTE_SYMBOLE, "$version: unbekanntes Symbol");

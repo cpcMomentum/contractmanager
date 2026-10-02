@@ -64,7 +64,15 @@ class TrashCleanupJob extends TimedJob {
 
 	/**
 	 * Delete contracts that have been in trash for more than 30 days
-	 * Excludes contracts created by admin users
+	 *
+	 * Only contracts their owner deleted themselves (#438). One deleted by
+	 * someone else stays until it is restored or an admin deletes it for good:
+	 * otherwise a deletion the owner never noticed would turn final after 30
+	 * days without anyone having agreed to it. Contracts trashed before
+	 * `deleted_by` existed have no recorded deleter and are kept as well.
+	 *
+	 * Also excludes contracts created by admin users and those whose creator
+	 * no longer has an account (#299).
 	 *
 	 * @return int Number of permanently deleted contracts
 	 */
@@ -79,7 +87,16 @@ class TrashCleanupJob extends TimedJob {
 
 		$deletedCount = 0;
 		$orphanedCount = 0;
+		$foreignCount = 0;
 		foreach ($expiredContracts as $contract) {
+			// Deleted by someone other than the owner, or by an unknown
+			// deleter (trashed before #438, deleted_by NULL — never equal to
+			// the owner): never purge automatically.
+			if ($contract->getDeletedBy() !== $contract->getEffectiveOwner()) {
+				$foreignCount++;
+				continue;
+			}
+
 			// Contracts whose creator no longer has an account are left alone
 			// (#299): once the owner is gone, nobody can restore them anymore,
 			// so purging them silently would take the decision away from the
@@ -98,6 +115,7 @@ class TrashCleanupJob extends TimedJob {
 					'contractId' => $contract->getId(),
 					'contractName' => $contract->getName(),
 					'createdBy' => $contract->getCreatedBy(),
+					'deletedBy' => $contract->getDeletedBy(),
 					'deletedAt' => $contract->getDeletedAt()?->format('Y-m-d H:i:s'),
 				]);
 			} catch (\Exception $e) {
@@ -107,6 +125,13 @@ class TrashCleanupJob extends TimedJob {
 					'exception' => $e->getMessage(),
 				]);
 			}
+		}
+
+		if ($foreignCount > 0) {
+			$this->logger->info('Kept trashed contracts not deleted by their owner from auto-cleanup', [
+				'app' => Application::APP_ID,
+				'keptCount' => $foreignCount,
+			]);
 		}
 
 		if ($orphanedCount > 0) {

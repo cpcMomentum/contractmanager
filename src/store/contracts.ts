@@ -44,6 +44,8 @@ export interface Contract {
 	archived?: boolean
 	isPrivate?: boolean
 	deletedAt?: string | null
+	/** Who moved it to the trash (#438); null when unknown or not trashed. */
+	deletedBy?: string | null
 	createdBy?: string
 	responsibleUser?: string | null
 	createdAt?: string
@@ -75,6 +77,10 @@ export const useContractsStore = defineStore('contracts', () => {
 	const isViewer = computed(() => permissions.value.isViewer)
 	const canEdit = computed(() => permissions.value.canEdit)
 	const canDeletePermanently = computed(() => permissions.value.canDeletePermanently)
+	// The app is enabled for every account; without one of the three roles the
+	// server refuses all contract data.
+	const hasRole = computed(() => permissions.value.isAdmin || permissions.value.isEditor || permissions.value.isViewer)
+	const permissionsLoaded = ref(false)
 
 	async function fetchContracts(): Promise<void> {
 		loading.value = true
@@ -116,6 +122,7 @@ export const useContractsStore = defineStore('contracts', () => {
 		error.value = null
 		try {
 			permissions.value = await ContractService.getPermissions()
+			permissionsLoaded.value = true
 		} catch (e) {
 			error.value = (e as Error).message
 		}
@@ -294,6 +301,8 @@ export const useContractsStore = defineStore('contracts', () => {
 		isViewer,
 		canEdit,
 		canDeletePermanently,
+		hasRole,
+		permissionsLoaded,
 		fetchContracts,
 		fetchArchivedContracts,
 		fetchTrashedContracts,

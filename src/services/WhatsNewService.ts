@@ -23,10 +23,27 @@ export interface WhatsNewPayload {
 	entries: WhatsNewEntry[]
 }
 
+/** Eine Version mit ihren Eintraegen im Archiv (#427). */
+export interface WhatsNewGroup {
+	version: string
+	entries: WhatsNewEntry[]
+}
+
+/** Antwort von `GET /api/whatsnew/all` — alle Versionen, neueste zuerst. */
+export interface WhatsNewArchive {
+	versions: WhatsNewGroup[]
+}
+
 export default {
 	/** Noch nicht gesehene Neuerungen der laufenden Version (#415). */
 	async getWhatsNew(): Promise<WhatsNewPayload> {
 		const response = await axios.get<WhatsNewPayload>(baseUrl)
+		return response.data
+	},
+
+	/** Alle bisherigen Neuerungen, nach Version gruppiert (#427) — fuers Menue. */
+	async getWhatsNewArchive(): Promise<WhatsNewArchive> {
+		const response = await axios.get<WhatsNewArchive>(`${baseUrl}/all`)
 		return response.data
 	},
 

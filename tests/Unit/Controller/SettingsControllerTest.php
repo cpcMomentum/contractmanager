@@ -38,6 +38,11 @@ class SettingsControllerTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->permissionService = $this->createMock(PermissionService::class);
 		$this->autoBackupService = $this->createMock(AutoBackupService::class);
+		// The schedule itself is covered in AutoBackupServiceTest; here only the
+		// wiring counts, so the mock answers like the plain-interval schedule.
+		$this->autoBackupService->method('nextScheduledRun')->willReturnCallback(
+			static fn (string $uid, string $interval, int $lastRun): int => $lastRun <= 0 ? 0 : $lastRun + AutoBackupService::intervalSeconds($interval)
+		);
 		$this->userManager = $this->createMock(IUserManager::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->l = $this->createMock(IL10N::class);
@@ -303,5 +308,33 @@ class SettingsControllerTest extends TestCase {
 
 		$this->assertSame(500, $response->getStatus());
 		$this->assertArrayHasKey('error', $response->getData());
+	}
+
+	// ========================================
+	// Fixed backup hour (#399)
+	// ========================================
+
+	public function testGetExposesBackupHour(): void {
+		$this->settingsService->method('getUserBackupHour')->willReturn(3);
+
+		$this->assertSame(3, $this->controller->get()->getData()['backupHour']);
+	}
+
+	public function testUpdateSetsBackupHour(): void {
+		$this->settingsService->expects($this->once())->method('setUserBackupHour')->with('admin', 22);
+
+		$this->controller->update(backupHour: 22);
+	}
+
+	public function testUpdateWithMinusOneClearsBackupHour(): void {
+		$this->settingsService->expects($this->once())->method('setUserBackupHour')->with('admin', null);
+
+		$this->controller->update(backupHour: -1);
+	}
+
+	public function testUpdateWithoutBackupHourLeavesItAlone(): void {
+		$this->settingsService->expects($this->never())->method('setUserBackupHour');
+
+		$this->controller->update(backupInterval: 'daily');
 	}
 }
