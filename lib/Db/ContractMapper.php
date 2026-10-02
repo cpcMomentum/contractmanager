@@ -118,16 +118,30 @@ class ContractMapper extends QBMapper {
     }
 
     /**
-     * Find deleted contracts for a specific user (their trash)
+     * Trashed contracts a non-admin may restore, i.e. what their trash shows (#438).
      *
+     * Mirrors ContractService::checkRestoreAccess(): the creator and the
+     * responsible user always, and editors additionally every non-private
+     * contract — whoever could have deleted it may also bring it back. Private
+     * contracts stay limited to creator and responsible user, exactly like the
+     * regular visibility rule.
+     *
+     * @param bool $includeShared true for editors: also non-private contracts of others
      * @return Contract[]
      */
-    public function findDeletedByUser(string $userId): array {
+    public function findDeletedRestorableBy(string $userId, bool $includeShared): array {
         $qb = $this->db->getQueryBuilder();
+        $own = [
+            $qb->expr()->eq('created_by', $qb->createNamedParameter($userId)),
+            $qb->expr()->eq('responsible_user', $qb->createNamedParameter($userId)),
+        ];
+        if ($includeShared) {
+            $own[] = $qb->expr()->eq('is_private', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT));
+        }
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->isNotNull('deleted_at'))
-            ->andWhere($qb->expr()->eq('created_by', $qb->createNamedParameter($userId)))
+            ->andWhere($qb->expr()->orX(...$own))
             ->orderBy('deleted_at', 'DESC');
 
         return $this->findEntities($qb);
