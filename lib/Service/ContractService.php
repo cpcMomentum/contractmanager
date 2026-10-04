@@ -23,6 +23,7 @@ class ContractService {
 	];
 
 	private const VALID_INTERVALS = [
+		Contract::INTERVAL_WEEKLY,
 		Contract::INTERVAL_MONTHLY,
 		Contract::INTERVAL_QUARTERLY,
 		Contract::INTERVAL_SEMI_ANNUAL,

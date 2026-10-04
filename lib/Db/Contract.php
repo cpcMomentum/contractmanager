@@ -85,6 +85,7 @@ class Contract extends Entity implements JsonSerializable {
     public const AMOUNT_TYPE_NETTO = 'netto';
     public const AMOUNT_TYPE_BRUTTO = 'brutto';
 
+    public const INTERVAL_WEEKLY = 'weekly';
     public const INTERVAL_MONTHLY = 'monthly';
     public const INTERVAL_QUARTERLY = 'quarterly';
     public const INTERVAL_SEMI_ANNUAL = 'semi_annual';

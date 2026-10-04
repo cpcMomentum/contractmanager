@@ -805,6 +805,7 @@ export default {
 		},
 		costIntervalOptions() {
 			return [
+				{ value: 'weekly', label: t('contractmanager', 'Wöchentlich') },
 				{ value: 'monthly', label: t('contractmanager', 'Monatlich') },
 				{ value: 'quarterly', label: t('contractmanager', 'Quartalsweise') },
 				{ value: 'semi_annual', label: t('contractmanager', 'Halbjährlich') },
