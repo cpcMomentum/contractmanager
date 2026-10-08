@@ -52,6 +52,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
 
     <commands>
         <command>OCA\ContractManager\Command\ExportContracts</command>
+        <command>OCA\ContractManager\Command\ImportContracts</command>
     </commands>
 
     <repair-steps>

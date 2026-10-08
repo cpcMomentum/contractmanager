@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Db;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\AppFramework\Db\QBMapper;
+use OCP\AppFramework\Db\TTransactional;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
@@ -15,8 +16,19 @@ use OCP\IDBConnection;
  */
 class ContractMapper extends QBMapper {
 
+    use TTransactional;
+
     public function __construct(IDBConnection $db) {
         parent::__construct($db, 'contractmgr_contracts', Contract::class);
+    }
+
+    /**
+     * @template T
+     * @param callable():T $fn
+     * @return T
+     */
+    public function transactional(callable $fn): mixed {
+        return $this->atomic($fn, $this->db);
     }
 
     /**

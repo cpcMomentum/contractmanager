@@ -248,6 +248,24 @@
 							</NcButton>
 						</div>
 					</template>
+
+					<template v-if="canEdit">
+						<h3 class="settings-subheading">
+							{{ t('contractmanager', 'Backup einlesen') }}
+						</h3>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Liest eine Sicherungsdatei (JSON) aus Ihren Nextcloud-Dateien ein, auch aus einer anderen Nextcloud. Die Verträge gehören danach Ihnen. Verträge, die Sie schon haben (gleicher Name, Anbieter und Beginn), werden übersprungen.') }}
+						</p>
+						<div class="settings-item">
+							<NcButton variant="secondary" :disabled="importBusy" @click="pickImportFile">
+								<template #icon>
+									<NcLoadingIcon v-if="importBusy" :size="20" />
+									<UploadIcon v-else :size="20" />
+								</template>
+								{{ t('contractmanager', 'Sicherungsdatei wählen') }}
+							</NcButton>
+						</div>
+					</template>
 				</div>
 
 				<!-- Kalender-Abo (#68) -->
@@ -703,6 +721,45 @@
 			</div>
 		</div>
 
+		<NcDialog v-if="importPreview"
+			:name="t('contractmanager', 'Backup einlesen?')"
+			@close="closeImportDialog">
+			<p class="import-file">
+				{{ importPath }}
+			</p>
+			<ul class="import-summary">
+				<li>{{ n('contractmanager', '%n Vertrag wird eingelesen', '%n Verträge werden eingelesen', importPreview.contracts) }}</li>
+				<li v-if="importPreview.duplicates > 0">
+					{{ n('contractmanager', '%n Vertrag ist schon vorhanden und wird übersprungen', '%n Verträge sind schon vorhanden und werden übersprungen', importPreview.duplicates) }}
+				</li>
+				<li v-if="importPreview.invalid > 0">
+					{{ n('contractmanager', '%n Eintrag ist unvollständig und wird übersprungen', '%n Einträge sind unvollständig und werden übersprungen', importPreview.invalid) }}
+				</li>
+				<li v-if="importPreview.categories > 0">
+					{{ n('contractmanager', '%n Kategorie wird neu angelegt', '%n Kategorien werden neu angelegt', importPreview.categories) }}
+				</li>
+				<li v-if="importPreview.missingFiles > 0">
+					{{ n('contractmanager', 'Bei %n Vertrag wurde das verknüpfte Dokument oder der Ordner hier nicht gefunden. Der Pfad bleibt erhalten, die Dateien müssen Sie selbst nachkopieren.', 'Bei %n Verträgen wurden verknüpfte Dokumente oder Ordner hier nicht gefunden. Die Pfade bleiben erhalten, die Dateien müssen Sie selbst nachkopieren.', importPreview.missingFiles) }}
+				</li>
+				<li v-if="importPreview.unknownUsers > 0">
+					{{ n('contractmanager', 'Bei %n Vertrag gibt es den Zuständigen hier nicht, das Feld bleibt leer.', 'Bei %n Verträgen gibt es den Zuständigen hier nicht, das Feld bleibt leer.', importPreview.unknownUsers) }}
+				</li>
+			</ul>
+			<template #actions>
+				<NcButton @click="closeImportDialog">
+					{{ t('contractmanager', 'Abbrechen') }}
+				</NcButton>
+				<NcButton variant="primary"
+					:disabled="importBusy || importPreview.contracts === 0"
+					@click="runImport">
+					<template v-if="importBusy" #icon>
+						<NcLoadingIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Einlesen') }}
+				</NcButton>
+			</template>
+		</NcDialog>
+
 		<NcDialog v-if="showDeleteCategoryDialog"
 			:name="t('contractmanager', 'Kategorie löschen')"
 			@close="showDeleteCategoryDialog = false">
@@ -721,8 +778,9 @@
 
 <script>
 import { mapState, mapActions } from 'pinia'
-import { getCanonicalLocale } from '@nextcloud/l10n'
+import { getCanonicalLocale, translatePlural as n } from '@nextcloud/l10n'
 import { useCategoriesStore } from '../store/categories'
+import { useContractsStore } from '../store/contracts'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -743,15 +801,17 @@ import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline
 import BellIcon from 'vue-material-design-icons/Bell.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BackupRestoreIcon from 'vue-material-design-icons/BackupRestore.vue'
+import UploadIcon from 'vue-material-design-icons/Upload.vue'
 import CalendarIcon from 'vue-material-design-icons/Calendar.vue'
 import SwapHorizontalIcon from 'vue-material-design-icons/SwapHorizontal.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
 import SettingsService from '../services/SettingsService'
 import ContractService from '../services/ContractService'
+import ImportService from '../services/ImportService'
 import { isAiActive } from '../utils/aiSettings'
 import { resolveCustomFieldEnabled, customFieldEnabledKey } from '../utils/customFields'
-import { showSuccess, showError } from '@nextcloud/dialogs'
+import { getFilePickerBuilder, showSuccess, showError } from '@nextcloud/dialogs'
 import '@nextcloud/dialogs/style.css'
 
 export default {
@@ -777,6 +837,7 @@ export default {
 		BellIcon,
 		CashMultipleIcon,
 		BackupRestoreIcon,
+		UploadIcon,
 		CalendarIcon,
 		SwapHorizontalIcon,
 		CogIcon,
@@ -809,6 +870,9 @@ export default {
 			backupLastRun: 0,
 			backupNextRun: 0,
 			backingUpNow: false,
+			importBusy: false,
+			importPath: '',
+			importPreview: null,
 			calendarFeedUrl: '',
 			generatingCalendarFeed: false,
 			savingAi: false,
@@ -855,6 +919,7 @@ export default {
 		...mapState(useCategoriesStore, {
 			categories: 'allCategories',
 		}),
+		...mapState(useContractsStore, ['canEdit']),
 		customFieldPlaceholders() {
 			return [
 				t('contractmanager', 'z.B. Versicherungsnummer'),
@@ -927,6 +992,7 @@ export default {
 	},
 	methods: {
 		...mapActions(useCategoriesStore, ['fetchCategories', 'createCategory', 'updateCategory', 'deleteCategory']),
+		...mapActions(useContractsStore, ['fetchContracts', 'fetchArchivedContracts']),
 
 		customFieldEnabled(n) {
 			return this.adminSettings[customFieldEnabledKey(n)]
@@ -1083,6 +1149,58 @@ export default {
 				showError(t('contractmanager', 'Fehler beim Speichern'))
 				this.backupHour = this.savedBackupHour
 			}
+		},
+
+		async pickImportFile() {
+			let path
+			try {
+				path = await getFilePickerBuilder(t('contractmanager', 'Sicherungsdatei wählen'))
+					.setMultiSelect(false)
+					.setMimeTypeFilter(['application/json'])
+					.addButton({
+						label: t('contractmanager', 'Auswählen'),
+						variant: 'primary',
+						callback: () => {},
+					})
+					.build()
+					.pick()
+			} catch (e) {
+				console.debug('Import file picker cancelled', e)
+				return
+			}
+			if (!path) {
+				return
+			}
+			this.importBusy = true
+			try {
+				this.importPreview = await ImportService.preview(path)
+				this.importPath = path
+			} catch (error) {
+				console.error('Import preview failed:', error)
+				showError(error?.response?.data?.error || t('contractmanager', 'Die Datei konnte nicht gelesen werden.'))
+			} finally {
+				this.importBusy = false
+			}
+		},
+
+		async runImport() {
+			this.importBusy = true
+			try {
+				const summary = await ImportService.import(this.importPath)
+				this.closeImportDialog()
+				showSuccess(n('contractmanager', '%n Vertrag eingelesen', '%n Verträge eingelesen', summary.contracts))
+				await Promise.all([this.fetchContracts(), this.fetchArchivedContracts(), this.fetchCategories()])
+			} catch (error) {
+				console.error('Import failed:', error)
+				showError(error?.response?.data?.error || t('contractmanager', 'Einlesen fehlgeschlagen'))
+			} finally {
+				this.importBusy = false
+			}
+		},
+
+		closeImportDialog() {
+			this.importPreview = null
+			this.importPath = ''
 		},
 
 		// Manually trigger a backup ("Jetzt sichern", #397) and refresh last/next.
@@ -1736,6 +1854,21 @@ export default {
 
 .settings-actions {
 	margin-top: 24px;
+}
+
+.settings-subheading {
+	margin-top: 32px;
+}
+
+.import-file {
+	color: var(--color-text-maxcontrast);
+	word-break: break-all;
+}
+
+.import-summary {
+	margin: 12px 0;
+	padding-inline-start: 20px;
+	list-style: disc;
 }
 
 /* KI-Block: eigener Speichern-Schritt direkt am Block, nicht am Seitenende. */
