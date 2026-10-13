@@ -28,7 +28,8 @@ class ImportControllerTest extends TestCase {
 		parent::setUp();
 		$this->importService = $this->createMock(ContractImportService::class);
 		$this->permissionService = $this->createMock(PermissionService::class);
-		$this->userFolder = $this->createMock(Folder::class);
+		// getUserFolder() returns IUserFolder on NC dev-master, which NC 32-34 lack
+		$this->userFolder = $this->createMock(interface_exists(\OCP\Files\IUserFolder::class) ? \OCP\Files\IUserFolder::class : Folder::class);
 	}
 
 	private function controller(?string $userId = 'bob'): ImportController {

@@ -35,7 +35,8 @@ class ContractImportServiceTest extends TestCase {
 		$this->categoryMapper = $this->createMock(CategoryMapper::class);
 		$this->optOutMapper = $this->createMock(ReminderOptOutMapper::class);
 		$this->userManager = $this->createMock(IUserManager::class);
-		$this->userFolder = $this->createMock(Folder::class);
+		// getUserFolder() returns IUserFolder on NC dev-master, which NC 32-34 lack
+		$this->userFolder = $this->createMock(interface_exists(\OCP\Files\IUserFolder::class) ? \OCP\Files\IUserFolder::class : Folder::class);
 		$this->contractMapper->method('transactional')->willReturnCallback(fn (callable $fn) => $fn());
 
 		$rootFolder = $this->createMock(IRootFolder::class);
