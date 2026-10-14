@@ -40,6 +40,8 @@ return [
         ['name' => 'settings#update', 'url' => '/api/settings', 'verb' => 'PUT'],
         ['name' => 'settings#resetCalendarFeedToken', 'url' => '/api/settings/calendar-feed/reset', 'verb' => 'POST'],
         ['name' => 'settings#backupNow', 'url' => '/api/settings/backup/now', 'verb' => 'POST'],
+        ['name' => 'import#preview', 'url' => '/api/import/preview', 'verb' => 'POST'],
+        ['name' => 'import#import', 'url' => '/api/import', 'verb' => 'POST'],
 
         // Public iCalendar feed (token-authenticated, #68)
         ['name' => 'calendar#feed', 'url' => '/feed/{token}/contracts.ics', 'verb' => 'GET'],

@@ -376,7 +376,48 @@
 		"Kein Zugriff auf VertragsWerk": "Kein Zugriff auf VertragsWerk",
 		"Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration.": "Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration.",
 		"Uhrzeit": "Uhrzeit",
-		"Keine feste Uhrzeit": "Keine feste Uhrzeit"
+		"Keine feste Uhrzeit": "Keine feste Uhrzeit",
+		"Backup einlesen": "Backup einlesen",
+		"Liest eine Sicherungsdatei (JSON) aus Ihren Nextcloud-Dateien ein, auch aus einer anderen Nextcloud. Die Verträge gehören danach Ihnen. Verträge, die Sie schon haben (gleicher Name, Anbieter und Beginn), werden übersprungen.": "Liest eine Sicherungsdatei (JSON) aus Ihren Nextcloud-Dateien ein, auch aus einer anderen Nextcloud. Die Verträge gehören danach Ihnen. Verträge, die Sie schon haben (gleicher Name, Anbieter und Beginn), werden übersprungen.",
+		"Sicherungsdatei wählen": "Sicherungsdatei wählen",
+		"Backup einlesen?": "Backup einlesen?",
+		"Einlesen": "Einlesen",
+		"Die Datei konnte nicht gelesen werden.": "Die Datei konnte nicht gelesen werden.",
+		"Einlesen fehlgeschlagen": "Einlesen fehlgeschlagen",
+		"_%n Vertrag wird eingelesen_::_%n Verträge werden eingelesen_": [
+			"%n Vertrag wird eingelesen",
+			"%n Verträge werden eingelesen"
+		],
+		"_%n Vertrag ist schon vorhanden und wird übersprungen_::_%n Verträge sind schon vorhanden und werden übersprungen_": [
+			"%n Vertrag ist schon vorhanden und wird übersprungen",
+			"%n Verträge sind schon vorhanden und werden übersprungen"
+		],
+		"_%n Eintrag ist unvollständig und wird übersprungen_::_%n Einträge sind unvollständig und werden übersprungen_": [
+			"%n Eintrag ist unvollständig und wird übersprungen",
+			"%n Einträge sind unvollständig und werden übersprungen"
+		],
+		"_%n Kategorie wird neu angelegt_::_%n Kategorien werden neu angelegt_": [
+			"%n Kategorie wird neu angelegt",
+			"%n Kategorien werden neu angelegt"
+		],
+		"_Bei %n Vertrag wurde das verknüpfte Dokument oder der Ordner hier nicht gefunden. Der Pfad bleibt erhalten, die Dateien müssen Sie selbst nachkopieren._::_Bei %n Verträgen wurden verknüpfte Dokumente oder Ordner hier nicht gefunden. Die Pfade bleiben erhalten, die Dateien müssen Sie selbst nachkopieren._": [
+			"Bei %n Vertrag wurde das verknüpfte Dokument oder der Ordner hier nicht gefunden. Der Pfad bleibt erhalten, die Dateien müssen Sie selbst nachkopieren.",
+			"Bei %n Verträgen wurden verknüpfte Dokumente oder Ordner hier nicht gefunden. Die Pfade bleiben erhalten, die Dateien müssen Sie selbst nachkopieren."
+		],
+		"_Bei %n Vertrag gibt es den Zuständigen hier nicht, das Feld bleibt leer._::_Bei %n Verträgen gibt es den Zuständigen hier nicht, das Feld bleibt leer._": [
+			"Bei %n Vertrag gibt es den Zuständigen hier nicht, das Feld bleibt leer.",
+			"Bei %n Verträgen gibt es den Zuständigen hier nicht, das Feld bleibt leer."
+		],
+		"_%n Vertrag eingelesen_::_%n Verträge eingelesen_": [
+			"%n Vertrag eingelesen",
+			"%n Verträge eingelesen"
+		],
+		"Keine Berechtigung": "Keine Berechtigung",
+		"Bitte eine JSON-Datei aus dem Backup wählen.": "Bitte eine JSON-Datei aus dem Backup wählen.",
+		"Die Datei ist zu groß.": "Die Datei ist zu groß.",
+		"Die Datei ist keine VertragsWerk-Sicherung.": "Die Datei ist keine VertragsWerk-Sicherung.",
+		"Diese Sicherung hat ein unbekanntes Format (Version %s). Bitte VertragsWerk aktualisieren.": "Diese Sicherung hat ein unbekanntes Format (Version %s). Bitte VertragsWerk aktualisieren.",
+		"Auswählen": "Auswählen"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }
