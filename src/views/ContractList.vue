@@ -231,13 +231,10 @@ import ContractListItem from '../components/ContractListItem.vue'
 import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isPlanned } from '../utils/contractStatus'
 import { contractForDuplicate } from '../utils/contractDuplicate'
+import { hasMonthlyEquivalent, monthlyCost } from '../utils/costInterval'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 import { showInfo, showError } from '@nextcloud/dialogs'
-
-// Teiler je Zahlweise, um einen Betrag auf einen Monatswert zu normalisieren.
-// Einmalzahlungen und unbekannte Intervalle haben bewusst keinen Eintrag.
-const COST_INTERVAL_DIVISOR = { monthly: 1, quarterly: 3, semi_annual: 6, yearly: 12 }
 
 export default {
 	name: 'ContractList',
@@ -414,7 +411,7 @@ export default {
 				// „Geplant" and are excluded from the active count, so they must
 				// not inflate the „laufende Kosten" sum either.
 				if (isPlanned(c)) return false
-				if (!COST_INTERVAL_DIVISOR[c.costInterval]) return false
+				if (!hasMonthlyEquivalent(c.costInterval)) return false
 				if (!Number.isFinite(parseFloat(c.cost))) return false
 				// Use the EFFECTIVE end date: getEffectiveEndDate rolls auto_renewal
 				// contracts forward and respects cancelledTo. The old code used the
@@ -435,7 +432,7 @@ export default {
 			let sum = 0
 			this.kpiCostContracts.forEach(c => {
 				if ((c.currency || 'EUR') !== this.kpiLeadCurrency) return
-				sum += parseFloat(c.cost) / COST_INTERVAL_DIVISOR[c.costInterval]
+				sum += monthlyCost(parseFloat(c.cost), c.costInterval)
 			})
 			return sum
 		},

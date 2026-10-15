@@ -10,11 +10,14 @@ use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Service\ContractExportService;
+use OCA\ContractManager\Service\ContractImportService;
 use OCA\ContractManager\UserMigration\ContractMigrator;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\UserMigration\IExportDestination;
 use OCP\UserMigration\IImportSource;
 use PHPUnit\Framework\TestCase;
@@ -38,6 +41,7 @@ class ContractMigratorTest extends TestCase {
 		$this->timeFactory = $this->createMock(ITimeFactory::class);
 		$this->timeFactory->method('getDateTime')->willReturn(new \DateTime('2026-07-24T12:00:00+00:00'));
 		$this->appManager->method('getAppVersion')->willReturn('1.2.6');
+		$this->contractMapper->method('transactional')->willReturnCallback(fn (callable $fn) => $fn());
 
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
@@ -52,12 +56,19 @@ class ContractMigratorTest extends TestCase {
 			$this->timeFactory,
 		);
 
-		$this->migrator = new ContractMigrator(
+		$importService = new ContractImportService(
 			$this->contractMapper,
 			$this->categoryMapper,
 			$this->optOutMapper,
-			$exportService,
+			$this->createMock(IUserManager::class),
+			$this->createMock(IRootFolder::class),
 			$this->timeFactory,
+			$l10n,
+		);
+
+		$this->migrator = new ContractMigrator(
+			$exportService,
+			$importService,
 			$l10n,
 		);
 	}
@@ -228,6 +239,16 @@ class ContractMigratorTest extends TestCase {
 
 		$this->assertCount(1, $insertedContracts);
 		$this->assertSame(7, $insertedContracts[0]->getCategoryId(), 'must reuse the existing category id');
+	}
+
+	public function testImportSkipsUnknownSchemaVersion(): void {
+		$source = $this->createMock(IImportSource::class);
+		$source->method('getMigratorVersion')->willReturn(1);
+		$source->method('pathExists')->willReturn(true);
+		$source->method('getFileContents')->willReturn(json_encode(['schemaVersion' => 2, 'contracts' => []]));
+		$this->contractMapper->expects($this->never())->method('insert');
+
+		$this->migrator->import($this->user('erin'), $source, new NullOutput());
 	}
 
 	public function testImportSkipsWhenMigratorVersionMissing(): void {

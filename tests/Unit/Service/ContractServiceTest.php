@@ -144,6 +144,34 @@ class ContractServiceTest extends TestCase {
 		$this->assertTrue(true);
 	}
 
+	public function testValidateAcceptsAllValidCostIntervals(): void {
+		$validIntervals = ['weekly', 'monthly', 'quarterly', 'semi_annual', 'yearly', 'one_time'];
+
+		foreach ($validIntervals as $interval) {
+			$data = [
+				'name' => 'Test Contract',
+				'vendor' => 'Test Vendor',
+				'costInterval' => $interval,
+			];
+
+			$this->service->validate($data);
+		}
+
+		$this->assertTrue(true);
+	}
+
+	public function testValidateThrowsWhenCostIntervalInvalid(): void {
+		$this->expectException(ValidationException::class);
+
+		$data = [
+			'name' => 'Test Contract',
+			'vendor' => 'Test Vendor',
+			'costInterval' => 'daily',
+		];
+
+		$this->service->validate($data);
+	}
+
 	// ========================================
 	// Access Control Tests
 	// ========================================

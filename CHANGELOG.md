@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-15
+
+### Added
+- **Backup einlesen**: Sicherungsdateien von VertragsWerk (Auto-Backup, `occ contractmanager:export`, Nextcloud-Kontoumzug) lassen sich wieder einlesen, auch auf einer anderen Nextcloud. In den Einstellungen unter Auto-Backup wählt man die Datei aus den eigenen Dateien, sieht eine Vorschau mit den Zahlen und liest dann ein; nur für Administratoren und Editoren. Eigene Verträge mit gleichem Namen, Anbieter und Beginn werden übersprungen, sodass wiederholtes Einlesen nichts verdoppelt. Fehlende Kategorien werden angelegt, Verweise auf Ordner und Dokumente bleiben erhalten; die Vorschau zählt, welche davon hier nicht gefunden werden. Dazu der Befehl `occ contractmanager:import --user --file [--dry-run]` (#446)
+- **Zahlweise „Wöchentlich“**: Verträge können wöchentlich bezahlt werden. Die Kachel „Monatliche Kosten“ rechnet den Wochenbetrag mit 52/12 (rund 4,33) auf den Monat um (#445)
+
+### Changed
+- Der Import beim Nextcloud-Kontoumzug (user_migration) nutzt dieselbe Logik wie „Backup einlesen“ und überspringt damit ebenfalls schon vorhandene Verträge. Eine Sicherung mit unbekanntem Format wird abgelehnt statt teilweise eingelesen (#446)
+
 ## [1.9.0] - 2026-10-02
 
 ### Added
@@ -485,7 +494,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.1...v1.8.0
 [1.7.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.7.0...v1.7.1
