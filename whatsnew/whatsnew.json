@@ -1,4 +1,38 @@
 {
+	"1.10.0": [
+		{
+			"title": {
+				"de": "Backup wieder einlesen",
+				"en": "Restore a backup"
+			},
+			"text": {
+				"de": "Eine Sicherungsdatei von VertragsWerk lässt sich jetzt wieder einlesen, auch auf einer anderen Nextcloud. Sie wählen die Datei aus Ihren Dateien und sehen vorher, wie viele Verträge neu dazukommen. Verträge, die schon da sind, werden übersprungen.",
+				"en": "You can now restore a VertragsWerk backup file, also on another Nextcloud. Choose the file from your files and see beforehand how many contracts will be added. Contracts that already exist are skipped."
+			},
+			"icon": "file-document",
+			"where": {
+				"de": "Einstellungen › Auto-Backup",
+				"en": "Settings › Auto-backup"
+			},
+			"plus": false
+		},
+		{
+			"title": {
+				"de": "Wöchentliche Zahlweise",
+				"en": "Weekly payment frequency"
+			},
+			"text": {
+				"de": "Verträge können jetzt auch wöchentlich bezahlt werden. Bei den monatlichen Kosten rechnet VertragsWerk den Wochenbetrag genau auf den Monat um.",
+				"en": "Contracts can now also be paid weekly. For the monthly costs, VertragsWerk converts the weekly amount exactly to a month."
+			},
+			"icon": "calendar",
+			"where": {
+				"de": "Vertrag › Zahlweise",
+				"en": "Contract › Payment frequency"
+			},
+			"plus": false
+		}
+	],
 	"1.9.0": [
 		{
 			"title": {
