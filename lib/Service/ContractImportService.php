@@ -10,6 +10,7 @@ use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IUserManager;
@@ -57,6 +58,7 @@ class ContractImportService {
 		private IRootFolder $rootFolder,
 		private ITimeFactory $timeFactory,
 		private IL10N $l,
+		private PermissionService $permissionService,
 	) {
 	}
 
@@ -83,7 +85,7 @@ class ContractImportService {
 
 	/**
 	 * @param array<string, mixed> $data result of parse()
-	 * @return array{contracts: int, duplicates: int, invalid: int, categories: int, missingFiles: int, unknownUsers: int}
+	 * @return array{contracts: int, duplicates: int, inTrash: int, invalid: int, categories: int, missingFiles: int, unknownUsers: int}
 	 */
 	public function preview(string $uid, array $data): array {
 		return $this->run($uid, $data, false);
@@ -91,7 +93,7 @@ class ContractImportService {
 
 	/**
 	 * @param array<string, mixed> $data result of parse()
-	 * @return array{contracts: int, duplicates: int, invalid: int, categories: int, missingFiles: int, unknownUsers: int}
+	 * @return array{contracts: int, duplicates: int, inTrash: int, invalid: int, categories: int, missingFiles: int, unknownUsers: int}
 	 */
 	public function import(string $uid, array $data): array {
 		return $this->contractMapper->transactional(fn () => $this->run($uid, $data, true));
@@ -101,12 +103,13 @@ class ContractImportService {
 	 * Shared by preview and import so the preview numbers match what the import does.
 	 *
 	 * @param array<string, mixed> $data
-	 * @return array{contracts: int, duplicates: int, invalid: int, categories: int, missingFiles: int, unknownUsers: int}
+	 * @return array{contracts: int, duplicates: int, inTrash: int, invalid: int, categories: int, missingFiles: int, unknownUsers: int}
 	 */
 	private function run(string $uid, array $data, bool $write): array {
 		$summary = [
 			'contracts' => 0,
 			'duplicates' => 0,
+			'inTrash' => 0,
 			'invalid' => 0,
 			'categories' => 0,
 			'missingFiles' => 0,
@@ -125,10 +128,8 @@ class ContractImportService {
 		}
 		$categoryMap = [];
 
-		$existingKeys = [];
-		foreach ($this->contractMapper->findAllByOwner($uid) as $existing) {
-			$existingKeys[$this->duplicateKey($existing->getName(), $existing->getVendor(), $existing->getStartDate())] = true;
-		}
+		[$existingKeys, $trashKeys] = $this->visibleKeys($uid);
+		$userFolder = null;
 
 		$contractMap = [];
 		foreach ($data['contracts'] as $c) {
@@ -150,6 +151,10 @@ class ContractImportService {
 				$summary['duplicates']++;
 				continue;
 			}
+			if (isset($trashKeys[$key])) {
+				$summary['inTrash']++;
+				continue;
+			}
 			$existingKeys[$key] = true;
 
 			$categoryId = null;
@@ -166,7 +171,7 @@ class ContractImportService {
 
 			$contractFolder = $this->nullableString($c['contractFolder'] ?? null, 1024);
 			$mainDocument = $this->nullableString($c['mainDocument'] ?? null, 1024);
-			if (!$this->pathResolves($uid, $contractFolder) || !$this->pathResolves($uid, $mainDocument)) {
+			if (!$this->pathResolves($uid, $userFolder, $contractFolder) || !$this->pathResolves($uid, $userFolder, $mainDocument)) {
 				$summary['missingFiles']++;
 			}
 
@@ -250,13 +255,47 @@ class ContractImportService {
 		return $categoryMap[$name] = $this->categoryMapper->insert($category)->getId();
 	}
 
-	// Empty references and external URLs count as resolved
-	private function pathResolves(string $uid, ?string $path): bool {
+	/**
+	 * Same visibility as list and trash, so the duplicate count never reveals private contracts of others.
+	 *
+	 * @return array{0: array<string, true>, 1: array<string, true>} [active and archived, trash]
+	 */
+	private function visibleKeys(string $uid): array {
+		$isAdmin = $this->permissionService->isAdmin($uid);
+		$active = array_merge(
+			$this->contractMapper->findAllVisible($uid, $isAdmin),
+			$this->contractMapper->findArchivedVisible($uid, $isAdmin),
+		);
+		$trash = $isAdmin
+			? $this->contractMapper->findAllDeleted()
+			: $this->contractMapper->findDeletedRestorableBy($uid, $this->permissionService->isEditor($uid));
+
+		$keys = [[], []];
+		foreach ([$active, $trash] as $i => $contracts) {
+			foreach ($contracts as $contract) {
+				$keys[$i][$this->duplicateKey($contract->getName(), $contract->getVendor(), $contract->getStartDate())] = true;
+			}
+		}
+		return $keys;
+	}
+
+	// Empty references and external URLs count as resolved. The user folder is fetched once per run.
+	private function pathResolves(string $uid, Folder|false|null &$userFolder, ?string $path): bool {
 		if ($path === null || preg_match('#^https?://#i', $path) === 1) {
 			return true;
 		}
+		if ($userFolder === null) {
+			try {
+				$userFolder = $this->rootFolder->getUserFolder($uid);
+			} catch (\Throwable) {
+				$userFolder = false;
+			}
+		}
+		if ($userFolder === false) {
+			return false;
+		}
 		try {
-			return $this->rootFolder->getUserFolder($uid)->nodeExists(ltrim($path, '/'));
+			return $userFolder->nodeExists(ltrim($path, '/'));
 		} catch (\Throwable) {
 			return false;
 		}

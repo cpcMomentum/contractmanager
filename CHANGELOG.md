@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Backup einlesen**: Schon vorhandene Verträge werden jetzt gegen alles geprüft, was man in VertragsWerk sieht, also auch gegen geteilte Verträge von Kollegen und archivierte Verträge. Liest ein Editor das Backup eines Kollegen ein, entstehen keine Kopien mehr. Verträge, die im Papierkorb liegen, werden übersprungen; die Vorschau zählt sie getrennt und verweist auf den Papierkorb. Private Verträge anderer bleiben beim Abgleich außen vor (#457)
+
 ## [1.10.0] - 2026-10-15
 
 ### Added

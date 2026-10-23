@@ -6,6 +6,7 @@ const baseUrl = generateUrl('/apps/contractmanager/api/import')
 export interface ImportSummary {
 	contracts: number
 	duplicates: number
+	inTrash: number
 	invalid: number
 	categories: number
 	missingFiles: number

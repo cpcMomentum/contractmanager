@@ -11,6 +11,7 @@ use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Service\ContractExportService;
 use OCA\ContractManager\Service\ContractImportService;
+use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\UserMigration\ContractMigrator;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -64,6 +65,7 @@ class ContractMigratorTest extends TestCase {
 			$this->createMock(IRootFolder::class),
 			$this->timeFactory,
 			$l10n,
+			$this->createMock(PermissionService::class),
 		);
 
 		$this->migrator = new ContractMigrator(
