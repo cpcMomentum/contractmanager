@@ -257,7 +257,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testDuplicateWithinTheFileIsImportedOnce(): void {
-
 		$summary = $this->service->import('bob', $this->doc([
 			$this->contract(),
 			$this->contract(['exportId' => 12]),
@@ -304,7 +303,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testInvalidValuesFallBackToDefaults(): void {
-
 		$this->service->import('bob', $this->doc([$this->contract([
 			'status' => 'gekündigt', 'costInterval' => 'biweekly', 'contractType' => 'x',
 			'amountType' => 'y', 'cancellationDeadlineType' => 'z', 'cost' => 'viel',
@@ -320,7 +318,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testValidValuesAreKept(): void {
-
 		$this->service->import('bob', $this->doc([$this->contract([
 			'status' => 'cancelled', 'costInterval' => 'weekly', 'contractType' => 'auto_renewal',
 			'amountType' => 'brutto', 'cancellationDeadlineType' => 'month_end',
@@ -336,7 +333,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testContractWithoutNameOrStartDateIsSkipped(): void {
-
 		$summary = $this->service->import('bob', $this->doc([
 			$this->contract(['name' => '  ']),
 			$this->contract(['exportId' => 12, 'startDate' => null]),
@@ -384,7 +380,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testOverlongValuesAreCutToColumnLength(): void {
-
 		$this->service->import('bob', $this->doc([$this->contract([
 			'name' => str_repeat('ä', 300), 'currency' => 'EURO', 'cancellationPeriod' => str_repeat('x', 80),
 			'vendor' => ['kein', 'Text'],
