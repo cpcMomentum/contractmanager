@@ -44,8 +44,8 @@ jobs:
       matrix:
         # PHP-Raender des unterstuetzten Bereichs; NC/ocp kommt aus info.xml.
         # 8.2 ist die Untergrenze der App (info.xml), 8.5 die Obergrenze des
-        # neuesten unterstuetzten NC. 8.4 bleibt stehen, weil "PHP 8.2" und
-        # "PHP 8.4" als Required Status Checks im develop-Ruleset haengen —
+        # neuesten unterstuetzten NC. 8.4 bleibt stehen, weil "PHP 8.2", "PHP 8.4"
+        # und "PHP 8.5" als Required Status Checks im develop-Ruleset haengen —
         # ein Umbenennen liesse den Check lautlos verschwinden und wuerde jeden
         # PR blockieren. Hinzufuegen ist gefahrlos, Umbenennen nicht.
         php-version: ['8.2', '8.4', '8.5']
