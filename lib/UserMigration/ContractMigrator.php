@@ -81,6 +81,6 @@ class ContractMigrator implements IMigrator {
 		}
 
 		$summary = $this->importService->import($user->getUID(), $data);
-		$output->writeln('Imported ' . $summary['contracts'] . ' contract(s), skipped ' . $summary['duplicates'] . ' duplicate(s).');
+		$output->writeln('Imported ' . $summary['contracts'] . ' contract(s), skipped ' . $summary['duplicates'] . ' duplicate(s) and ' . $summary['inTrash'] . ' in trash.');
 	}
 }

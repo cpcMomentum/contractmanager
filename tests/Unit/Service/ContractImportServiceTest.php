@@ -10,6 +10,7 @@ use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Service\ContractImportService;
+use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\ValidationException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\Folder;
@@ -24,10 +25,15 @@ class ContractImportServiceTest extends TestCase {
 	private CategoryMapper $categoryMapper;
 	private ReminderOptOutMapper $optOutMapper;
 	private IUserManager $userManager;
+	private PermissionService $permissionService;
+	private ITimeFactory $timeFactory;
+	private IL10N $l10n;
 	private Folder $userFolder;
 	private ContractImportService $service;
 	/** @var list<Contract> */
 	private array $inserted = [];
+	private bool $isAdmin = false;
+	private bool $isEditor = true;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -35,16 +41,20 @@ class ContractImportServiceTest extends TestCase {
 		$this->categoryMapper = $this->createMock(CategoryMapper::class);
 		$this->optOutMapper = $this->createMock(ReminderOptOutMapper::class);
 		$this->userManager = $this->createMock(IUserManager::class);
+		// Importers are editors by default; the admin and viewer paths have their own tests
+		$this->permissionService = $this->createMock(PermissionService::class);
+		$this->permissionService->method('isAdmin')->willReturnCallback(fn () => $this->isAdmin);
+		$this->permissionService->method('isEditor')->willReturnCallback(fn () => $this->isEditor);
 		// getUserFolder() returns IUserFolder on NC dev-master, which NC 32-34 lack
 		$this->userFolder = $this->createMock(interface_exists(\OCP\Files\IUserFolder::class) ? \OCP\Files\IUserFolder::class : Folder::class);
 		$this->contractMapper->method('transactional')->willReturnCallback(fn (callable $fn) => $fn());
 
 		$rootFolder = $this->createMock(IRootFolder::class);
 		$rootFolder->method('getUserFolder')->willReturn($this->userFolder);
-		$timeFactory = $this->createMock(ITimeFactory::class);
-		$timeFactory->method('getDateTime')->willReturn(new \DateTime('2026-10-08T12:00:00+00:00'));
-		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnCallback(fn (string $text, array $p = []) => vsprintf($text, $p));
+		$this->timeFactory = $this->createMock(ITimeFactory::class);
+		$this->timeFactory->method('getDateTime')->willReturn(new \DateTime('2026-10-08T12:00:00+00:00'));
+		$this->l10n = $this->createMock(IL10N::class);
+		$this->l10n->method('t')->willReturnCallback(fn (string $text, array $p = []) => vsprintf($text, $p));
 
 		$this->contractMapper->method('insert')->willReturnCallback(function (Contract $c) {
 			$c->setId(1000 + count($this->inserted));
@@ -52,14 +62,19 @@ class ContractImportServiceTest extends TestCase {
 			return $c;
 		});
 
-		$this->service = new ContractImportService(
-			$this->contractMapper,
+		$this->service = $this->makeService($this->contractMapper, $rootFolder);
+	}
+
+	private function makeService(ContractMapper $mapper, IRootFolder $rootFolder): ContractImportService {
+		return new ContractImportService(
+			$mapper,
 			$this->categoryMapper,
 			$this->optOutMapper,
 			$this->userManager,
 			$rootFolder,
-			$timeFactory,
-			$l10n,
+			$this->timeFactory,
+			$this->l10n,
+			$this->permissionService,
 		);
 	}
 
@@ -120,7 +135,7 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testImportSkipsContractTheUserAlreadyOwns(): void {
-		$this->contractMapper->method('findAllByOwner')->with('bob')->willReturn([
+		$this->contractMapper->method('findAllVisible')->with('bob', false)->willReturn([
 			$this->existing('strom ', 'Acme', '2026-01-01'),
 		]);
 
@@ -136,7 +151,7 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testSameNameWithOtherStartDateIsNoDuplicate(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([
+		$this->contractMapper->method('findAllVisible')->willReturn([
 			$this->existing('Strom', 'ACME', '2025-01-01'),
 		]);
 
@@ -146,9 +161,102 @@ class ContractImportServiceTest extends TestCase {
 		$this->assertCount(1, $this->inserted);
 	}
 
-	public function testDuplicateWithinTheFileIsImportedOnce(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
+	public function testArchivedContractCountsAsDuplicate(): void {
+		$this->contractMapper->method('findArchivedVisible')->with('bob', false)->willReturn([
+			$this->existing('Strom', 'ACME', '2026-01-01'),
+		]);
 
+		$summary = $this->service->import('bob', $this->doc([$this->contract()]));
+
+		$this->assertSame(1, $summary['duplicates']);
+		$this->assertCount(0, $this->inserted);
+	}
+
+	public function testContractInTrashIsSkippedAndCountedSeparately(): void {
+		$this->contractMapper->method('findDeletedRestorableBy')->with('bob', true)->willReturn([
+			$this->existing('Strom', 'ACME', '2026-01-01'),
+		]);
+
+		$summary = $this->service->import('bob', $this->doc([
+			$this->contract(),
+			$this->contract(['exportId' => 12, 'name' => 'Handy']),
+		]));
+
+		$this->assertSame(1, $summary['inTrash']);
+		$this->assertSame(0, $summary['duplicates']);
+		$this->assertSame(1, $summary['contracts']);
+		$this->assertCount(1, $this->inserted);
+		$this->assertSame('Handy', $this->inserted[0]->getName());
+	}
+
+	public function testActiveDuplicateWinsOverTrash(): void {
+		$this->contractMapper->method('findAllVisible')->willReturn([$this->existing('Strom', 'ACME', '2026-01-01')]);
+		$this->contractMapper->method('findDeletedRestorableBy')->willReturn([$this->existing('Strom', 'ACME', '2026-01-01')]);
+
+		$summary = $this->service->preview('bob', $this->doc([$this->contract()]));
+
+		$this->assertSame(1, $summary['duplicates']);
+		$this->assertSame(0, $summary['inTrash']);
+	}
+
+	public function testEditorComparesAgainstVisibleContractsOnly(): void {
+		$this->contractMapper->expects($this->once())->method('findAllVisible')->with('bob', false)->willReturn([]);
+		$this->contractMapper->expects($this->once())->method('findArchivedVisible')->with('bob', false)->willReturn([]);
+		$this->contractMapper->expects($this->once())->method('findDeletedRestorableBy')->with('bob', true)->willReturn([]);
+		$this->contractMapper->expects($this->never())->method('findAllDeleted');
+
+		$this->service->preview('bob', $this->doc([$this->contract()]));
+	}
+
+	public function testAdminComparesAgainstAllContracts(): void {
+		$this->isAdmin = true;
+		$this->contractMapper->expects($this->once())->method('findAllVisible')->with('bob', true)->willReturn([]);
+		$this->contractMapper->expects($this->once())->method('findArchivedVisible')->with('bob', true)->willReturn([]);
+		$this->contractMapper->expects($this->once())->method('findAllDeleted')->willReturn([
+			$this->existing('Strom', 'ACME', '2026-01-01'),
+		]);
+		$this->contractMapper->expects($this->never())->method('findDeletedRestorableBy');
+
+		$summary = $this->service->preview('bob', $this->doc([$this->contract()]));
+
+		$this->assertSame(1, $summary['inTrash']);
+	}
+
+	public function testUserWithoutEditorRoleSeesOnlyOwnTrash(): void {
+		// user_migration imports for any user, not only editors
+		$this->isEditor = false;
+		$this->contractMapper->expects($this->once())->method('findDeletedRestorableBy')->with('bob', false)->willReturn([]);
+
+		$this->service->preview('bob', $this->doc([$this->contract()]));
+	}
+
+	public function testUserFolderIsFetchedOncePerRun(): void {
+		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder->expects($this->once())->method('getUserFolder')->with('bob')->willReturn($this->userFolder);
+		$this->userFolder->method('nodeExists')->willReturn(true);
+
+		$summary = $this->makeService($this->contractMapper, $rootFolder)->import('bob', $this->doc([
+			$this->contract(['mainDocument' => '/a.pdf', 'contractFolder' => '/A']),
+			$this->contract(['exportId' => 12, 'name' => 'Handy', 'mainDocument' => '/b.pdf']),
+			$this->contract(['exportId' => 13, 'name' => 'Web', 'contractFolder' => '/C']),
+		]));
+
+		$this->assertSame(0, $summary['missingFiles']);
+	}
+
+	public function testUnavailableUserFolderCountsPathsAsMissing(): void {
+		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder->expects($this->once())->method('getUserFolder')->willThrowException(new \RuntimeException('no storage'));
+
+		$summary = $this->makeService($this->contractMapper, $rootFolder)->preview('bob', $this->doc([
+			$this->contract(['mainDocument' => '/a.pdf']),
+			$this->contract(['exportId' => 12, 'name' => 'Handy', 'mainDocument' => '/b.pdf']),
+		]));
+
+		$this->assertSame(2, $summary['missingFiles']);
+	}
+
+	public function testDuplicateWithinTheFileIsImportedOnce(): void {
 		$summary = $this->service->import('bob', $this->doc([
 			$this->contract(),
 			$this->contract(['exportId' => 12]),
@@ -159,7 +267,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testPreviewWritesNothingAndMatchesImport(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
 		$this->categoryMapper->method('findByName')->willReturn(null);
 		$this->categoryMapper->expects($this->once())->method('insert')->willReturnCallback(function (Category $cat) {
 			$cat->setId(99);
@@ -180,7 +287,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testExistingCategoryIsReusedByName(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
 		$cat = new Category();
 		$cat->setId(7);
 		$cat->setName('Energie');
@@ -197,8 +303,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testInvalidValuesFallBackToDefaults(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
-
 		$this->service->import('bob', $this->doc([$this->contract([
 			'status' => 'gekündigt', 'costInterval' => 'biweekly', 'contractType' => 'x',
 			'amountType' => 'y', 'cancellationDeadlineType' => 'z', 'cost' => 'viel',
@@ -214,8 +318,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testValidValuesAreKept(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
-
 		$this->service->import('bob', $this->doc([$this->contract([
 			'status' => 'cancelled', 'costInterval' => 'weekly', 'contractType' => 'auto_renewal',
 			'amountType' => 'brutto', 'cancellationDeadlineType' => 'month_end',
@@ -231,8 +333,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testContractWithoutNameOrStartDateIsSkipped(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
-
 		$summary = $this->service->import('bob', $this->doc([
 			$this->contract(['name' => '  ']),
 			$this->contract(['exportId' => 12, 'startDate' => null]),
@@ -244,7 +344,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testUnknownResponsibleUserIsCleared(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
 		$this->userManager->method('userExists')->willReturnCallback(fn (string $uid) => $uid === 'alice');
 
 		$summary = $this->service->import('bob', $this->doc([
@@ -258,7 +357,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testMissingAttachmentIsCountedButPathKept(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
 		$this->userFolder->method('nodeExists')->willReturnCallback(fn (string $p) => $p === 'Verträge/da.pdf');
 
 		$summary = $this->service->import('bob', $this->doc([
@@ -272,7 +370,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testOptOutIsRemappedToNewContract(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
 		$this->optOutMapper->expects($this->once())->method('setOptOut')->with(1000, 'bob', true);
 
 		$this->service->import('bob', $this->doc(
@@ -283,8 +380,6 @@ class ContractImportServiceTest extends TestCase {
 	}
 
 	public function testOverlongValuesAreCutToColumnLength(): void {
-		$this->contractMapper->method('findAllByOwner')->willReturn([]);
-
 		$this->service->import('bob', $this->doc([$this->contract([
 			'name' => str_repeat('ä', 300), 'currency' => 'EURO', 'cancellationPeriod' => str_repeat('x', 80),
 			'vendor' => ['kein', 'Text'],
@@ -299,7 +394,6 @@ class ContractImportServiceTest extends TestCase {
 
 	public function testImportWritesInsideOneTransaction(): void {
 		$mapper = $this->createMock(ContractMapper::class);
-		$mapper->method('findAllByOwner')->willReturn([]);
 		$inTransaction = false;
 		$mapper->expects($this->once())->method('transactional')->willReturnCallback(function (callable $fn) use (&$inTransaction) {
 			$inTransaction = true;
@@ -312,18 +406,7 @@ class ContractImportServiceTest extends TestCase {
 			$c->setId(1);
 			return $c;
 		});
-		$timeFactory = $this->createMock(ITimeFactory::class);
-		$timeFactory->method('getDateTime')->willReturn(new \DateTime());
-
-		$service = new ContractImportService(
-			$mapper,
-			$this->categoryMapper,
-			$this->optOutMapper,
-			$this->userManager,
-			$this->createMock(IRootFolder::class),
-			$timeFactory,
-			$this->createMock(IL10N::class),
-		);
+		$service = $this->makeService($mapper, $this->createMock(IRootFolder::class));
 
 		$service->import('bob', $this->doc([$this->contract()]));
 	}

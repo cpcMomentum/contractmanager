@@ -732,6 +732,9 @@
 				<li v-if="importPreview.duplicates > 0">
 					{{ n('contractmanager', '%n Vertrag ist schon vorhanden und wird übersprungen', '%n Verträge sind schon vorhanden und werden übersprungen', importPreview.duplicates) }}
 				</li>
+				<li v-if="importPreview.inTrash > 0">
+					{{ n('contractmanager', '%n Vertrag liegt im Papierkorb und wird übersprungen. Stellen Sie ihn dort wieder her.', '%n Verträge liegen im Papierkorb und werden übersprungen. Stellen Sie sie dort wieder her.', importPreview.inTrash) }}
+				</li>
 				<li v-if="importPreview.invalid > 0">
 					{{ n('contractmanager', '%n Eintrag ist unvollständig und wird übersprungen', '%n Einträge sind unvollständig und werden übersprungen', importPreview.invalid) }}
 				</li>
