@@ -1,4 +1,22 @@
 {
+	"1.11.0": [
+		{
+			"title": {
+				"de": "Kontakt aus dem Adressbuch verknüpfen",
+				"en": "Link a contact from your address book"
+			},
+			"text": {
+				"de": "Zum Vertragspartner können Sie jetzt einen Kontakt aus Ihrem Adressbuch auswählen. E-Mail, Telefon und Adresse sehen Sie dann direkt im Vertrag, immer auf dem aktuellen Stand, mit einem Link in die Kontakte-App.",
+				"en": "You can now link a contact from your address book to the contract partner. Email, phone and address then appear right in the contract, always up to date, with a link to the Contacts app."
+			},
+			"icon": "account-group",
+			"where": {
+				"de": "Vertrag › Vertragspartner",
+				"en": "Contract › Contract partner"
+			},
+			"plus": false
+		}
+	],
 	"1.10.0": [
 		{
 			"title": {
