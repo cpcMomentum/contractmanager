@@ -10,6 +10,8 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
 use OCP\IDateTimeZone;
+use OCP\IUserManager;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -45,6 +47,8 @@ class AutoBackupService {
 		private ITimeFactory $timeFactory,
 		private LoggerInterface $logger,
 		private IDateTimeZone $dateTimeZone,
+		private IUserManager $userManager,
+		private IUserSession $userSession,
 	) {
 	}
 
@@ -164,6 +168,8 @@ class AutoBackupService {
 				continue;
 			}
 			try {
+				// Without an active user the file activity shows the author as "remote account".
+				$this->userSession->setVolatileActiveUser($this->userManager->get($uid));
 				$this->backupForUser($uid);
 				// The anchor stays on the schedule, never on the actual run time:
 				// whole intervals without a fixed hour (#375), the hour's latest
@@ -181,6 +187,8 @@ class AutoBackupService {
 					'user' => $uid,
 					'exception' => $e->getMessage(),
 				]);
+			} finally {
+				$this->userSession->setVolatileActiveUser(null);
 			}
 		}
 		return $count;
@@ -222,7 +230,8 @@ class AutoBackupService {
 			$folder = $userFolder->newFolder($relativePath);
 		}
 
-		$filename = 'contracts-' . $this->timeFactory->getDateTime()->format('Y-m-d-His') . '.json';
+		$localTime = $this->timeFactory->getDateTime()->setTimezone($this->dateTimeZone->getTimeZone(false, $uid));
+		$filename = 'contracts-' . $localTime->format('Y-m-d-His') . '.json';
 		$folder->newFile($filename, $this->exportService->exportJson($uid));
 
 		$this->prune($folder);
