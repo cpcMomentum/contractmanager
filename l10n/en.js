@@ -397,6 +397,14 @@ OC.L10N.register(
     "Die Datei ist zu groß." : "The file is too large.",
     "Die Datei ist keine VertragsWerk-Sicherung." : "The file is not a VertragsWerk backup.",
     "Diese Sicherung hat ein unbekanntes Format (Version %s). Bitte VertragsWerk aktualisieren." : "This backup has an unknown format (version %s). Please update VertragsWerk.",
-    "Auswählen" : "Select"
+    "Auswählen" : "Select",
+    "_%n Vertrag liegt im Papierkorb und wird übersprungen. Stellen Sie ihn dort wieder her._::_%n Verträge liegen im Papierkorb und werden übersprungen. Stellen Sie sie dort wieder her._" : ["%n contract is in the trash and will be skipped. Restore it there.","%n contracts are in the trash and will be skipped. Restore them there."],
+    "Kontakt im Adressbuch" : "Address book contact",
+    "Kontakt suchen..." : "Search contacts...",
+    "Optional. E-Mail, Telefon und Adresse kommen dann aus dem Adressbuch." : "Optional. Email, phone and address then come from the address book.",
+    "Verknüpfter Kontakt" : "Linked contact",
+    "Im Kontakt sind keine E-Mail-Adresse, Telefonnummer oder Adresse hinterlegt." : "The contact has no email address, phone number or address.",
+    "In Kontakte öffnen" : "Open in Contacts",
+    "Der verknüpfte Kontakt ist in Ihren Adressbüchern nicht verfügbar." : "The linked contact is not available in your address books."
 },
 "nplurals=2; plural=(n != 1);");

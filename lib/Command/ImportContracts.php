@@ -66,6 +66,7 @@ class ImportContracts extends Command {
 		$output->writeln(($dryRun ? 'Would import' : 'Imported') . ' for ' . $uid . ':');
 		$output->writeln('  contracts:              ' . $summary['contracts']);
 		$output->writeln('  skipped (duplicates):   ' . $summary['duplicates']);
+		$output->writeln('  skipped (in trash):     ' . $summary['inTrash']);
 		$output->writeln('  skipped (invalid):      ' . $summary['invalid']);
 		$output->writeln('  new categories:         ' . $summary['categories']);
 		$output->writeln('  file paths not found:   ' . $summary['missingFiles']);

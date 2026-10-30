@@ -355,6 +355,7 @@ class ContractService {
         ?string $cancelledTo = null,
         ?string $responsibleUser = null,
         string $cancellationDeadlineType = Contract::DEADLINE_TYPE_NORMAL,
+        ?string $vendorContactUid = null,
     ): Contract {
         $contract = new Contract();
         $contract->setName($name);
@@ -385,6 +386,7 @@ class ContractService {
         $contract->setCustomField3($customField3);
         $contract->setAmountType(in_array($amountType, [Contract::AMOUNT_TYPE_BRUTTO, Contract::AMOUNT_TYPE_NETTO], true) ? $amountType : Contract::AMOUNT_TYPE_NETTO);
         $contract->setResponsibleUser($responsibleUser !== null && $responsibleUser !== '' ? $responsibleUser : null);
+        $contract->setVendorContactUid($this->normalizeContactUid($vendorContactUid));
         $contract->setCreatedBy($userId);
         $contract->setCreatedAt(new DateTime());
         $contract->setUpdatedAt(new DateTime());
@@ -427,6 +429,7 @@ class ContractService {
         ?string $cancelledTo = null,
         ?string $responsibleUser = null,
         string $cancellationDeadlineType = Contract::DEADLINE_TYPE_NORMAL,
+        ?string $vendorContactUid = null,
     ): Contract {
         try {
             $contract = $this->mapper->find($id);
@@ -462,6 +465,7 @@ class ContractService {
         $contract->setReminderDays($reminderDays);
         $contract->setNotes($notes);
         $contract->setResponsibleUser($responsibleUser !== null && $responsibleUser !== '' ? $responsibleUser : null);
+        $contract->setVendorContactUid($this->normalizeContactUid($vendorContactUid));
         if ($isPrivate !== null) {
             $contract->setIsPrivate($isPrivate);
         }
@@ -472,6 +476,14 @@ class ContractService {
         $contract->setUpdatedAt(new DateTime());
 
         return $this->mapper->update($contract);
+    }
+
+    /**
+     * Empty clears the link; an over-long value cannot be a vCard UID we stored.
+     */
+    public function normalizeContactUid(?string $uid): ?string {
+        $uid = $uid === null ? '' : trim($uid);
+        return ($uid === '' || strlen($uid) > 255) ? null : $uid;
     }
 
     /**
