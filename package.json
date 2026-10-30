@@ -31,11 +31,11 @@
     "dependencies": {
         "@nextcloud/auth": "^2.5.3",
         "@nextcloud/axios": "^2.5.0",
-        "@nextcloud/dialogs": "^7.5.0",
+        "@nextcloud/dialogs": "^7.6.0",
         "@nextcloud/initial-state": "^2.2.0",
         "@nextcloud/l10n": "^3.1.0",
         "@nextcloud/router": "^3.2.0",
-        "@nextcloud/vue": "^9.13.1",
+        "@nextcloud/vue": "^9.14.0",
         "pinia": "^2.3.1",
         "vue": "^3.5.44",
         "vue-material-design-icons": "^5.4.0"
@@ -48,7 +48,7 @@
         "eslint": "^8.57.0",
         "happy-dom": "^21.0.4",
         "nc-app-tooling": "github:cpcMomentum/nc-app-tooling#v1.17.0",
-        "sass": "^1.105.2",
+        "sass": "^1.106.1",
         "typescript": "^5.7.2",
         "vite": "^7.3.7",
         "vitest": "^4.1.12",
