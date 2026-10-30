@@ -398,6 +398,13 @@ OC.L10N.register(
     "Die Datei ist keine VertragsWerk-Sicherung." : "Die Datei ist keine VertragsWerk-Sicherung.",
     "Diese Sicherung hat ein unbekanntes Format (Version %s). Bitte VertragsWerk aktualisieren." : "Diese Sicherung hat ein unbekanntes Format (Version %s). Bitte VertragsWerk aktualisieren.",
     "Auswählen" : "Auswählen",
-    "_%n Vertrag liegt im Papierkorb und wird übersprungen. Stellen Sie ihn dort wieder her._::_%n Verträge liegen im Papierkorb und werden übersprungen. Stellen Sie sie dort wieder her._" : ["%n Vertrag liegt im Papierkorb und wird übersprungen. Stellen Sie ihn dort wieder her.","%n Verträge liegen im Papierkorb und werden übersprungen. Stellen Sie sie dort wieder her."]
+    "_%n Vertrag liegt im Papierkorb und wird übersprungen. Stellen Sie ihn dort wieder her._::_%n Verträge liegen im Papierkorb und werden übersprungen. Stellen Sie sie dort wieder her._" : ["%n Vertrag liegt im Papierkorb und wird übersprungen. Stellen Sie ihn dort wieder her.","%n Verträge liegen im Papierkorb und werden übersprungen. Stellen Sie sie dort wieder her."],
+    "Kontakt im Adressbuch" : "Kontakt im Adressbuch",
+    "Kontakt suchen..." : "Kontakt suchen...",
+    "Optional. E-Mail, Telefon und Adresse kommen dann aus dem Adressbuch." : "Optional. E-Mail, Telefon und Adresse kommen dann aus dem Adressbuch.",
+    "Verknüpfter Kontakt" : "Verknüpfter Kontakt",
+    "Im Kontakt sind keine E-Mail-Adresse, Telefonnummer oder Adresse hinterlegt." : "Im Kontakt sind keine E-Mail-Adresse, Telefonnummer oder Adresse hinterlegt.",
+    "In Kontakte öffnen" : "In Kontakte öffnen",
+    "Der verknüpfte Kontakt ist in Ihren Adressbüchern nicht verfügbar." : "Der verknüpfte Kontakt ist in Ihren Adressbüchern nicht verfügbar."
 },
 "nplurals=2; plural=(n != 1);");

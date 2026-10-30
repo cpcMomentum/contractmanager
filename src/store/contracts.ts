@@ -19,6 +19,7 @@ export interface Contract {
 	id: number
 	name?: string
 	vendor?: string
+	vendorContactUid?: string | null
 	status?: ContractStatus
 	categoryId?: number | null
 	startDate?: string | null

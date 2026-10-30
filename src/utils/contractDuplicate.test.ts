@@ -7,6 +7,7 @@ const cancelled: Contract = {
 	id: 42,
 	name: 'Stromvertrag',
 	vendor: 'Stadtwerke',
+	vendorContactUid: 'abc-123',
 	status: 'cancelled',
 	categoryId: 7,
 	startDate: '2019-03-01',
@@ -53,6 +54,7 @@ describe('contractForDuplicate (#307)', () => {
 		const copy = contractForDuplicate(cancelled, 'Kopie')
 
 		expect(copy.vendor).toBe('Stadtwerke')
+		expect(copy.vendorContactUid).toBe('abc-123')
 		expect(copy.categoryId).toBe(7)
 		expect(copy.cost).toBe('84.50')
 		expect(copy.currency).toBe('EUR')
