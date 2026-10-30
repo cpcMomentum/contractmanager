@@ -209,6 +209,9 @@ class ContractImportService {
 			$contract->setArchived((int)($c['archived'] ?? 0) === 1 ? 1 : 0);
 			$contract->setIsPrivate((int)($c['isPrivate'] ?? 0) === 1 ? 1 : 0);
 			$contract->setResponsibleUser($responsibleUser);
+			$contactUid = $this->nullableString($c['vendorContactUid'] ?? null);
+			// A cut-off UID would point to nothing, so drop it instead
+			$contract->setVendorContactUid($contactUid !== null && strlen($contactUid) <= 255 ? $contactUid : null);
 			$contract->setCreatedAt($this->stringToDate($c['createdAt'] ?? null) ?? $this->timeFactory->getDateTime());
 			$contract->setUpdatedAt($this->stringToDate($c['updatedAt'] ?? null) ?? $this->timeFactory->getDateTime());
 			$contract->setCreatedBy($uid);

@@ -103,6 +103,7 @@ class ContractExportService {
 				'archived' => $contract->getArchived(),
 				'isPrivate' => $contract->getIsPrivate(),
 				'responsibleUser' => $contract->getResponsibleUser(),
+				'vendorContactUid' => $contract->getVendorContactUid(),
 				'createdAt' => $this->dateToString($contract->getCreatedAt()),
 				'updatedAt' => $this->dateToString($contract->getUpdatedAt()),
 			];

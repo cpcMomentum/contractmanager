@@ -29,6 +29,11 @@ return [
         ['name' => 'contract#deletePermanently', 'url' => '/api/contracts/{id}/permanent', 'verb' => 'DELETE'],
         ['name' => 'contract#emptyTrash', 'url' => '/api/contracts/trash/empty', 'verb' => 'POST'],
 
+        // Address book link of the contract partner
+        ['name' => 'contact#status', 'url' => '/api/contacts/status', 'verb' => 'GET'],
+        ['name' => 'contact#search', 'url' => '/api/contacts/search', 'verb' => 'GET'],
+        ['name' => 'contact#resolve', 'url' => '/api/contacts/resolve', 'verb' => 'GET'],
+
         // Category API routes
         ['name' => 'category#index', 'url' => '/api/categories', 'verb' => 'GET'],
         ['name' => 'category#create', 'url' => '/api/categories', 'verb' => 'POST'],

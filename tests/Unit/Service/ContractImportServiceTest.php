@@ -356,6 +356,18 @@ class ContractImportServiceTest extends TestCase {
 		$this->assertNull($this->inserted[1]->getResponsibleUser());
 	}
 
+	public function testContactLinkIsKeptAndOverlongUidDropped(): void {
+		$this->service->import('bob', $this->doc([
+			$this->contract(['vendorContactUid' => 'abc-123']),
+			$this->contract(['exportId' => 12, 'name' => 'Handy', 'vendorContactUid' => str_repeat('u', 256)]),
+			$this->contract(['exportId' => 13, 'name' => 'Web']),
+		]));
+
+		$this->assertSame('abc-123', $this->inserted[0]->getVendorContactUid());
+		$this->assertNull($this->inserted[1]->getVendorContactUid());
+		$this->assertNull($this->inserted[2]->getVendorContactUid());
+	}
+
 	public function testMissingAttachmentIsCountedButPathKept(): void {
 		$this->userFolder->method('nodeExists')->willReturnCallback(fn (string $p) => $p === 'Verträge/da.pdf');
 

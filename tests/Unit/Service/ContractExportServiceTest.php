@@ -60,6 +60,7 @@ class ContractExportServiceTest extends TestCase {
 	public function testBuildExportDocumentShape(): void {
 		$c1 = $this->makeContract(11, 'Strom', 5);
 		$c2 = $this->makeContract(12, 'Handy', null);
+		$c2->setVendorContactUid('abc-123');
 		$this->contractMapper->method('findAllByOwner')->with('alice')->willReturn([$c1, $c2]);
 
 		$category = new Category();
@@ -81,6 +82,8 @@ class ContractExportServiceTest extends TestCase {
 		$this->assertCount(2, $doc['contracts']);
 		$this->assertSame(5, $doc['contracts'][0]['categoryExportId']);
 		$this->assertNull($doc['contracts'][1]['categoryExportId']);
+		$this->assertNull($doc['contracts'][0]['vendorContactUid']);
+		$this->assertSame('abc-123', $doc['contracts'][1]['vendorContactUid']);
 		$this->assertCount(1, $doc['optouts']);
 		$this->assertSame(11, $doc['optouts'][0]['contractExportId']);
 	}

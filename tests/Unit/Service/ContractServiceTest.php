@@ -336,6 +336,36 @@ class ContractServiceTest extends TestCase {
 		$this->assertInstanceOf(Contract::class, $result);
 	}
 
+	public function testCreateStoresTrimmedContactUid(): void {
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$result = $this->service->create(
+			name: 'Strom', vendor: 'Stadtwerke', startDate: '2026-01-01', endDate: null,
+			contractType: 'fixed', userId: 'testuser', vendorContactUid: '  abc-123 ',
+		);
+
+		$this->assertSame('abc-123', $result->getVendorContactUid());
+	}
+
+	public function testUpdateWithEmptyContactUidRemovesTheLink(): void {
+		$contract = $this->createRealContract('testuser');
+		$contract->setVendorContactUid('abc-123');
+		$this->mapper->method('find')->willReturn($contract);
+		$this->mapper->method('update')->willReturnArgument(0);
+
+		$result = $this->service->update(
+			id: 1, name: 'Strom', vendor: 'Stadtwerke', startDate: '2026-01-01', endDate: null,
+			contractType: 'fixed', vendorContactUid: '',
+		);
+
+		$this->assertNull($result->getVendorContactUid());
+	}
+
+	public function testOverlongContactUidIsNotStored(): void {
+		$this->assertNull($this->service->normalizeContactUid(str_repeat('u', 256)));
+		$this->assertSame(str_repeat('u', 255), $this->service->normalizeContactUid(str_repeat('u', 255)));
+	}
+
 	// ========================================
 	// Delete Tests
 	// ========================================

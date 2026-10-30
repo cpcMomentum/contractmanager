@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Vertragspartner mit Kontakt verknüpfen**: Im Vertrag lässt sich unter dem Vertragspartner ein Kontakt aus den eigenen oder geteilten Adressbüchern auswählen. Der Vertrag merkt sich nur die Verknüpfung; E-Mail, Telefon und Adresse kommen beim Öffnen live aus dem Adressbuch, dazu ein Link „In Kontakte öffnen“. Wer das Adressbuch nicht sehen kann, bekommt statt der Daten einen Hinweis. Der Vertragspartner als Text bleibt Pflicht; ist er leer, wird er beim Auswählen aus dem Kontakt übernommen. Backup und Kontoumzug nehmen die Verknüpfung mit (#452)
+
 ### Fixed
 - **Backup einlesen**: Schon vorhandene Verträge werden jetzt gegen alles geprüft, was man in VertragsWerk sieht, also auch gegen geteilte Verträge von Kollegen und archivierte Verträge. Liest ein Editor das Backup eines Kollegen ein, entstehen keine Kopien mehr. Verträge, die im Papierkorb liegen, werden übersprungen; die Vorschau zählt sie getrennt und verweist auf den Papierkorb. Private Verträge anderer bleiben beim Abgleich außen vor (#457)
 

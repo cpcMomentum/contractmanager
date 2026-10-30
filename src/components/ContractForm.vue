@@ -96,6 +96,34 @@
 						</label>
 					</div>
 
+					<div v-if="showContactField" class="cm-field">
+						<span>{{ t('contractmanager', 'Kontakt im Adressbuch') }}</span>
+						<NcSelect v-if="!readOnly && contactsAvailable"
+							v-model="contactSelection"
+							class="cm-select"
+							:options="contactResults"
+							:loading="contactSearching"
+							:filterable="false"
+							:placeholder="t('contractmanager', 'Kontakt suchen...')"
+							label="name"
+							track-by="uid"
+							:clearable="true"
+							@search="onContactSearch">
+							<template #option="option">
+								<span class="contact-option">
+									{{ option.name }}
+									<small v-if="contactSubline(option)">{{ contactSubline(option) }}</small>
+								</span>
+							</template>
+						</NcSelect>
+						<VendorContactCard v-if="form.vendorContactUid"
+							:contact="linkedContact"
+							:loading="contactResolving" />
+						<p v-else class="cm-hint">
+							{{ t('contractmanager', 'Optional. E-Mail, Telefon und Adresse kommen dann aus dem Adressbuch.') }}
+						</p>
+					</div>
+
 					<div class="cm-field-row">
 						<label class="cm-field">
 							<span>{{ t('contractmanager', 'Kategorie') }}</span>
@@ -586,6 +614,8 @@ import { normalizeCostInput, costForApi, costValidationError } from '../utils/co
 import ContractService from '../services/ContractService'
 import ExtractionService from '../services/ExtractionService'
 import SettingsService from '../services/SettingsService'
+import ContactService from '../services/ContactService'
+import VendorContactCard from './VendorContactCard.vue'
 
 export default {
 	name: 'ContractForm',
@@ -603,6 +633,7 @@ export default {
 		LockIcon,
 		LockOpenVariantIcon,
 		FileSearchIcon,
+		VendorContactCard,
 	},
 	props: {
 		show: {
@@ -646,12 +677,37 @@ export default {
 			responsibleSearchResults: [],
 			responsibleSearching: false,
 			responsibleInitialLoaded: false,
+			contactsAvailable: false,
+			contactResults: [],
+			contactSearching: false,
+			linkedContact: null,
+			contactResolving: false,
 		}
 	},
 	computed: {
 		...mapState(useCategoriesStore, ['allCategories']),
 		isEdit() {
 			return this.contract !== null && this.contract.id != null
+		},
+		showContactField() {
+			return !!this.form.vendorContactUid || (!this.readOnly && this.contactsAvailable)
+		},
+		contactSelection: {
+			get() {
+				if (!this.form.vendorContactUid) {
+					return null
+				}
+				return {
+					uid: this.form.vendorContactUid,
+					name: this.linkedContact ? this.linkedContact.name : t('contractmanager', 'Verknüpfter Kontakt'),
+				}
+			},
+			set(option) {
+				this.form.vendorContactUid = option ? option.uid : null
+				if (option && !this.form.vendor.trim()) {
+					this.form.vendor = option.organization || option.name
+				}
+			},
 		},
 		// Accessible name of the dialog. Rendered visually hidden and referenced
 		// via NcModal's label-id — NcModal's own :name would render a visible
@@ -864,6 +920,12 @@ export default {
 				}
 			},
 		},
+		'form.vendorContactUid': {
+			immediate: true,
+			handler(uid) {
+				this.resolveContact(uid)
+			},
+		},
 		'form.endDate'(newVal) {
 			// Ohne Enddatum keine Erinnerung. Bei vorhandenem Enddatum bleibt der
 			// gespeicherte Zustand erhalten (kein Auto-Aktivieren beim Laden, #180).
@@ -890,6 +952,13 @@ export default {
 			}
 		} catch (e) {
 			console.debug('Failed to load custom field labels:', e)
+		}
+		if (!this.readOnly) {
+			try {
+				this.contactsAvailable = await ContactService.isAvailable()
+			} catch (e) {
+				this.contactsAvailable = false
+			}
 		}
 		if (this.isEdit) {
 			try {
@@ -938,6 +1007,41 @@ export default {
 				this.responsibleSearching = false
 			}
 		},
+		async onContactSearch(query) {
+			try {
+				this.contactSearching = true
+				this.contactResults = query.trim() ? await ContactService.search(query) : []
+			} catch (e) {
+				this.contactResults = []
+			} finally {
+				this.contactSearching = false
+			}
+		},
+		contactSubline(option) {
+			return [option.organization !== option.name ? option.organization : '', option.email]
+				.filter(Boolean)
+				.join(' · ')
+		},
+		async resolveContact(uid) {
+			this.linkedContact = null
+			if (!uid) {
+				return
+			}
+			this.contactResolving = true
+			try {
+				const contact = await ContactService.resolve(uid)
+				// A slower answer for a contact picked earlier must not overwrite the current one
+				if (this.form.vendorContactUid === uid) {
+					this.linkedContact = contact
+				}
+			} catch (e) {
+				console.debug('Failed to resolve contact:', e)
+			} finally {
+				if (this.form.vendorContactUid === uid) {
+					this.contactResolving = false
+				}
+			}
+		},
 		async onReminderOptOutChange(value) {
 			this.optOutSaving = true
 			try {
@@ -966,6 +1070,7 @@ export default {
 			return {
 				name: '',
 				vendor: '',
+				vendorContactUid: null,
 				categoryId: null,
 				contractStatus: 'active',
 				startDate: null,
@@ -1050,6 +1155,7 @@ export default {
 				notes: contract.notes || '',
 				amountType: contract.amountType || 'netto',
 				isPrivate: contract.isPrivate === true,
+				vendorContactUid: contract.vendorContactUid || null,
 				responsiblePrincipal: contract.responsibleUser
 					? { id: 'user:' + contract.responsibleUser, uid: contract.responsibleUser, displayName: contract.responsibleUser, type: 'user' }
 					: null,
@@ -1064,6 +1170,7 @@ export default {
 			return {
 				name: this.form.name.trim(),
 				vendor: this.form.vendor.trim(),
+				vendorContactUid: this.form.vendorContactUid || null,
 				categoryId: this.form.categoryId,
 				status: this.form.contractStatus,
 				startDate: startDate ? this.formatDateForApi(startDate) : null,
@@ -1507,6 +1614,16 @@ textarea.cm-input {
 }
 
 .cm-input--num { flex: 0 0 84px; }
+
+.contact-option {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.3;
+
+	small {
+		color: var(--color-text-maxcontrast);
+	}
+}
 
 .cm-hint {
 	margin: 6px 0 0;
