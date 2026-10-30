@@ -1025,6 +1025,7 @@ export default {
 		async resolveContact(uid) {
 			this.linkedContact = null
 			if (!uid) {
+				this.contactResolving = false
 				return
 			}
 			this.contactResolving = true
