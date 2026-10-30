@@ -15,6 +15,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setName(string $name)
  * @method string getVendor()
  * @method void setVendor(string $vendor)
+ * @method string|null getVendorContactUid()
+ * @method void setVendorContactUid(?string $vendorContactUid)
  * @method string getStatus()
  * @method void setStatus(string $status)
  * @method int|null getCategoryId()
@@ -94,6 +96,7 @@ class Contract extends Entity implements JsonSerializable {
 
     protected string $name = '';
     protected string $vendor = '';
+    protected ?string $vendorContactUid = null;
     protected string $status = self::STATUS_ACTIVE;
     protected ?int $categoryId = null;
     protected ?DateTime $startDate = null;
@@ -239,6 +242,7 @@ class Contract extends Entity implements JsonSerializable {
             'id' => $this->id,
             'name' => $this->name,
             'vendor' => $this->vendor,
+            'vendorContactUid' => $this->vendorContactUid,
             'status' => $this->status,
             'categoryId' => $this->categoryId,
             'startDate' => $this->startDate?->format('Y-m-d'),
