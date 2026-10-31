@@ -12,6 +12,9 @@ use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\IDateTimeZone;
+use OCP\IUser;
+use OCP\IUserManager;
+use OCP\IUserSession;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -23,6 +26,8 @@ class AutoBackupServiceTest extends TestCase {
 	private SettingsService $settingsService;
 	private IRootFolder $rootFolder;
 	private ITimeFactory $timeFactory;
+	private IUserManager $userManager;
+	private IUserSession $userSession;
 	private AutoBackupService $service;
 
 	protected function setUp(): void {
@@ -32,6 +37,8 @@ class AutoBackupServiceTest extends TestCase {
 		$this->rootFolder = $this->createMock(IRootFolder::class);
 		$this->timeFactory = $this->createMock(ITimeFactory::class);
 		$this->timeFactory->method('getDateTime')->willReturn(new \DateTime('2026-08-25T09:00:00+00:00'));
+		$this->userManager = $this->createMock(IUserManager::class);
+		$this->userSession = $this->createMock(IUserSession::class);
 
 		$this->service = new AutoBackupService(
 			$this->exportService,
@@ -40,6 +47,8 @@ class AutoBackupServiceTest extends TestCase {
 			$this->timeFactory,
 			$this->createMock(LoggerInterface::class),
 			$this->berlin(),
+			$this->userManager,
+			$this->userSession,
 		);
 	}
 
@@ -80,6 +89,25 @@ class AutoBackupServiceTest extends TestCase {
 		$home->method('nodeExists')->with('VertragsWerk-Backup')->willReturn(true);
 		$home->method('get')->with('VertragsWerk-Backup')->willReturn($target);
 		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($home);
+
+		$this->service->backupForUser('alice');
+	}
+
+	public function testBackupFileNameUsesTheUsersLocalTime(): void {
+		$this->settingsService->method('getUserBackupFolder')->willReturn('/VertragsWerk-Backup');
+		$this->exportService->method('exportJson')->willReturn('{}');
+
+		$target = $this->createMock(Folder::class);
+		$target->method('getDirectoryListing')->willReturn([]);
+		$target->expects($this->once())
+			->method('newFile')
+			->with('contracts-2026-08-25-110000.json', '{}')
+			->willReturn($this->createMock(File::class));
+
+		$home = $this->mockUserHome();
+		$home->method('nodeExists')->willReturn(true);
+		$home->method('get')->willReturn($target);
+		$this->rootFolder->method('getUserFolder')->willReturn($home);
 
 		$this->service->backupForUser('alice');
 	}
@@ -163,6 +191,60 @@ class AutoBackupServiceTest extends TestCase {
 		$count = $this->service->runDueBackups();
 
 		$this->assertSame(1, $count);
+	}
+
+	public function testRunDueBackupsActsAsTheUserAndResetsAfterwards(): void {
+		$this->timeFactory->method('getTime')->willReturn(1_724_000_000);
+		$this->settingsService->method('getUsersWithBackupEnabled')->willReturn(['alice']);
+		$this->settingsService->method('getUserBackupInterval')->willReturn('daily');
+		$this->settingsService->method('getUserBackupLastRun')->willReturn(0);
+		$this->settingsService->method('getUserBackupFolder')->willReturn('/VertragsWerk-Backup');
+		$this->exportService->method('exportJson')->willReturn('{}');
+
+		$alice = $this->createMock(IUser::class);
+		$this->userManager->method('get')->with('alice')->willReturn($alice);
+
+		$target = $this->createMock(Folder::class);
+		$target->method('getDirectoryListing')->willReturn([]);
+		$active = [];
+		$target->method('newFile')->willReturnCallback(function () use (&$active) {
+			$active[] = 'write';
+			return $this->createMock(File::class);
+		});
+		$home = $this->mockUserHome();
+		$home->method('nodeExists')->willReturn(true);
+		$home->method('get')->willReturn($target);
+		$this->rootFolder->method('getUserFolder')->willReturn($home);
+
+		$this->userSession->method('setVolatileActiveUser')->willReturnCallback(
+			static function (?IUser $user) use (&$active, $alice): void {
+				$active[] = $user === $alice ? 'alice' : 'none';
+			}
+		);
+
+		$this->assertSame(1, $this->service->runDueBackups());
+		$this->assertSame(['alice', 'write', 'none'], $active);
+	}
+
+	public function testRunDueBackupsResetsTheActiveUserWhenTheBackupFails(): void {
+		$this->timeFactory->method('getTime')->willReturn(1_724_000_000);
+		$this->settingsService->method('getUsersWithBackupEnabled')->willReturn(['alice']);
+		$this->settingsService->method('getUserBackupInterval')->willReturn('daily');
+		$this->settingsService->method('getUserBackupLastRun')->willReturn(0);
+		$this->settingsService->method('getUserBackupFolder')->willReturn('/VertragsWerk-Backup');
+		$this->userManager->method('get')->willReturn($this->createMock(IUser::class));
+		$this->rootFolder->method('getUserFolder')->willThrowException(new \RuntimeException('no home'));
+
+		$last = 'unset';
+		$this->userSession->method('setVolatileActiveUser')->willReturnCallback(
+			static function (?IUser $user) use (&$last): void {
+				$last = $user;
+			}
+		);
+		$this->settingsService->expects($this->never())->method('setUserBackupLastRun');
+
+		$this->assertSame(0, $this->service->runDueBackups());
+		$this->assertNull($last);
 	}
 
 	public function testBackupNowWritesSnapshotAndStampsCurrentTime(): void {
