@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-10-31
+
+### Fixed
+- **Automatisches Backup in der Aktivität**: Die nächtliche Sicherung erscheint in der Aktivität jetzt als eigene Aktion („Sie haben … erstellt“) statt als „"Entferntes Konto" hat … erstellt“. Das gilt auch für das Löschen alter Sicherungen. Der Zeitstempel im Dateinamen folgt jetzt der eigenen Zeitzone statt UTC (#466)
+
+### Changed
+- Wartung: Sass-Funktion `nth()` auf `list.nth()` umgestellt, keine sichtbare Änderung
+
 ## [1.11.0] - 2026-10-30
 
 ### Added
@@ -510,7 +518,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.1...HEAD
+[1.11.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.0...v1.11.1
 [1.11.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.8.0...v1.9.0
