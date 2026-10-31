@@ -384,6 +384,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use "sass:list";
+
 /* Status-Farbpalette (aus WorkTime/Vinarium übernommen) */
 $st: (
 	planned:   (#e6eefb, #2f5aa8),
@@ -411,14 +413,14 @@ $st-dark: (
 /* Chip-Hintergrund/Text im Dark-Mode. */
 @mixin chip-dark {
 	@each $name, $colors in $st-dark {
-		&--#{$name} { background: nth($colors, 1); color: nth($colors, 2); }
+		&--#{$name} { background: list.nth($colors, 1); color: list.nth($colors, 2); }
 	}
 }
 
 /* Akzentbalken der Listenzeile im Dark-Mode (heller Textton). */
 @mixin accent-dark {
 	@each $name, $colors in $st-dark {
-		&--#{$name} .contract-list-item__accent { background: nth($colors, 2); }
+		&--#{$name} .contract-list-item__accent { background: list.nth($colors, 2); }
 	}
 }
 
@@ -461,7 +463,7 @@ $st-dark: (
 	}
 
 	@each $name, $colors in $st {
-		&--#{$name} .contract-list-item__accent { background: nth($colors, 2); }
+		&--#{$name} .contract-list-item__accent { background: list.nth($colors, 2); }
 	}
 
 	// Dark-Mode: explizit gewähltes NC-Theme oder System-Präferenz (#204).
@@ -549,7 +551,7 @@ $st-dark: (
 	white-space: nowrap;
 
 	@each $name, $colors in $st {
-		&--#{$name} { background: nth($colors, 1); color: nth($colors, 2); }
+		&--#{$name} { background: list.nth($colors, 1); color: list.nth($colors, 2); }
 	}
 
 	&--lock { background: #fbf3e6; color: #9a6c25; }
