@@ -420,6 +420,46 @@ class SettingsServiceTest extends TestCase {
 		$this->assertSame(['cancelled'], $filters['statuses']);
 	}
 
+	public function testSetUserFiltersKeepsValidDeadlineAndCostFilters(): void {
+		$stored = null;
+		$this->config->method('setUserValue')
+			->willReturnCallback(function ($user, $app, $key, $value) use (&$stored) {
+				$stored = json_decode($value, true);
+			});
+
+		$this->service->setUserFilters('testuser', ['deadlineWithin' => 90, 'minMonthlyCost' => 49.999]);
+
+		$this->assertSame(90, $stored['deadlineWithin']);
+		$this->assertEqualsWithDelta(50.0, $stored['minMonthlyCost'], 0.0001);
+	}
+
+	public function testSetUserFiltersDropsInvalidDeadlineAndCostFilters(): void {
+		$stored = null;
+		$this->config->method('setUserValue')
+			->willReturnCallback(function ($user, $app, $key, $value) use (&$stored) {
+				$stored = json_decode($value, true);
+			});
+
+		$this->service->setUserFilters('testuser', ['deadlineWithin' => 45, 'minMonthlyCost' => -5]);
+		$this->assertSame(0, $stored['deadlineWithin']);
+		$this->assertNull($stored['minMonthlyCost']);
+
+		$this->service->setUserFilters('testuser', ['deadlineWithin' => '90', 'minMonthlyCost' => '20']);
+		$this->assertSame(0, $stored['deadlineWithin']);
+		$this->assertNull($stored['minMonthlyCost']);
+	}
+
+	public function testGetUserFiltersDefaultsNewFiltersForOldStoredValues(): void {
+		$this->config->method('getUserValue')
+			->willReturn(json_encode(['vendor' => 'Telekom', 'statuses' => ['active'], 'contractType' => '', 'responsible' => '']));
+
+		$filters = $this->service->getUserFilters('testuser');
+
+		$this->assertSame(0, $filters['deadlineWithin']);
+		$this->assertNull($filters['minMonthlyCost']);
+		$this->assertSame('Telekom', $filters['vendor']);
+	}
+
 	// ========================================
 	// Custom Field Active Flag Tests (#368)
 	// ========================================
