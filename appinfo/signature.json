@@ -1,18 +1,18 @@
 {
     "hashes": {
-        "CHANGELOG.md": "307c85f71f750ef1f030e0b5b30d88f84432e1868e0769a7d953d37e05f26ac3a7b00dc2c9085b912e71572a2050aae3b191ccfa34b99e0a295dc570703c03f1",
+        "CHANGELOG.md": "81057fe6f226f4b51a44ca921ffd733a6acf58b5dd299812a36e34855577d26125da435f9ad2d3233edca84d7c25d49531e360cce40ed5933117841936e7bd8d",
         "LICENSE": "3568a76677f3d55dbbc7fc33c4073b4714cc6f68d92cd842a9ca2b230e8bd2140e59c3fc3cce34be34ffed78d75ab6e9d991ba59bf7c4addde7fb96648d3375d",
         "README.md": "5b3aec96d561781d7945445fb470b411ef5c04fec90ecb3e9bad02b1831dd1f5f633ad70dbfb7382e9b97ffd0c9607df696f874826bfe8b35b2fa0f84e169cec",
-        "appinfo\/info.xml": "f64538309ec2875d1874e032383bc5bb5009dc28f95c5c7b212645199deb0235ad3e65ce5fec45e34dfd04ce74800659ef78d432a0f5b8a07d2bd1e9f7bd8b6e",
+        "appinfo\/info.xml": "a48b8d8c1fa272f8dd8c4609e406640930e3a6cd0eb5c80cf9f0b5708f815fc0be29b876ed9d20ba49720f459e9abb44a0007ef28ad1430c9b9c484e8a57ea5b",
         "appinfo\/routes.php": "62c8db4b7b9a674ecd2d7d55dd84bc8d9d5ebd097dec045ee2f9dcd04e566eef685e6188593ba4f526ab9795d1cb86347bb2824a09bd3a2973740b854e38bdc3",
-        "css\/contractmanager-main.css": "da5eefca8e6100608c0b2450d55b195d6d49a247674ec9473cb91d933aa75b951c7b98b38df68eea40a24c45a778bab998b82823f8cfb7a664ad3ee8f9a23ff0",
+        "css\/contractmanager-main.css": "c8b639f0a834297259a17a8e5434906f67f922f5278fa79b9ef852ebca62e04f770942605b6945e0300ac842048b790250c7ce4b189c7a432bf410803b654d6a",
         "css\/main.scss": "d663b32588adeec116bf4da24ac4cefee1e18bd72d0c18c51ae85ada04669e6d63e94b1c24a889960e5ed294d68952130db92ef3a6e9d4743fcf458519df8d0e",
         "img\/app.svg": "e86145b1095cd5bcb1007795f98c7c83bed8c72df63f29a1440a23913d2b5f018a62a74f207a8eef2435eca4e793631cde0917a6d37c5485bbebc6bf03a7c2a8",
-        "js\/contractmanager-main.js": "d23d9ddf932c65649fc81c72cbd867c3504ac01ae1987adda9e3e7fd837ff613e73814e1f7c0ca1cde06d1bb22bbbae1713ee759bad8f34c74bff5017328880c",
-        "l10n\/de.js": "0020a184289e1a85000c54d58a4f3431a28189ae58257ddf9a52b37e7547d684c514de543cb6e249a51bfa7f6be8e180aeb93f3addbfbdb4648331665f8c7472",
-        "l10n\/de.json": "1db5acfa0b6433eb7270b5bbd78346e880e56965800f597c6fcc06d363c21a7b84ed966ec42e42f7cc8b149143bcd6cb001f3f44a6e20659494fc282eff1d414",
-        "l10n\/en.js": "a8fd14aac09d8e6200dc4c1666d5ad939778ebccb6992ddb3e33eff38ea572593673b4456b12e98a6b4ee955bb650b7c3427bb5730248a897938bd88023ea2fe",
-        "l10n\/en.json": "7e67ff95c968b80fd00999361870094bb96e9390815763179728b93d4478940a4acc3ac249ea356275d5df076e3316d7261970381d424ea47905157012589aa9",
+        "js\/contractmanager-main.js": "a2674b8b97e45abd5d468e68138b8af7c9d67cc5133974920a4260cb4c6273ba0e4e6a1b5e7ab35c004fce51d256b394c842f79dff8d2dcc0b5dd3c44e6a685d",
+        "l10n\/de.js": "08c26ae5e14b87ca3ba719094f7e77dec5be548460ccb6dbba2e805045efb5873d7b811ede922aa90f4f08077a372daa8d7a5264a81dfc839311c82393ee0ebb",
+        "l10n\/de.json": "e514ebbbbdf23ef217874065c5fce77f2a1e07dc95a8708035f8eeba0260ceffa3dca7d8629b37814f43e28f489bb606b9121eeaa0ee4690ff1aff9696622273",
+        "l10n\/en.js": "97685f2a915a33c26ff8ab624eb7829f3c0472e7423f9efeeff8efe7e566a4762f5db55298a9de40b95ada6875afde341ca96842547efdde4176c46e153fe2ef",
+        "l10n\/en.json": "a91ea76059488c64637ba427fcd623b9d949ce6c3255d8c5fe33348d19b71dad3b2b73ad669c973d6ebaec87c3ea0690518125f0d441e314f396dce5b153f738",
         "lib\/AppInfo\/Application.php": "3fce98aced8570c9c1db964355e160b5bbc404d0692311d10920a995a58f85dbca5053e5cdb894df1a605e41e878671b7c945dd6c7a1de90739883d67a50277b",
         "lib\/BackgroundJob\/AutoBackupJob.php": "f3942e69840cc1c98523e9b3c4af5c0d8824ca6416f2d594c67e0a96bebfed802e1bda8b88762d7d5c4c421e6d95f8c75335e02f7c8a94633f2ea4f238371210",
         "lib\/BackgroundJob\/ReminderJob.php": "33ba719a6498f15b4071d110b7ceb62ad26f939543710a4d690a151d4040c3799f8e0500cc0563899bd9edb9f8ba2e9b24711878a0928c65cea6bbb60631e2c3",
@@ -72,7 +72,7 @@
         "lib\/Service\/PdfTextService.php": "19cd0de80144ab1721b0f0e51b2a33c75e6d09ff49e4207ce7882714db842448e70d573cb157797eb97209fd0424beea8cd599183d7d05b2478270cec7c4a461",
         "lib\/Service\/PermissionService.php": "c5562a6fa78f078203a40eca20b672843ba28c603a4fe25045fc325bb623445d569110f9bf11caee1e46a28eb2d2f21aae849e0c3b7f52a8ec02ded7f8ca9dc4",
         "lib\/Service\/ReminderService.php": "b25840205ce38405db33970a88af2c8be6a7dba725008183b197792ed2ac045e1f68dfadaf13f388a28b90c7cadef4e55b608a0ad315cb072a943e859dc1bf46",
-        "lib\/Service\/SettingsService.php": "1d0134290a06042065c332618cf8f6cf2300e990c163583d0b7c148cd5142717283102c9143a43a9980b71cd5fa20d1cdc7db2bdd309bdbe9018758f0d7278ac",
+        "lib\/Service\/SettingsService.php": "bc787fd34464f1a16a49ff1fb4ad4e9f9317fd079c8578c545a5b202b5fcf4ca2e3082cf87bc7f77d336c8819e368ad8f1c6b1c78db5bb17c478f2871b675ac8",
         "lib\/Service\/TalkService.php": "f2bd0293d6a99f08971b2cbb3ba5aad593adbbc0ae2fe41970408c55f99681dedfd5ded35a26ebafcdd5cb7acf2bd45d3d6a22aafeaa603390e8416236bf7808",
         "lib\/Service\/ValidationException.php": "77faf5ef3fd2d59ed6d4083cc6ce302c4e7da5727a589a354eaeb1bed93da9595176995d003ba4db62a63c626fe40605a9c0af5125f04b6626908e4ea462aebc",
         "lib\/Service\/WhatsNewService.php": "b3d4d61cfd21102d239196483f42d07209b36c78e044ab387be4c2574b50b6f8b7faee0ad070145b30969d7c0de249f2921fe4aef9df5efe7570b1a152cf73db",
@@ -150,8 +150,8 @@
         "vendor\/symfony\/polyfill-mbstring\/bootstrap.php": "8b61babcdb98a3120787ddcdaf1106e3a6663266e6ad10f7a04a5771592daa0163000eff0321edf815dab850feb31e7b80fb6b144d1a0ef2db94a9da9bd3ae54",
         "vendor\/symfony\/polyfill-mbstring\/bootstrap80.php": "5d6bb8fd004a7ff49e959792ed35c99d4fea9ac46d0c0fa52dfba5196bbd9b042ce4e3ef98d81a28b19b515195e1831f487eac03bcd4bbe3ac136cfa0c62ba3a",
         "vendor\/symfony\/polyfill-mbstring\/composer.json": "21cf92a202ff00b2b3a35a40a7265e2c7a9b53b94d8cbbf8afd533fb392e8edfe5b87a1f60041ff88c618f5a905ea34098f2f7435685e51dae78878b12d33431",
-        "whatsnew\/whatsnew.json": "8858df1d87e4d48d4c8e2a25657ae9f204847c9c1cad41b8364783a559d8d8f6c3d822b0bd9698ad32dcb47d8a64f4c471394e27ad7ab8172cf4c6998b98484a"
+        "whatsnew\/whatsnew.json": "e00c1d90ff449226e74746ceef2ade19a0b739b5e24b5e9617119bb06c8da1c6ee850a3eb348860f9ad6624a113d5508f9401ce65a22de588587dbf999194cf8"
     },
-    "signature": "R0R30X1rlrwp9zIQw96Jth30qyZncjKB1tMwtaiqA534CoQ7jE9ebnUR0q551sulLHXTbCCRomonWyx7zf5euyr6hedTNEaY8pOq0qSFEYd4Fu4WI8Aw13MH\/XW0t30z80fdplqyZIBzIiTYwAqdmntf2aTlRuzHJzKQThUJ94BDAMFDLFNqaa+eVKNlbb9hKuTXDQc1ebtBkzD8PGmK4S0gjiUVZPJI1AELZw1EHfuwHL7z0PJdWyhdJ7CihO9SzB4hd0in0RR1FmUIvNt6XopPoAkClv89GUyh2q\/miljjLnHJ3+Kw0A6eeBej9te+NF\/CmZ\/mfPc2ruRtpt7acA==",
+    "signature": "A5CfMchP3gt4NwyeXqqXPENQC+RBxyADBmj+Whnt+iGhIIZOs9cLuDcehdXqGwJ+5bD6vJx1ajUEB\/dJ1ZEKm9hx5aVxJT3yvNKxSBgw65JvGojDmcWEq\/5SsTIseUIcbo1f5yhJZbuwCLQa19NOuPQVLC2h8m6GcJ+VB5FT8jFsfRblF3kgoNOyBDlMMsIwP0IPrMDwijR8Zrztp4MGykisqWiAVOvRGapH52cvs+UhMpBRsY9VfRRr8WED0yCD+sAujrzy8hwL\/dw2HUEL6LuaK\/u5iTShdpg8E83sh6vhR4TvgVH\/KnS\/YaRcFGh3SM4K49WO5pWFNSD30rmYUw==",
     "certificate": "-----BEGIN CERTIFICATE-----\r\nMIIDCjCCAfICAhLsMA0GCSqGSIb3DQEBCwUAMHsxCzAJBgNVBAYTAkRFMRswGQYD\r\nVQQIDBJCYWRlbi1XdWVydHRlbWJlcmcxFzAVBgNVBAoMDk5leHRjbG91ZCBHbWJI\r\nMTYwNAYDVQQDDC1OZXh0Y2xvdWQgQ29kZSBTaWduaW5nIEludGVybWVkaWF0ZSBB\r\ndXRob3JpdHkwHhcNMjYwMjAyMTU0MTQ4WhcNMzYwNTEwMTU0MTQ4WjAaMRgwFgYD\r\nVQQDDA9jb250cmFjdG1hbmFnZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\r\nAoIBAQC5R5Qp4Wm5Q2dDNSyN33MAIianNamIQCzLP9TqKbvrHUvhIb5XojZizo6H\r\n\/3jZTpRau83rYewLsJiEDgyuKdLiFYiuas5bdU6lie\/X2V21BeowwqlOGoVaiXwE\r\nvDmarjfhHAMIbW\/H8IyT1PEAvSLZLl8vofGDibsovGacRfBlj\/WhTQSVoFyc1N32\r\nivUM\/rta10BLN1JurgXjN6s33uqW19bTms+y9zO3C1Wpq\/KhwgVNIcoRdio4uA0e\r\nSAnQQHE1HUieBDydwP52fFnlqf4l1OjP\/WLeNrwFNWdCBqZIEZsynASFHae\/cyOs\r\nqebHseLaDRkySMmHLv2hsH\/\/dm6rAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAD08\r\nvS9I3TjEfSfcF45IdanGUsrSMm7rCdQpdVaY7xyB8w6BymWgv9q0I4rATyCYgNIU\r\nN8TNGNNXHutvlOJ8ACdTxDs0bitSM0VY0lNqCVInRIT3W8UfoOmvpVG6Xc5eEi1Z\r\nO1JLVd\/lH6n86cHnkcMeSH265JwdGfKFF86g94YfDJ+uU4OLwaAnmeJaWTCHn3Nm\r\nFXWrSzvpPU7y47yCAJok+1Na0pXx5Y6BxId95ZBSBKPXmFpANvU58v52Ed+6npl5\r\nc6wfDUcb1088N4NBP8j76ci5BB358vTSwjAV5moyFUZO63vPRRcfP1Rq03LUfWyi\r\ndg1AcSTaDHL7vhQm19M=\r\n-----END CERTIFICATE-----"
 }
