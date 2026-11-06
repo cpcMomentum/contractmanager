@@ -1,4 +1,22 @@
 {
+	"1.12.0": [
+		{
+			"title": {
+				"de": "Nach Frist und Kosten filtern",
+				"en": "Filter by deadline and cost"
+			},
+			"text": {
+				"de": "In der Filterleiste finden Sie zwei neue Felder: Verträge, deren Frist oder Ende in den nächsten 30 bis 180 Tagen liegt, und Verträge ab einem bestimmten Monatsbetrag. Jahresbeträge werden dafür auf den Monat umgerechnet.",
+				"en": "The filter bar has two new fields: contracts whose deadline or end falls within the next 30 to 180 days, and contracts from a certain monthly amount. Yearly amounts are converted to a month for this."
+			},
+			"icon": "magnify",
+			"where": {
+				"de": "Vertragsliste › Filter",
+				"en": "Contract list › Filter"
+			},
+			"plus": false
+		}
+	],
 	"1.11.0": [
 		{
 			"title": {

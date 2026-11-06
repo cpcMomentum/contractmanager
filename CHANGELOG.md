@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-11-07
+
+### Added
+- **Filter nach Frist und Kosten**: Die Filterleiste der Vertragsliste hat zwei neue Felder. „Frist / Ende in 30, 60, 90 oder 180 Tagen“ richtet sich nach dem Datum in der Spalte „Frist / Ende“, also nach der Kündigungsfrist bei Verträgen mit Verlängerung und sonst nach dem Laufzeitende. „Monatskosten ab“ vergleicht den auf den Monat umgerechneten Betrag, Einmalzahlungen fallen dabei heraus. Beide Filter werden wie die übrigen gespeichert, und die Kennzahlen folgen der gefilterten Liste (#64)
+
+### Fixed
+- **Laufzeitende im Vertragsfenster**: „Endet“ oben im Vertrag zeigt bei automatischer Verlängerung jetzt das aktuelle Laufzeitende und bei einer Kündigung das „Gekündigt zum“. Bisher stand dort das ursprünglich eingetragene Enddatum, auch wenn es längst vorbei war (#479)
+- **Kündigen über den Status**: Wer den Status auf „Gekündigt“ stellt, bekommt bei leerem „Gekündigt am“ das heutige Datum eingetragen, „Gekündigt zum“ wird mit dem Laufzeitende vorbelegt. Bisher blieb der Vertrag ohne Datum, die Liste zeigte ein vergangenes Ende, und er wurde nie automatisch beendet. Solche Verträge zeigen in der Liste jetzt „Gekündigt“ statt fälschlich „Beendet“ (#479)
+- **Status-Filter**: „Geplant“ und „Kündigungsfrist endet“ bleiben nach dem Neuladen ausgewählt (#483)
+- Die Status-Pille oben rechts im Vertragsfenster überdeckt nicht mehr den Schließen-Knopf (#481)
+
+### Changed
+- Wartung: `@nextcloud/vue` 9.14.1, sass 1.107.0, follow-redirects 1.16.2 (#476, #478)
+
+**Hinweis zum Update:** Verträge, die früher nur über den Status gekündigt wurden, haben kein „Gekündigt am“ und werden deshalb nicht automatisch beendet. Bitte dort „Gekündigt am“ nachtragen.
+
 ## [1.11.1] - 2026-10-31
 
 ### Fixed
@@ -518,7 +534,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.1...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.12.0...HEAD
+[1.12.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.1...v1.12.0
 [1.11.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.0...v1.11.1
 [1.11.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.9.0...v1.10.0

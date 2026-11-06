@@ -37,9 +37,9 @@
 							<span>{{ t('contractmanager', 'Vertragstyp') }}</span>
 							<b>{{ summaryTypeLabel }}</b>
 						</div>
-						<div v-if="endDateApplicable && form.endDate" class="fact">
+						<div v-if="endDateApplicable && summaryEndDate" class="fact">
 							<span>{{ form.contractType === 'auto_renewal' ? t('contractmanager', 'Endet') : t('contractmanager', 'Läuft aus') }}</span>
-							<b>{{ formatDateDisplay(form.endDate) }}</b>
+							<b>{{ formatDateDisplay(summaryEndDate) }}</b>
 						</div>
 						<div v-if="showCancellationDeadline" class="fact">
 							<span>{{ t('contractmanager', 'Kündbar bis') }}</span>
@@ -135,7 +135,10 @@
 						</label>
 						<label class="cm-field">
 							<span>{{ t('contractmanager', 'Status') }}</span>
-							<select v-model="form.contractStatus" class="cm-input" :disabled="readOnly">
+							<select v-model="form.contractStatus"
+								class="cm-input"
+								:disabled="readOnly"
+								@change="onStatusChange">
 								<option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
 									{{ opt.label }}
 								</option>
@@ -609,7 +612,7 @@ import { parsePeriod, calculateCancellationDeadline, getEffectiveEndDate } from 
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
 import { linkifyText } from '../utils/linkify.js'
 import { reminderEnabledForEndDate } from '../utils/reminderForm'
-import { isEndDateApplicable, endDateForSave } from '../utils/contractFormRules'
+import { isEndDateApplicable, endDateForSave, effectiveEndForForm } from '../utils/contractFormRules'
 import { normalizeCostInput, costForApi, costValidationError } from '../utils/costFormat'
 import ContractService from '../services/ContractService'
 import ExtractionService from '../services/ExtractionService'
@@ -819,6 +822,18 @@ export default {
 				return { cls: 'active-fixed', label: t('contractmanager', 'Laufend') }
 			}
 			return { cls: 'active', label: t('contractmanager', 'Laufend') }
+		},
+		summaryEndDate() {
+			return effectiveEndForForm({
+				endDate: this.form.endDate,
+				contractType: this.form.contractType,
+				renewalPeriod: this.form.renewalPeriodValue && this.form.renewalPeriodUnit
+					? `${this.form.renewalPeriodValue} ${this.form.renewalPeriodUnit}`
+					: null,
+				status: this.form.contractStatus,
+				cancelledOn: this.form.cancelledOn,
+				cancelledTo: this.form.cancelledTo,
+			})
 		},
 		summaryTypeLabel() {
 			const opt = this.contractTypeOptions.find(o => o.value === this.form.contractType)
@@ -1211,6 +1226,14 @@ export default {
 		formatDateForApi(date) {
 			return formatDateForInput(date)
 		},
+		onStatusChange() {
+			// Without a cancellation date the background job never ends the contract.
+			if (this.form.contractStatus === 'cancelled' && !this.form.cancelledOn) {
+				const today = new Date()
+				today.setHours(0, 0, 0, 0)
+				this.onCancelledOnInput(today)
+			}
+		},
 		onCancelledOnInput(value) {
 			this.form.cancelledOn = value
 			if (!value) {
@@ -1467,6 +1490,8 @@ export default {
 		display: flex;
 		align-items: flex-start;
 		gap: 12px;
+		// NcModal's close button sits on top of the content in the right corner.
+		padding-inline-end: 28px;
 	}
 
 	&__id { flex: 1; min-width: 0; }

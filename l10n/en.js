@@ -405,6 +405,10 @@ OC.L10N.register(
     "Verknüpfter Kontakt" : "Linked contact",
     "Im Kontakt sind keine E-Mail-Adresse, Telefonnummer oder Adresse hinterlegt." : "The contact has no email address, phone number or address.",
     "In Kontakte öffnen" : "Open in Contacts",
-    "Der verknüpfte Kontakt ist in Ihren Adressbüchern nicht verfügbar." : "The linked contact is not available in your address books."
+    "Der verknüpfte Kontakt ist in Ihren Adressbüchern nicht verfügbar." : "The linked contact is not available in your address books.",
+    "Frist / Ende in" : "Deadline / End within",
+    "Monatskosten ab" : "Monthly cost from",
+    "Ungültiger Betrag" : "Invalid amount",
+    "Frist / Ende in {days} Tagen" : "Deadline / End within {days} days"
 },
 "nplurals=2; plural=(n != 1);");
