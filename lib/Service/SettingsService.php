@@ -97,11 +97,14 @@ class SettingsService {
 	private const ALLOWED_FILTER_KEYS = ['vendor', 'statuses', 'contractType', 'responsible'];
 	private const ALLOWED_STATUSES = ['active', 'cancelled', 'ended'];
 	private const ALLOWED_CONTRACT_TYPES = ['', 'fixed', 'auto_renewal'];
+	private const ALLOWED_DEADLINE_WITHIN = [0, 30, 60, 90, 180];
 	private const DEFAULT_FILTERS = [
 		'vendor' => '',
 		'statuses' => [],
 		'contractType' => '',
 		'responsible' => '',
+		'deadlineWithin' => 0,
+		'minMonthlyCost' => null,
 		'ownerMissing' => false,
 	];
 
@@ -447,7 +450,7 @@ class SettingsService {
 	/**
 	 * Get filter preferences for a user
 	 *
-	 * @return array{vendor: string, statuses: string[], contractType: string, responsible: string, ownerMissing: bool}
+	 * @return array{vendor: string, statuses: string[], contractType: string, responsible: string, deadlineWithin: int, minMonthlyCost: float|null, ownerMissing: bool}
 	 */
 	public function getUserFilters(string $userId): array {
 		$json = $this->config->getUserValue(
@@ -466,6 +469,26 @@ class SettingsService {
 			return self::DEFAULT_FILTERS;
 		}
 
+		return $this->validateFilters($filters);
+	}
+
+	/**
+	 * Set filter preferences for a user (validated)
+	 */
+	public function setUserFilters(string $userId, array $filters): void {
+		$this->config->setUserValue(
+			$userId,
+			Application::APP_ID,
+			self::KEY_FILTERS,
+			json_encode($this->validateFilters($filters))
+		);
+	}
+
+	/**
+	 * @return array{vendor: string, statuses: string[], contractType: string, responsible: string, deadlineWithin: int, minMonthlyCost: float|null, ownerMissing: bool}
+	 */
+	private function validateFilters(array $filters): array {
+		$minMonthlyCost = $filters['minMonthlyCost'] ?? null;
 		return [
 			'vendor' => isset($filters['vendor']) && is_string($filters['vendor']) ? $filters['vendor'] : '',
 			'statuses' => isset($filters['statuses']) && is_array($filters['statuses'])
@@ -475,41 +498,15 @@ class SettingsService {
 				? $filters['contractType']
 				: '',
 			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
-			// Bewusst nicht aus dem gespeicherten Wert gelesen (#332): siehe
-			// setUserFilters. Ein aus einer frueheren Version stammendes true
-			// wird damit ignoriert und beim naechsten Speichern ueberschrieben.
+			'deadlineWithin' => isset($filters['deadlineWithin']) && in_array($filters['deadlineWithin'], self::ALLOWED_DEADLINE_WITHIN, true)
+				? $filters['deadlineWithin']
+				: 0,
+			'minMonthlyCost' => (is_int($minMonthlyCost) || is_float($minMonthlyCost)) && is_finite((float)$minMonthlyCost) && $minMonthlyCost >= 0
+				? round((float)$minMonthlyCost, 2)
+				: null,
+			// "Ohne aktiven Eigentuemer" ist ein Diagnosewerkzeug und wird nie gespeichert.
 			'ownerMissing' => false,
 		];
-	}
-
-	/**
-	 * Set filter preferences for a user (validated)
-	 */
-	public function setUserFilters(string $userId, array $filters): void {
-		$validated = [
-			'vendor' => isset($filters['vendor']) && is_string($filters['vendor']) ? $filters['vendor'] : '',
-			'statuses' => isset($filters['statuses']) && is_array($filters['statuses'])
-				? array_values(array_intersect($filters['statuses'], self::ALLOWED_STATUSES))
-				: self::DEFAULT_FILTERS['statuses'],
-			'contractType' => isset($filters['contractType']) && in_array($filters['contractType'], self::ALLOWED_CONTRACT_TYPES, true)
-				? $filters['contractType']
-				: '',
-			'responsible' => isset($filters['responsible']) && is_string($filters['responsible']) ? $filters['responsible'] : '',
-			// "Ohne aktiven Eigentuemer" wird bewusst nie dauerhaft gespeichert
-			// (#332). Der Filter ist das Administratoren-Diagnosewerkzeug aus
-			// #299 und liefert im Normalbetrieb fast immer null Treffer. Einmal
-			// angetippt filterte er ueber Monate stumm weiter, weil die leere
-			// Liste keinen Grund nannte. Er gilt jetzt nur fuer die laufende
-			// Ansicht und ist nach jedem Neuladen aus.
-			'ownerMissing' => false,
-		];
-
-		$this->config->setUserValue(
-			$userId,
-			Application::APP_ID,
-			self::KEY_FILTERS,
-			json_encode($validated)
-		);
 	}
 
 	public function getUserDefaultAmountType(string $userId): string {

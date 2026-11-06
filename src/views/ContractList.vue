@@ -106,6 +106,24 @@
 				:clearable="true"
 				input-id="filter-responsible"
 				@update:model-value="persistFilters" />
+			<NcSelect v-model="filterDeadlineWithin"
+				:options="deadlineWithinOptions"
+				:placeholder="t('contractmanager', 'Frist / Ende in')"
+				:clearable="true"
+				label="label"
+				track-by="id"
+				:reduce="option => option.id"
+				input-id="filter-deadline-within"
+				@update:model-value="persistFilters" />
+			<NcTextField v-model="filterMinMonthlyCostText"
+				class="filter-min-cost"
+				:label="t('contractmanager', 'Monatskosten ab')"
+				inputmode="decimal"
+				:error="minMonthlyCostInvalid"
+				:helper-text="minMonthlyCostInvalid ? t('contractmanager', 'Ungültiger Betrag') : ''"
+				:show-trailing-button="filterMinMonthlyCostText !== ''"
+				trailing-button-icon="close"
+				@trailing-button-click="filterMinMonthlyCostText = ''" />
 			<NcCheckboxRadioSwitch v-if="isAdmin"
 				:model-value="filterOwnerMissing"
 				type="switch"
@@ -217,6 +235,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import FileDocumentIcon from 'vue-material-design-icons/FileDocument.vue'
 import SortAscendingIcon from 'vue-material-design-icons/SortAscending.vue'
@@ -232,6 +251,8 @@ import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isPlanned } from '../utils/contractStatus'
 import { contractForDuplicate } from '../utils/contractDuplicate'
 import { hasMonthlyEquivalent, monthlyCost } from '../utils/costInterval'
+import { normalizeCostInput } from '../utils/costFormat'
+import { DEADLINE_WITHIN_OPTIONS, hasMonthlyCostAtLeast, isDeadlineWithin } from '../utils/listFilters'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
 import { showInfo, showError } from '@nextcloud/dialogs'
@@ -247,6 +268,7 @@ export default {
 		NcEmptyContent,
 		NcSelect,
 		NcCheckboxRadioSwitch,
+		NcTextField,
 		PlusIcon,
 		FileDocumentIcon,
 		SortAscendingIcon,
@@ -301,6 +323,9 @@ export default {
 			filterStatuses: filters.statuses || [],
 			filterContractType: filters.contractType || null,
 			filterResponsible: filters.responsible || null,
+			filterDeadlineWithin: filters.deadlineWithin || null,
+			filterMinMonthlyCostText: typeof filters.minMonthlyCost === 'number' ? String(filters.minMonthlyCost) : '',
+			minMonthlyCostSaveTimer: null,
 			// Admin-only (#299): contracts whose effective owner no longer has
 			// an account. Bewusst nicht aus den gespeicherten Filtern gelesen
 			// und nie mitgespeichert (#332): ein Diagnosewerkzeug, das im
@@ -348,11 +373,28 @@ export default {
 			const option = this.sortOptions.find(o => o.key === this.sortBy)
 			return option ? option.label : ''
 		},
+		deadlineWithinOptions() {
+			return DEADLINE_WITHIN_OPTIONS.map(days => ({
+				id: days,
+				label: t('contractmanager', 'Frist / Ende in {days} Tagen', { days }),
+			}))
+		},
+		filterMinMonthlyCost() {
+			const normalized = normalizeCostInput(this.filterMinMonthlyCostText)
+			if (normalized === '') return null
+			const amount = Number(normalized)
+			return Number.isFinite(amount) && amount >= 0 ? amount : null
+		},
+		minMonthlyCostInvalid() {
+			return this.filterMinMonthlyCostText.trim() !== '' && this.filterMinMonthlyCost === null
+		},
 		hasActiveFilters() {
 			if (this.filterVendor) return true
 			if (this.filterStatuses.length > 0) return true
 			if (this.filterContractType) return true
 			if (this.filterResponsible) return true
+			if (this.filterDeadlineWithin) return true
+			if (this.filterMinMonthlyCost !== null) return true
 			if (this.filterOwnerMissing) return true
 			return false
 		},
@@ -518,6 +560,14 @@ export default {
 				filtered = filtered.filter(c => c.responsibleUser === this.filterResponsible)
 			}
 
+			if (this.filterDeadlineWithin) {
+				filtered = filtered.filter(c => isDeadlineWithin(c, this.filterDeadlineWithin))
+			}
+
+			if (this.filterMinMonthlyCost !== null) {
+				filtered = filtered.filter(c => hasMonthlyCostAtLeast(c, this.filterMinMonthlyCost))
+			}
+
 			// Verwaiste Verträge (nur Admins, #299). isAdmin wird zusätzlich
 			// geprüft, damit ein noch gespeicherter Filterwert nach dem Entzug
 			// der Admin-Rolle nicht zu einer leeren, unerklärten Liste führt -
@@ -528,6 +578,16 @@ export default {
 
 			return this.sortContracts(filtered)
 		},
+	},
+	watch: {
+		// Typing must not save on every keystroke.
+		filterMinMonthlyCost() {
+			clearTimeout(this.minMonthlyCostSaveTimer)
+			this.minMonthlyCostSaveTimer = setTimeout(() => this.persistFilters(), 600)
+		},
+	},
+	beforeUnmount() {
+		clearTimeout(this.minMonthlyCostSaveTimer)
 	},
 	created() {
 		// Wait for contracts AND permissions before resolving a deep link, so the
@@ -741,6 +801,8 @@ export default {
 			this.filterStatuses = []
 			this.filterContractType = null
 			this.filterResponsible = null
+			this.filterDeadlineWithin = null
+			this.filterMinMonthlyCostText = ''
 			this.filterOwnerMissing = false
 			this.persistFilters()
 		},
@@ -758,6 +820,8 @@ export default {
 						statuses: this.filterStatuses,
 						contractType: this.filterContractType || '',
 						responsible: this.filterResponsible || '',
+						deadlineWithin: this.filterDeadlineWithin || 0,
+						minMonthlyCost: this.filterMinMonthlyCost,
 					},
 				})
 			} catch (error) {
@@ -795,6 +859,7 @@ export default {
 
 	&__filters {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 8px;
 		margin-bottom: 16px;
@@ -804,6 +869,7 @@ export default {
 
 		.v-select {
 			min-width: 180px;
+			max-width: 300px;
 			flex: 1;
 		}
 
@@ -811,6 +877,10 @@ export default {
 		// squeezed and its label wrapped.
 		.filter-owner-missing {
 			flex: 0 0 auto;
+		}
+
+		.filter-min-cost {
+			flex: 0 0 180px;
 		}
 	}
 
