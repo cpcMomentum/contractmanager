@@ -460,6 +460,25 @@ class SettingsServiceTest extends TestCase {
 		$this->assertSame('Telekom', $filters['vendor']);
 	}
 
+	public function testSetUserFiltersKeepsDerivedStatusOptions(): void {
+		$stored = null;
+		$this->config->method('setUserValue')
+			->willReturnCallback(function ($user, $app, $key, $value) use (&$stored) {
+				$stored = json_decode($value, true);
+			});
+
+		$this->service->setUserFilters('testuser', ['statuses' => ['planned', 'ending_soon', 'active', 'bogus']]);
+
+		$this->assertSame(['planned', 'ending_soon', 'active'], $stored['statuses']);
+	}
+
+	public function testGetUserFiltersKeepsDerivedStatusOptions(): void {
+		$this->config->method('getUserValue')
+			->willReturn(json_encode(['statuses' => ['ending_soon', 'planned', 'bogus']]));
+
+		$this->assertSame(['ending_soon', 'planned'], $this->service->getUserFilters('testuser')['statuses']);
+	}
+
 	// ========================================
 	// Custom Field Active Flag Tests (#368)
 	// ========================================
