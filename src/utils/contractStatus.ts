@@ -118,6 +118,8 @@ export function isExpiredFixed(contract: Contract): boolean {
  */
 export function isEndedCancelled(contract: Contract): boolean {
 	if (contract.status !== 'cancelled') return false
+	// The background job only ends contracts with a cancellation date.
+	if (!contract.cancelledOn) return false
 
 	const effectiveEnd = contract.cancelledTo ?? contract.endDate
 	if (!effectiveEnd) return false

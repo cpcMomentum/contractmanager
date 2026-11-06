@@ -240,6 +240,10 @@ describe('isEndedCancelled', () => {
 		expect(isEndedCancelled(autoRenewal({ endDate: daysFromNow(-10) }))).toBe(false)
 	})
 
+	it('is false without a cancellation date, because the background job never ends such a contract', () => {
+		expect(isEndedCancelled(cancelled({ cancelledOn: null, cancelledTo: null, endDate: daysFromNow(-30) }))).toBe(false)
+	})
+
 	it('is false when neither "cancelled to" nor end date is set', () => {
 		expect(isEndedCancelled(cancelled({ cancelledTo: null, endDate: null }))).toBe(false)
 	})
