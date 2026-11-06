@@ -1490,6 +1490,8 @@ export default {
 		display: flex;
 		align-items: flex-start;
 		gap: 12px;
+		// NcModal's close button sits on top of the content in the right corner.
+		padding-inline-end: 28px;
 	}
 
 	&__id { flex: 1; min-width: 0; }
