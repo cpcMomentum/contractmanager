@@ -479,6 +479,25 @@ class SettingsServiceTest extends TestCase {
 		$this->assertSame(['ending_soon', 'planned'], $this->service->getUserFilters('testuser')['statuses']);
 	}
 
+	public function testSetUserFiltersKeepsUnlimitedContractType(): void {
+		$stored = null;
+		$this->config->method('setUserValue')
+			->willReturnCallback(function ($user, $app, $key, $value) use (&$stored) {
+				$stored = json_decode($value, true);
+			});
+
+		$this->service->setUserFilters('testuser', ['contractType' => 'unlimited']);
+
+		$this->assertSame('unlimited', $stored['contractType']);
+	}
+
+	public function testGetUserFiltersKeepsUnlimitedContractType(): void {
+		$this->config->method('getUserValue')
+			->willReturn(json_encode(['contractType' => 'unlimited']));
+
+		$this->assertSame('unlimited', $this->service->getUserFilters('testuser')['contractType']);
+	}
+
 	// ========================================
 	// Custom Field Active Flag Tests (#368)
 	// ========================================

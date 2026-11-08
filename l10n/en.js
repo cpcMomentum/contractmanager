@@ -204,7 +204,6 @@ OC.L10N.register(
     "Unbefristete Verträge haben kein Enddatum." : "Unlimited contracts have no end date.",
     "Erinnerungen sind nur mit gesetztem Enddatum möglich." : "Reminders are only available when an end date is set.",
     "Externer Link" : "External link",
-    "Festlaufzeit" : "Fixed term",
     "Filter" : "Filter",
     "Halbjährlich" : "Semi-annually",
     "In Papierkorb" : "Move to trash",
