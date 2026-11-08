@@ -346,6 +346,7 @@ export default {
 			contractTypeOptions: [
 				{ id: 'fixed', label: t('contractmanager', 'Festlaufzeit') },
 				{ id: 'auto_renewal', label: t('contractmanager', 'Automatische Verlängerung') },
+				{ id: 'unlimited', label: t('contractmanager', 'Unbefristet') },
 			],
 		}
 	},
