@@ -204,7 +204,6 @@ OC.L10N.register(
     "Unbefristete Verträge haben kein Enddatum." : "Unbefristete Verträge haben kein Enddatum.",
     "Erinnerungen sind nur mit gesetztem Enddatum möglich." : "Erinnerungen sind nur mit gesetztem Enddatum möglich.",
     "Externer Link" : "Externer Link",
-    "Festlaufzeit" : "Festlaufzeit",
     "Filter" : "Filter",
     "Halbjährlich" : "Halbjährlich",
     "In Papierkorb" : "In Papierkorb",
