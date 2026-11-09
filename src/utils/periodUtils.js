@@ -3,6 +3,8 @@
  * Handles period strings like "3 months", "14 days", "1 year"
  */
 
+import { toLocalDate } from './dateUtils.js'
+
 /**
  * Parses a period string into value and unit
  * @param {string|null} periodString - e.g. "3 months", "14 days"
@@ -131,13 +133,13 @@ function isCancelled(status) {
 export function getEffectiveEndDate(endDate, contractType, renewalPeriod, options = {}) {
 	if (!endDate) return null
 
-	const end = new Date(endDate)
-	if (isNaN(end.getTime())) return null
+	const end = toLocalDate(endDate)
+	if (!end || isNaN(end.getTime())) return null
 
 	if (isCancelled(options.status)) {
 		if (options.cancelledTo) {
-			const cancelledTo = new Date(options.cancelledTo)
-			if (!isNaN(cancelledTo.getTime())) return cancelledTo
+			const cancelledTo = toLocalDate(options.cancelledTo)
+			if (cancelledTo && !isNaN(cancelledTo.getTime())) return cancelledTo
 		}
 		return end
 	}
@@ -225,8 +227,8 @@ export function getDeadlineInfo(contract) {
 
 	let end = getEffectiveEndDate(contract.endDate, contract.contractType, contract.renewalPeriod, options)
 	if (!end && contract.endDate) {
-		const parsed = new Date(contract.endDate)
-		if (!isNaN(parsed.getTime())) end = parsed
+		const parsed = toLocalDate(contract.endDate)
+		if (parsed && !isNaN(parsed.getTime())) end = parsed
 	}
 	if (!end) {
 		return { date: null, labelKey: null }

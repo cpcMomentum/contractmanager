@@ -13,7 +13,7 @@ import { getCanonicalLocale } from '@nextcloud/l10n'
 export function formatDate(dateInput) {
 	if (!dateInput) return ''
 
-	const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
+	const date = toLocalDate(dateInput)
 
 	if (isNaN(date.getTime())) return ''
 
@@ -47,6 +47,16 @@ export function parseLocalDate(dateString) {
 	return date
 }
 
+// new Date('YYYY-MM-DD') is UTC midnight, i.e. the previous day west of UTC.
+export function toLocalDate(dateInput) {
+	if (!dateInput) return null
+	if (dateInput instanceof Date) return new Date(dateInput.getTime())
+	if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+		return parseLocalDate(dateInput)
+	}
+	return new Date(dateInput)
+}
+
 /**
  * Formats a date for input fields (YYYY-MM-DD)
  * @param {string|Date|null} dateInput - Date to format
@@ -55,7 +65,7 @@ export function parseLocalDate(dateString) {
 export function formatDateForInput(dateInput) {
 	if (!dateInput) return ''
 
-	const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
+	const date = toLocalDate(dateInput)
 
 	if (isNaN(date.getTime())) return ''
 
@@ -77,7 +87,7 @@ export function formatDateForInput(dateInput) {
 export function isDateInPast(dateInput) {
 	if (!dateInput) return false
 
-	const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
+	const date = toLocalDate(dateInput)
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
 
@@ -93,7 +103,7 @@ export function isDateInPast(dateInput) {
 export function isDateWithinDays(dateInput, days) {
 	if (!dateInput) return false
 
-	const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
+	const date = toLocalDate(dateInput)
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
 
