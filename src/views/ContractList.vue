@@ -81,16 +81,23 @@
 				:clearable="true"
 				input-id="filter-vendor"
 				@update:model-value="persistFilters" />
-			<NcSelect v-model="filterStatuses"
-				:multiple="true"
+			<NcSelect :model-value="statusSummary"
 				:options="statusOptions"
 				:placeholder="t('contractmanager', 'Status')"
-				:clearable="false"
+				:clearable="true"
+				:keep-open="true"
 				label="label"
 				track-by="id"
-				:reduce="option => option.id"
 				input-id="filter-status"
-				@update:model-value="persistFilters" />
+				@update:model-value="onStatusPick">
+				<template #option="option">
+					<span class="status-option">
+						<CheckboxMarkedIcon v-if="filterStatuses.includes(option.id)" :size="20" fill-color="var(--color-primary-element)" />
+						<CheckboxBlankOutlineIcon v-else :size="20" />
+						{{ option.label }}
+					</span>
+				</template>
+			</NcSelect>
 			<NcSelect v-model="filterContractType"
 				:options="contractTypeOptions"
 				:placeholder="t('contractmanager', 'Vertragstyp')"
@@ -226,7 +233,7 @@ import { mapState, mapActions } from 'pinia'
 import { useContractsStore } from '../store/contracts'
 import { useCategoriesStore } from '../store/categories'
 import { loadState } from '@nextcloud/initial-state'
-import { getCanonicalLocale } from '@nextcloud/l10n'
+import { getCanonicalLocale, translatePlural as n } from '@nextcloud/l10n'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -244,6 +251,8 @@ import CircleSmallIcon from 'vue-material-design-icons/CircleSmall.vue'
 import FilterIcon from 'vue-material-design-icons/Filter.vue'
 import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import CheckboxMarkedIcon from 'vue-material-design-icons/CheckboxMarked.vue'
+import CheckboxBlankOutlineIcon from 'vue-material-design-icons/CheckboxBlankOutline.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
@@ -277,6 +286,8 @@ export default {
 		FilterIcon,
 		FilterOffIcon,
 		CloseIcon,
+		CheckboxMarkedIcon,
+		CheckboxBlankOutlineIcon,
 		CashMultipleIcon,
 		BellRingIcon,
 		ContractListItem,
@@ -351,6 +362,17 @@ export default {
 		}
 	},
 	computed: {
+		statusSummary() {
+			if (this.filterStatuses.length === 0) return null
+			const count = this.filterStatuses.length
+			const label = count > 2
+				? n('contractmanager', '%n Status', '%n Status', count)
+				: this.statusOptions
+					.filter(o => this.filterStatuses.includes(o.id))
+					.map(o => o.label)
+					.join(', ')
+			return { id: '__summary', label }
+		},
 		...mapState(useContractsStore, {
 			allContracts: 'allContracts',
 			loading: 'isLoading',
@@ -797,6 +819,17 @@ export default {
 			this.showFilters = !this.showFilters
 		},
 
+		onStatusPick(option) {
+			if (!option) {
+				this.filterStatuses = []
+			} else if (this.filterStatuses.includes(option.id)) {
+				this.filterStatuses = this.filterStatuses.filter(id => id !== option.id)
+			} else {
+				this.filterStatuses = [...this.filterStatuses, option.id]
+			}
+			this.persistFilters()
+		},
+
 		resetFilters() {
 			this.filterVendor = null
 			this.filterStatuses = []
@@ -834,6 +867,12 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.status-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
 .contract-list {
 	padding: 20px;
 	padding-left: 50px;
@@ -882,6 +921,8 @@ export default {
 
 		.filter-min-cost {
 			flex: 0 0 180px;
+			// Same bottom margin as NcSelect, so the row centres all fields alike.
+			margin-block-end: var(--default-grid-baseline);
 		}
 	}
 

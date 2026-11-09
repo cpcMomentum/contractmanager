@@ -408,6 +408,7 @@ OC.L10N.register(
     "Frist / Ende in" : "Deadline / End within",
     "Monatskosten ab" : "Monthly cost from",
     "Ungültiger Betrag" : "Invalid amount",
-    "Frist / Ende in {days} Tagen" : "Deadline / End within {days} days"
+    "Frist / Ende in {days} Tagen" : "Deadline / End within {days} days",
+    "_%n Status_::_%n Status_" : ["%n status","%n statuses"]
 },
 "nplurals=2; plural=(n != 1);");
