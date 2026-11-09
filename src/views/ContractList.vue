@@ -257,7 +257,7 @@ import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
-import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isPlanned } from '../utils/contractStatus'
+import { DEFAULT_REMINDER_DAYS_1, getDisplayStatus, isEndingSoon, isPlanned } from '../utils/contractStatus'
 import { contractForDuplicate } from '../utils/contractDuplicate'
 import { hasMonthlyEquivalent, monthlyCost } from '../utils/costInterval'
 import { normalizeCostInput } from '../utils/costFormat'
@@ -307,7 +307,7 @@ export default {
 		const defaultPrefs = {
 			sortBy: 'endDate',
 			sortDirection: 'asc',
-			filters: { vendor: '', statuses: ['active', 'cancelled', 'ended'], contractType: '' },
+			filters: { vendor: '', statuses: [], contractType: '' },
 		}
 		const prefs = loadState('contractmanager', 'userPreferences', defaultPrefs)
 		const filters = prefs.filters || defaultPrefs.filters
@@ -349,10 +349,11 @@ export default {
 			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
 			statusOptions: [
 				{ id: 'planned', label: t('contractmanager', 'Geplant') },
-				{ id: 'active', label: t('contractmanager', 'Aktiv') },
+				{ id: 'active', label: t('contractmanager', 'Laufend') },
 				{ id: 'ending_soon', label: t('contractmanager', 'Kündigungsfrist endet') },
+				{ id: 'ending', label: t('contractmanager', 'endet') },
 				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
-				{ id: 'ended', label: t('contractmanager', 'Abgelaufen') },
+				{ id: 'ended', label: t('contractmanager', 'Beendet') },
 			],
 			contractTypeOptions: [
 				{ id: 'fixed', label: t('contractmanager', 'Befristet') },
@@ -450,14 +451,14 @@ export default {
 			}
 			return t('contractmanager', 'Kennzahlen für die gefilterte Ansicht')
 		},
+		kpiRunningContracts() {
+			return this.kpiBaseContracts.filter(c => ['active', 'ending_soon', 'ending'].includes(getDisplayStatus(c, this.defaultReminderDays)))
+		},
 		kpiActiveCount() {
-			// Planned contracts keep the stored status "active" but haven't started
-			// yet (#109) — they show as „Geplant", so they must not be counted as
-			// active here or the KPI would contradict the list.
-			return this.kpiBaseContracts.filter(c => c.status === 'active' && !isPlanned(c)).length
+			return this.kpiRunningContracts.length
 		},
 		kpiTypeSub() {
-			const auto = this.kpiBaseContracts.filter(c => c.status === 'active' && !isPlanned(c) && c.contractType === 'auto_renewal').length
+			const auto = this.kpiRunningContracts.filter(c => c.contractType === 'auto_renewal').length
 			const rest = this.kpiActiveCount - auto
 			return t('contractmanager', '{auto} mit autom. Verlängerung · {rest} weitere', { auto, rest })
 		},
@@ -550,22 +551,10 @@ export default {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
 
-			// Status-Filter (leer = kein Filter = alle anzeigen).
-			// "ending_soon" and "planned" are virtual options: they don't map to a
-			// stored status but to a derived predicate over active contracts —
-			// see utils/contractStatus.isEndingSoon / isPlanned. Planned contracts
-			// keep the stored status "active", so they also match the "active"
-			// option, mirroring how ending_soon behaves.
+			// Status-Filter (leer = kein Filter = alle anzeigen), gleicher Schlüssel wie der Chip.
 			if (this.filterStatuses.length > 0) {
-				const wantsEndingSoon = this.filterStatuses.includes('ending_soon')
-				const wantsPlanned = this.filterStatuses.includes('planned')
-				const realStatuses = this.filterStatuses.filter(id => id !== 'ending_soon' && id !== 'planned')
 				const reminderDays = this.defaultReminderDays
-				filtered = filtered.filter(c => {
-					if (wantsEndingSoon && isEndingSoon(c, reminderDays)) return true
-					if (wantsPlanned && isPlanned(c)) return true
-					return realStatuses.includes(c.status)
-				})
+				filtered = filtered.filter(c => this.filterStatuses.includes(getDisplayStatus(c, reminderDays)))
 			}
 
 			// Vertragspartner-Filter

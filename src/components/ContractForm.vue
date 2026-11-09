@@ -605,7 +605,7 @@ import axios from '@nextcloud/axios'
 import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { getCanonicalLocale } from '@nextcloud/l10n'
-import { isPlanned } from '../utils/contractStatus'
+import { getDisplayStatus } from '../utils/contractStatus'
 import { loadState } from '@nextcloud/initial-state'
 import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
@@ -809,19 +809,22 @@ export default {
 		},
 		// --- Summary-Header (Eckdaten oben im Modal) ---
 		summaryChip() {
-			if (isPlanned({ status: this.form.contractStatus, startDate: this.form.startDate })) {
+			switch (getDisplayStatus(this.formToPayload(), this.defaultReminderDays)) {
+			case 'planned':
 				return { cls: 'planned', label: t('contractmanager', 'Geplant') }
-			}
-			if (this.form.contractStatus === 'cancelled') {
+			case 'ending_soon':
+				return { cls: 'soon', label: t('contractmanager', 'Kündigungsfrist endet') }
+			case 'ending':
+				return { cls: 'soon', label: t('contractmanager', 'endet') }
+			case 'cancelled':
 				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt') }
-			}
-			if (this.form.contractStatus === 'ended') {
+			case 'ended':
 				return { cls: 'ended', label: t('contractmanager', 'Beendet') }
+			default:
+				return this.form.contractType === 'fixed'
+					? { cls: 'active-fixed', label: t('contractmanager', 'Laufend') }
+					: { cls: 'active', label: t('contractmanager', 'Laufend') }
 			}
-			if (this.form.contractType === 'fixed') {
-				return { cls: 'active-fixed', label: t('contractmanager', 'Laufend') }
-			}
-			return { cls: 'active', label: t('contractmanager', 'Laufend') }
 		},
 		summaryEndDate() {
 			return effectiveEndForForm({
@@ -1531,6 +1534,7 @@ export default {
 	&--planned { background: #e6eefb; color: #2f5aa8; }
 	&--active { background: #eaf5ee; color: #2f7d49; }
 	&--active-fixed { background: #dcefe3; color: #1d5c33; }
+	&--soon { background: #fbf3e6; color: #9a6c25; }
 	&--cancelled { background: #fef3c7; color: #92400e; }
 	&--ended { background: #efefef; color: #5a5a5a; }
 
@@ -1540,6 +1544,7 @@ export default {
 		&--planned { background: #182842; color: #7ba3e6; }
 		&--active { background: #17301f; color: #6fbf87; }
 		&--active-fixed { background: #16281c; color: #63c081; }
+		&--soon { background: #33291a; color: #e0b15a; }
 		&--cancelled { background: #3a2713; color: #e08a4a; }
 		&--ended { background: #2b2b2b; color: #a8a8a8; }
 	}

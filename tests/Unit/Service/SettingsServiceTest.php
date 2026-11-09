@@ -467,16 +467,16 @@ class SettingsServiceTest extends TestCase {
 				$stored = json_decode($value, true);
 			});
 
-		$this->service->setUserFilters('testuser', ['statuses' => ['planned', 'ending_soon', 'active', 'bogus']]);
+		$this->service->setUserFilters('testuser', ['statuses' => ['planned', 'ending_soon', 'ending', 'active', 'bogus']]);
 
-		$this->assertSame(['planned', 'ending_soon', 'active'], $stored['statuses']);
+		$this->assertSame(['planned', 'ending_soon', 'ending', 'active'], $stored['statuses']);
 	}
 
 	public function testGetUserFiltersKeepsDerivedStatusOptions(): void {
 		$this->config->method('getUserValue')
-			->willReturn(json_encode(['statuses' => ['ending_soon', 'planned', 'bogus']]));
+			->willReturn(json_encode(['statuses' => ['ending_soon', 'ending', 'planned', 'bogus']]));
 
-		$this->assertSame(['ending_soon', 'planned'], $this->service->getUserFilters('testuser')['statuses']);
+		$this->assertSame(['ending_soon', 'ending', 'planned'], $this->service->getUserFilters('testuser')['statuses']);
 	}
 
 	public function testSetUserFiltersKeepsUnlimitedContractType(): void {
