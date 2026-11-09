@@ -94,7 +94,7 @@ class SettingsService {
 	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost', 'cancellationDeadline'];
 	private const ALLOWED_AMOUNT_TYPES = ['netto', 'brutto'];
 	private const ALLOWED_SORT_DIRECTION = ['asc', 'desc'];
-	private const ALLOWED_STATUSES = ['planned', 'active', 'ending_soon', 'cancelled', 'ended'];
+	private const ALLOWED_STATUSES = ['planned', 'active', 'ending_soon', 'ending', 'cancelled', 'ended'];
 	private const ALLOWED_CONTRACT_TYPES = ['', 'fixed', 'auto_renewal', 'unlimited'];
 	private const ALLOWED_DEADLINE_WITHIN = [0, 30, 60, 90, 180];
 	private const DEFAULT_FILTERS = [

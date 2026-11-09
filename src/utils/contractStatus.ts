@@ -154,3 +154,20 @@ export function isPlanned(contract: Contract): boolean {
 
 	return start > today
 }
+
+// Keys are also the saved filter ids (SettingsService::ALLOWED_STATUSES); the check order decides ties.
+export type DisplayStatus = 'planned' | 'active' | 'ending_soon' | 'ending' | 'cancelled' | 'ended'
+
+export function getDisplayStatus(
+	contract: Contract,
+	defaultReminderDays: number = DEFAULT_REMINDER_DAYS_1,
+): DisplayStatus {
+	if (isPlanned(contract)) return 'planned'
+	if (isExpiredFixed(contract)) return 'ended'
+	if (isEndingSoon(contract, defaultReminderDays)) return 'ending_soon'
+	if (isEndingSoonFixed(contract, defaultReminderDays)) return 'ending'
+	if (isEndedCancelled(contract)) return 'ended'
+	if (contract.status === 'cancelled') return 'cancelled'
+	if (contract.status === 'ended') return 'ended'
+	return 'active'
+}
