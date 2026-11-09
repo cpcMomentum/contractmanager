@@ -24,7 +24,7 @@ const day = (offset: number) => {
 	return d.toISOString().slice(0, 10)
 }
 
-const summaryChip = (ContractForm.computed as Record<string, (this: Record<string, unknown>) => unknown>).summaryChip
+const summaryChip = (ContractForm.computed as unknown as Record<string, (this: Record<string, unknown>) => unknown>).summaryChip
 
 const chipFor = (payload: Record<string, unknown>) => summaryChip.call({
 	formToPayload: () => ({ id: 1, ...payload }),

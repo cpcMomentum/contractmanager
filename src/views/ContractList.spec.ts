@@ -38,7 +38,7 @@ const contracts = [
 	{ id: 7, name: 'Beendet', status: 'ended', contractType: 'fixed', endDate: day(-30) },
 ]
 
-const computed = ContractList.computed as Record<string, (this: Record<string, unknown>) => unknown>
+const computed = ContractList.computed as unknown as Record<string, (this: Record<string, unknown>) => unknown>
 
 function listContext(filterStatuses: string[]) {
 	return {
@@ -71,7 +71,7 @@ describe('ContractList: Status-Filter und KPI', () => {
 	})
 
 	it('bietet genau die sechs Chip-Begriffe als Filter an, ohne Vorauswahl', () => {
-		const data = (ContractList.data as () => Record<string, unknown>).call({})
+		const data = (ContractList.data as unknown as () => Record<string, unknown>).call({})
 		expect((data.statusOptions as { id: string, label: string }[]).map(o => [o.id, o.label])).toEqual([
 			['planned', 'Geplant'],
 			['active', 'Laufend'],
