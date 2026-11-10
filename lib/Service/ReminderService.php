@@ -191,10 +191,11 @@ class ReminderService {
 			return clone $endDate;
 		}
 
-		$now = $now ?? new DateTime();
+		// The end day itself still belongs to the current period.
+		$today = (clone ($now ?? new DateTime()))->setTime(0, 0);
 		$effective = clone $endDate;
 
-		if ($effective > $now) {
+		if ($effective >= $today) {
 			return $effective;
 		}
 
@@ -207,7 +208,7 @@ class ReminderService {
 		$unit = strtolower(rtrim($matches[2], 's'));
 
 		// Calculate number of periods needed mathematically (O(1) instead of O(n))
-		$diffDays = (int) $now->diff($effective)->format('%a');
+		$diffDays = (int) $today->diff($effective)->format('%a');
 		$periodsNeeded = 0;
 
 		if ($unit === 'day') {
@@ -225,7 +226,7 @@ class ReminderService {
 		$effective->modify("+{$totalValue} {$unit}");
 
 		// Adjust if estimate was slightly off (max 3 iterations for month-length variance)
-		while ($effective <= $now) {
+		while ($effective < $today) {
 			$effective->modify("+{$value} {$unit}");
 		}
 
@@ -267,7 +268,9 @@ class ReminderService {
 		$contractType = $contract->getContractType();
 		$renewalPeriod = $contract->getRenewalPeriod();
 		if ($contractType === 'auto_renewal' && !empty($renewalPeriod)) {
-			while ($deadline < $now) {
+			// The deadline day itself is still open for cancellation.
+			$today = (clone $now)->setTime(0, 0);
+			while ($deadline < $today) {
 				$endDate = $this->addPeriodToDate($endDate, $renewalPeriod);
 				if ($endDate === null) {
 					break;
@@ -371,7 +374,7 @@ class ReminderService {
 	 * @return array<array{contract: Contract, deadline: DateTime}>
 	 */
 	public function getUpcomingDeadlinesForUser(string $userId): array {
-		$now = new DateTime();
+		$today = new DateTime('today');
 		$accessUsers = $this->permissionService->getAllUsersWithAccess();
 		$result = [];
 		foreach ($this->contractMapper->findByStatus(Contract::STATUS_ACTIVE) as $contract) {
@@ -385,7 +388,7 @@ class ReminderService {
 			// Match shouldSendFirstReminder()/shouldSendFinalReminder(): a deadline
 			// that has already passed (e.g. a fixed contract nobody archived yet)
 			// never triggers a notification, so it must not show up here either.
-			if ($deadline < $now) {
+			if ($deadline < $today) {
 				continue;
 			}
 			if (!in_array($userId, $this->getRecipients($contract, $accessUsers), true)) {
@@ -419,7 +422,7 @@ class ReminderService {
 		if ($now < $reminderDate) {
 			return false; // Too early
 		}
-		if ($now > $deadline) {
+		if ($deadline < new DateTime('today')) {
 			return false; // Too late, deadline passed
 		}
 
@@ -463,7 +466,7 @@ class ReminderService {
 		if ($now < $reminderDate) {
 			return false; // Too early
 		}
-		if ($now > $deadline) {
+		if ($deadline < new DateTime('today')) {
 			return false; // Too late, deadline passed
 		}
 
