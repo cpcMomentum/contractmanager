@@ -74,6 +74,10 @@ jobs:
       - name: Frontend-Unit-Tests (vitest)
         run: npm test
 
+      # Datum ohne Uhrzeit darf westlich von UTC nicht auf den Vortag rutschen.
+      - name: Frontend-Unit-Tests westlich von UTC (TZ=America/New_York)
+        run: npm run test:tz
+
       - name: Produktions-Build
         run: npm run build
 

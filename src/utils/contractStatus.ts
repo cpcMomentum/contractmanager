@@ -1,4 +1,5 @@
 import { calculateCancellationDeadline } from './periodUtils.js'
+import { toLocalDate } from './dateUtils.js'
 import type { Contract } from '../store/contracts'
 
 /**
@@ -68,7 +69,7 @@ export function isEndingSoonFixed(
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
 
-	const end = new Date(contract.endDate)
+	const end = toLocalDate(contract.endDate) as Date
 	end.setHours(0, 0, 0, 0)
 
 	const windowStart = new Date(end)
@@ -92,7 +93,7 @@ export function isExpiredFixed(contract: Contract): boolean {
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
-	const end = new Date(contract.endDate)
+	const end = toLocalDate(contract.endDate) as Date
 	end.setHours(0, 0, 0, 0)
 
 	return end < today
@@ -126,7 +127,7 @@ export function isEndedCancelled(contract: Contract): boolean {
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
-	const end = new Date(effectiveEnd)
+	const end = toLocalDate(effectiveEnd) as Date
 	end.setHours(0, 0, 0, 0)
 
 	return end <= today
@@ -149,7 +150,7 @@ export function isPlanned(contract: Contract): boolean {
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
-	const start = new Date(contract.startDate)
+	const start = toLocalDate(contract.startDate) as Date
 	start.setHours(0, 0, 0, 0)
 
 	return start > today

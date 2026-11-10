@@ -261,6 +261,7 @@ import { DEFAULT_REMINDER_DAYS_1, getDisplayStatus, isEndingSoon, isPlanned } fr
 import { contractForDuplicate } from '../utils/contractDuplicate'
 import { hasMonthlyEquivalent, monthlyCost } from '../utils/costInterval'
 import { normalizeCostInput } from '../utils/costFormat'
+import { toLocalDate } from '../utils/dateUtils.js'
 import { DEADLINE_WITHIN_OPTIONS, hasMonthlyCostAtLeast, isDeadlineWithin } from '../utils/listFilters'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
@@ -739,7 +740,7 @@ export default {
 					if (!a.endDate && !b.endDate) { cmp = 0; break }
 					if (!a.endDate) { cmp = 1; break }
 					if (!b.endDate) { cmp = -1; break }
-					cmp = new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
+					cmp = toLocalDate(a.endDate).getTime() - toLocalDate(b.endDate).getTime()
 					break
 				}
 				case 'name':
