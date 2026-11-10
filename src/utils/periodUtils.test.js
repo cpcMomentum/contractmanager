@@ -315,3 +315,47 @@ describe('getDeadlineInfo (#252)', () => {
 		expect(info.labelKey).toBeNull()
 	})
 })
+
+describe('Fristtag und Endtag zählen bis Tagesende als heute', () => {
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it.each([
+		['00:01', new Date(2026, 5, 15, 0, 1)],
+		['08:00', FAKE_NOW],
+		['23:59', new Date(2026, 5, 15, 23, 59)],
+	])('Frist heute um %s bleibt die heutige Frist', (_label, now) => {
+		vi.useFakeTimers()
+		vi.setSystemTime(now)
+		expect(ymd(calculateCancellationDeadline('2026-07-15', '1 month', 'auto_renewal', '12 months'))).toBe('2026-06-15')
+	})
+
+	it.each([
+		['Frist gestern', '2026-07-14', '2027-06-14'],
+		['Frist morgen', '2026-07-16', '2026-06-16'],
+	])('%s', (_label, endDate, expected) => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+		expect(ymd(calculateCancellationDeadline(endDate, '1 month', 'auto_renewal', '12 months'))).toBe(expected)
+	})
+
+	it.each([
+		['Ende gestern', '2026-06-14', '2027-06-14'],
+		['Ende heute', '2026-06-15', '2026-06-15'],
+		['Ende morgen', '2026-06-16', '2026-06-16'],
+		['Ende heute vor zwei Perioden', '2024-06-15', '2026-06-15'],
+	])('%s (autom. Verlängerung)', (_label, endDate, expected) => {
+		vi.useFakeTimers()
+		vi.setSystemTime(new Date(2026, 5, 15, 23, 59))
+		expect(ymd(getEffectiveEndDate(endDate, 'auto_renewal', '12 months'))).toBe(expected)
+	})
+
+	it('Liste zeigt am Fristtag „Kündbar bis“ heute', () => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+		const info = getDeadlineInfo({ status: 'active', contractType: 'auto_renewal', endDate: '2026-07-15', cancellationPeriod: '1 month', renewalPeriod: '12 months' })
+		expect(info.labelKey).toBe('cancelBy')
+		expect(ymd(info.date)).toBe('2026-06-15')
+	})
+})

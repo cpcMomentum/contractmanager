@@ -107,6 +107,12 @@ export function formatPeriod(periodString) {
 	return `${period.value} ${units[period.unit] || period.unit}`
 }
 
+function startOfToday() {
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	return today
+}
+
 /**
  * Whether a contract status means the contract no longer renews.
  * @param {string} [status] - Contract status
@@ -148,8 +154,9 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod, option
 		return end
 	}
 
-	const now = new Date()
-	if (end > now) {
+	// The end day itself still belongs to the current period.
+	const today = startOfToday()
+	if (end >= today) {
 		return end
 	}
 
@@ -157,7 +164,7 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod, option
 	const period = parsePeriod(renewalPeriod)
 	if (!period) return end
 
-	const diffMs = now.getTime() - end.getTime()
+	const diffMs = today.getTime() - end.getTime()
 	const diffDays = diffMs / (1000 * 60 * 60 * 24)
 	let periodsNeeded = 0
 
@@ -185,7 +192,7 @@ export function getEffectiveEndDate(endDate, contractType, renewalPeriod, option
 
 	// Adjust if estimate was slightly off (max 3 iterations for month-length variance).
 	// eslint-disable-next-line no-unmodified-loop-condition -- effective is mutated via setTime() inside the loop
-	while (effective <= now) {
+	while (effective < today) {
 		const next = addPeriod(effective, renewalPeriod)
 		if (!next) return end
 		effective.setTime(next.getTime())
@@ -290,8 +297,9 @@ export function calculateCancellationDeadline(endDate, cancellationPeriod, contr
 	// past-check, so a "month_end" deadline still upcoming this period is not
 	// skipped to the next year.
 	if (deadline && contractType === 'auto_renewal' && renewalPeriod) {
-		const now = new Date()
-		while (deadline < now) {
+		// The deadline day itself is still open for cancellation.
+		const today = startOfToday()
+		while (deadline < today) {
 			effectiveEnd = addPeriod(effectiveEnd, renewalPeriod)
 			if (!effectiveEnd) break
 			deadline = subtractPeriod(effectiveEnd, cancellationPeriod)

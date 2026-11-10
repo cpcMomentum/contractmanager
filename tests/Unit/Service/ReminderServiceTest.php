@@ -14,6 +14,7 @@ use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\ReminderService;
 use OCA\ContractManager\Service\SettingsService;
 use OCA\ContractManager\Service\TalkService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -856,6 +857,105 @@ class ReminderServiceTest extends TestCase {
 		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
 
 		$this->assertSame([], $this->service->getUpcomingDeadlinesForUser('testuser'));
+	}
+
+	#[DataProvider('deadlineTodayTimes')]
+	public function testCancellationDeadlineTodayStaysToday(string $time): void {
+		$contract = $this->createContract(new DateTime('2026-07-15'), '1 month', 'auto_renewal', '12 months');
+
+		$result = $this->service->calculateCancellationDeadline($contract, new DateTime("2026-06-15 {$time}"));
+
+		$this->assertSame('2026-06-15', $result->format('Y-m-d'));
+	}
+
+	public static function deadlineTodayTimes(): array {
+		return [['00:01'], ['08:00'], ['23:59']];
+	}
+
+	public function testCancellationDeadlineYesterdayMovesToNextPeriod(): void {
+		$contract = $this->createContract(new DateTime('2026-07-14'), '1 month', 'auto_renewal', '12 months');
+
+		$result = $this->service->calculateCancellationDeadline($contract, new DateTime('2026-06-15 08:00'));
+
+		$this->assertSame('2027-06-14', $result->format('Y-m-d'));
+	}
+
+	#[DataProvider('endDayCases')]
+	public function testEffectiveEndDateKeepsTodayUntilEndOfDay(string $endDate, string $expected): void {
+		$contract = $this->createContract(new DateTime($endDate), '1 month', 'auto_renewal', '12 months');
+
+		$result = $this->service->getEffectiveEndDate($contract, new DateTime('2026-06-15 23:59'));
+
+		$this->assertSame($expected, $result->format('Y-m-d'));
+	}
+
+	public static function endDayCases(): array {
+		return [
+			'Ende gestern' => ['2026-06-14', '2027-06-14'],
+			'Ende heute' => ['2026-06-15', '2026-06-15'],
+			'Ende morgen' => ['2026-06-16', '2026-06-16'],
+			'Ende heute vor zwei Perioden' => ['2024-06-15', '2026-06-15'],
+		];
+	}
+
+	public function testFinalReminderIsSentOnDeadlineDayIfNotSentYet(): void {
+		$contract = $this->createContract(new DateTime('today'), '', 'fixed');
+		$contract->setId(1);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$this->assertTrue($this->service->shouldSendFinalReminder($contract, self::TEST_USER));
+	}
+
+	public function testFinalReminderIsNotRepeatedOnDeadlineDay(): void {
+		$contract = $this->createContract(new DateTime('today'), '', 'fixed');
+		$contract->setId(1);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(true);
+
+		$this->assertFalse($this->service->shouldSendFinalReminder($contract, self::TEST_USER));
+	}
+
+	public function testFirstReminderIsSentOnDeadlineDayIfNotSentYet(): void {
+		$contract = $this->createContract(new DateTime('today'), '', 'fixed');
+		$contract->setId(1);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$this->assertTrue($this->service->shouldSendFirstReminder($contract, self::TEST_USER));
+	}
+
+	public function testNoReminderAfterDeadlineDay(): void {
+		$contract = $this->createContract(new DateTime('yesterday'), '', 'fixed');
+		$contract->setId(1);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$this->assertFalse($this->service->shouldSendFirstReminder($contract, self::TEST_USER));
+		$this->assertFalse($this->service->shouldSendFinalReminder($contract, self::TEST_USER));
+	}
+
+	#[DataProvider('calendarDayCases')]
+	public function testCalendarFeedKeepsDeadlineUntilEndOfDay(string $endDate, int $expectedCount): void {
+		$contract = $this->createContract(new DateTime($endDate), '', 'fixed');
+		$contract->setId(1);
+		$this->contractMapper->method('findByStatus')->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+
+		$this->assertCount($expectedCount, $this->service->getUpcomingDeadlinesForUser('testuser'));
+	}
+
+	public static function calendarDayCases(): array {
+		return [
+			'Frist heute' => ['today', 1],
+			'Frist gestern' => ['yesterday', 0],
+		];
 	}
 
 	private function createContract(
