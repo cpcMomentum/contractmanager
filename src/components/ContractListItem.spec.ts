@@ -142,4 +142,22 @@ describe('ContractListItem: Status-Chip', () => {
 		expect(chip.text()).toBe(label)
 		expect(chip.classes()).toContain(cls)
 	})
+
+	const deadlineLabelOf = (contract: Record<string, unknown>) => {
+		const wrapper = mount(ContractListItem, { global, props: { contract: { id: 1, name: 'X', vendor: 'Y', ...contract } } })
+		return wrapper.find('.contract-list-item__deadline-label').text()
+	}
+
+	it.each([
+		[{ status: 'active', contractType: 'fixed', endDate: day(-3) }, 'Endete am'],
+		[{ status: 'ended', contractType: 'fixed', endDate: day(-30) }, 'Endete am'],
+		[{ status: 'active', contractType: 'fixed', endDate: day(0) }, 'Läuft bis'],
+		[{ status: 'active', contractType: 'fixed', endDate: day(200) }, 'Läuft bis'],
+		[{ status: 'cancelled', contractType: 'auto_renewal', endDate: day(-10), cancelledOn: day(-60), cancelledTo: day(-10) }, 'Gekündigt zum'],
+		[{ status: 'cancelled', contractType: 'auto_renewal', endDate: day(60), cancelledOn: day(-5), cancelledTo: day(60) }, 'Gekündigt zum'],
+		[{ status: 'ended', contractType: 'auto_renewal', endDate: day(-10), cancelledOn: day(-60), cancelledTo: day(-10) }, 'Gekündigt zum'],
+		[{ status: 'active', contractType: 'auto_renewal', endDate: day(20), cancellationPeriod: '7 days', renewalPeriod: '12 months' }, 'Kündbar bis'],
+	])('Frist/Ende-Beschriftung %j → %s', (contract, label) => {
+		expect(deadlineLabelOf(contract)).toBe(label)
+	})
 })

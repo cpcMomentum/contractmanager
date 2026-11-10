@@ -246,8 +246,14 @@ export default {
 				cancelBy: t('contractmanager', 'Kündbar bis'),
 				cancelledTo: t('contractmanager', 'Gekündigt zum'),
 				runsUntil: t('contractmanager', 'Läuft bis'),
+				endedOn: t('contractmanager', 'Endete am'),
 			}
-			return labels[this.deadlineInfo.labelKey] || null
+			// The background job also sets expired fixed contracts to 'ended'; only a real cancellation reads "Gekündigt zum".
+			const wasCancelled = Boolean(this.contract.cancelledOn || this.contract.cancelledTo)
+			const key = this.deadlineInfo.labelKey && !wasCancelled && getDisplayStatus(this.contract, this.defaultReminderDays) === 'ended'
+				? 'endedOn'
+				: this.deadlineInfo.labelKey
+			return labels[key] || null
 		},
 		// Archive and trash are view-only (#328) — dragging a row there must not
 		// be able to change its category, even for editors.

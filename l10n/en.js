@@ -24,7 +24,7 @@ OC.L10N.register(
     "{count} Verträge von {from} auf {to} übertragen?" : "Transfer {count} contracts from {from} to {to}?",
     "{count} Verträge übertragen" : "{count} contracts transferred",
     "Übertragung fehlgeschlagen" : "Transfer failed",
-    "Kündigungsfrist endet" : "Cancellation deadline approaching",
+    "Kündigungsfrist endet" : "Notice period ending",
     "endet" : "Ending soon",
     "Der befristete Vertrag läuft in Kürze aus." : "The fixed-term contract is ending soon.",
     "Legen Sie fest, für welche Verträge Sie Erinnerungen erhalten möchten, wie früh und auf welchem Weg." : "Choose which contracts you want reminders for, how early, and by which channel.",
@@ -407,6 +407,7 @@ OC.L10N.register(
     "Monatskosten ab" : "Monthly cost from",
     "Ungültiger Betrag" : "Invalid amount",
     "Frist / Ende in {days} Tagen" : "Deadline / End within {days} days",
-    "_%n Status_::_%n Status_" : ["%n status","%n statuses"]
+    "_%n Status_::_%n Status_" : ["%n status","%n statuses"],
+    "Endete am" : "Ended on"
 },
 "nplurals=2; plural=(n != 1);");
