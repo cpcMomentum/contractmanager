@@ -433,7 +433,8 @@
 		"_%n Status_::_%n Status_": [
 			"%n Status",
 			"%n Status"
-		]
+		],
+		"Endete am": "Endete am"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }
