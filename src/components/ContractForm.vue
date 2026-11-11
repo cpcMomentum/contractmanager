@@ -487,7 +487,7 @@
 									{{ t('contractmanager', 'Mich nicht an diesen Vertrag erinnern') }}
 								</NcCheckboxRadioSwitch>
 								<p class="reminder-switch__hint">
-									{{ t('contractmanager', 'Betrifft nur Ihre eigene Erinnerung, andere Berechtigte bleiben informiert.') }}
+									{{ t('contractmanager', 'Betrifft nur deine eigene Erinnerung, andere Berechtigte bleiben informiert.') }}
 								</p>
 							</div>
 						</div>

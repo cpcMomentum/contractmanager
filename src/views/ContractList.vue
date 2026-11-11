@@ -159,8 +159,8 @@
 				? t('contractmanager', 'Kein Vertrag passt zur aktuellen Auswahl')
 				: t('contractmanager', 'Keine Verträge')"
 			:description="viewIsNarrowed
-				? t('contractmanager', 'Filter, Kategorie oder Suche schränken die Liste ein. Heben Sie die Einschränkung auf, um alle Verträge zu sehen.')
-				: t('contractmanager', 'Erstellen Sie Ihren ersten Vertrag, um zu beginnen.')">
+				? t('contractmanager', 'Filter, Kategorie oder Suche schränken die Liste ein. Hebe die Einschränkung auf, um alle Verträge zu sehen.')
+				: t('contractmanager', 'Erstelle deinen ersten Vertrag, um zu beginnen.')">
 			<template #icon>
 				<FilterOffIcon v-if="viewIsNarrowed" :size="64" />
 				<FileDocumentIcon v-else :size="64" />
