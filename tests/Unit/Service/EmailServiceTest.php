@@ -8,10 +8,13 @@ use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Service\EmailService;
 use OCA\ContractManager\Service\SettingsService;
 use OCP\IConfig;
+use OCP\IL10N;
+use OCP\IUser;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
+use OCP\Mail\IMessage;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
@@ -131,5 +134,33 @@ class EmailServiceTest extends TestCase {
 			'https://nc.example.test/apps/contractmanager/?contract=42',
 			$this->callBuildContractUrl(false, 'true'),
 		);
+	}
+
+	public function testReminderMailUsesRecipientLanguage(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getEMailAddress')->willReturn('user@example.test');
+		$user->method('getDisplayName')->willReturn('Test');
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('get')->with('formal')->willReturn($user);
+
+		$l = $this->createMock(IL10N::class);
+		$l->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		$factory = $this->createMock(IFactory::class);
+		$factory->method('getUserLanguage')->with($user)->willReturn('de_DE');
+		$factory->expects($this->once())->method('get')->with('contractmanager', 'de_DE')->willReturn($l);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getUserEmailReminder')->willReturn(true);
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
+		$mailer->expects($this->once())->method('send');
+
+		$service = new EmailService($mailer, $userManager, $this->createMock(IURLGenerator::class), $this->createMock(IConfig::class), $factory, $settings, $this->createMock(LoggerInterface::class));
+		$contract = new Contract();
+		$contract->setId(1);
+		$contract->setName('Strom');
+		$contract->setVendor('Stadtwerke');
+
+		$this->assertTrue($service->sendReminder($contract, 'formal', '30.11.2026', 'final'));
 	}
 }

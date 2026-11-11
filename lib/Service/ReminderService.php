@@ -534,7 +534,7 @@ class ReminderService {
 		$talkToken = $this->settingsService->getUserTalkChatToken($userId);
 		if ($talkToken !== null && $this->talkService->isTalkAvailable()) {
 			try {
-				if ($this->talkService->sendReminderMessage($talkToken, $contract->getName(), $deadlineFormatted, $reminderType, $contractType)) {
+				if ($this->talkService->sendReminderMessage($talkToken, $contract->getName(), $deadlineFormatted, $reminderType, $contractType, $userId)) {
 					$delivered = true;
 				}
 			} catch (\Exception $e) {
