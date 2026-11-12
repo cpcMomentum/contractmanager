@@ -8,12 +8,15 @@ use DateTime;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
+use OCA\ContractManager\Db\ReminderSent;
 use OCA\ContractManager\Db\ReminderSentMapper;
 use OCA\ContractManager\Service\EmailService;
 use OCA\ContractManager\Service\PermissionService;
 use OCA\ContractManager\Service\ReminderService;
 use OCA\ContractManager\Service\SettingsService;
 use OCA\ContractManager\Service\TalkService;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -32,6 +35,15 @@ class ReminderServiceTest extends TestCase {
 	private ReminderOptOutMapper $optOutMapper;
 	private ReminderService $service;
 
+	/** Fixed clock in UTC ("Y-m-d H:i:s"); null = real clock. */
+	private ?string $clockUtc = null;
+	/** Default timezone of every user. */
+	private string $zone = 'UTC';
+	/** @var array<string, string> Timezone per user, overrides $zone. */
+	private array $userZones = [];
+	/** Server default timezone, used when no user is involved. */
+	private string $serverZone = 'UTC';
+
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -49,6 +61,18 @@ class ReminderServiceTest extends TestCase {
 		$this->settingsService->method('getUserReminderDays1')->willReturn(null);
 		$this->settingsService->method('getUserReminderDays2')->willReturn(null);
 
+		$timeFactory = $this->createMock(ITimeFactory::class);
+		$timeFactory->method('getDateTime')->willReturnCallback(
+			fn (string $time = 'now', ?\DateTimeZone $tz = null): DateTime
+				=> (new DateTime($this->clockUtc ?? $time, new \DateTimeZone('UTC')))->setTimezone($tz ?? new \DateTimeZone('UTC')),
+		);
+		$dateTimeZone = $this->createMock(IDateTimeZone::class);
+		$dateTimeZone->method('getTimeZone')->willReturnCallback(
+			fn (int|false $timestamp = false, ?string $userId = null): \DateTimeZone
+				=> new \DateTimeZone($userId === null ? $this->serverZone : ($this->userZones[$userId] ?? $this->zone)),
+		);
+		$dateTimeZone->method('getDefaultTimeZone')->willReturnCallback(fn (): \DateTimeZone => new \DateTimeZone($this->serverZone));
+
 		$this->service = new ReminderService(
 			$this->contractMapper,
 			$this->reminderSentMapper,
@@ -58,6 +82,8 @@ class ReminderServiceTest extends TestCase {
 			$this->logger,
 			$this->permissionService,
 			$this->optOutMapper,
+			$timeFactory,
+			$dateTimeZone,
 		);
 	}
 
@@ -956,6 +982,146 @@ class ReminderServiceTest extends TestCase {
 			'Frist heute' => ['today', 1],
 			'Frist gestern' => ['yesterday', 0],
 		];
+	}
+
+	// ========================================
+	// "Today" in local time, not UTC (#512)
+	// ========================================
+
+	/**
+	 * 23:30 UTC on 10 Nov is already 00:30 on 11 Nov in Berlin. For a Berlin
+	 * user a deadline of 10 Nov has passed; the UTC day would still say "today".
+	 */
+	private function shortlyAfterLocalMidnight(string $zone): void {
+		$this->clockUtc = '2026-11-10 23:30:00';
+		$this->zone = $zone;
+	}
+
+	#[DataProvider('zoneCases')]
+	public function testNoReminderOnceTheLocalDayIsPastTheDeadline(string $zone, bool $expected): void {
+		$this->shortlyAfterLocalMidnight($zone);
+		$contract = $this->createContract(new DateTime('2026-11-10'), '', 'fixed');
+		$contract->setId(1);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$this->assertSame($expected, $this->service->shouldSendFirstReminder($contract, self::TEST_USER));
+		$this->assertSame($expected, $this->service->shouldSendFinalReminder($contract, self::TEST_USER));
+	}
+
+	public static function zoneCases(): array {
+		return [
+			'Berlin: Frist gestern' => ['Europe/Berlin', false],
+			'UTC: Frist heute' => ['UTC', true],
+		];
+	}
+
+	#[DataProvider('zoneCases')]
+	public function testCalendarFeedDropsTheDeadlineAtLocalMidnight(string $zone, bool $expected): void {
+		$this->shortlyAfterLocalMidnight($zone);
+		$contract = $this->createContract(new DateTime('2026-11-10'), '', 'fixed');
+		$contract->setId(1);
+		$this->contractMapper->method('findByStatus')->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn(['testuser']);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+
+		$this->assertCount($expected ? 1 : 0, $this->service->getUpcomingDeadlinesForUser('testuser'));
+	}
+
+	public function testAutoRenewalMovesToNextPeriodAtLocalMidnight(): void {
+		// End 10 Dec, 1 month notice -> cancellation deadline 10 Nov.
+		$contract = $this->createContract(new DateTime('2026-12-10'), '1 month', 'auto_renewal', '12 months');
+
+		$this->shortlyAfterLocalMidnight('Europe/Berlin');
+		$this->assertSame('2027-11-10', $this->service->getReminderDeadline($contract, self::TEST_USER)->format('Y-m-d'));
+
+		$this->shortlyAfterLocalMidnight('UTC');
+		$this->assertSame('2026-11-10', $this->service->getReminderDeadline($contract, self::TEST_USER)->format('Y-m-d'));
+	}
+
+	#[DataProvider('windowCases')]
+	public function testReminderWindowOpensAtLocalMidnight(string $zone, bool $expected): void {
+		$this->shortlyAfterLocalMidnight($zone);
+		// End 25 Nov, 14 days lead -> window opens on 11 Nov.
+		$contract = $this->createContract(new DateTime('2026-11-25'), '', 'fixed');
+		$contract->setId(1);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+
+		$this->assertSame($expected, $this->service->shouldSendFirstReminder($contract, self::TEST_USER));
+	}
+
+	public static function windowCases(): array {
+		return [
+			'Berlin: schon der 11.' => ['Europe/Berlin', true],
+			'UTC: noch der 10.' => ['UTC', false],
+		];
+	}
+
+	public function testSentMarkerUsesTheRecipientsPeriodForCheckAndMark(): void {
+		// Check and mark must use the same local day, otherwise they could land
+		// in different renewal periods and the reminder would repeat.
+		$this->shortlyAfterLocalMidnight('Europe/Berlin');
+		$contract = $this->createContract(new DateTime('2026-11-10'), '0 days', 'auto_renewal', '12 months');
+		$contract->setId(1);
+		$this->givenSingleContractForReminders($contract, ['testuser']);
+		$this->settingsService->method('getReminderDays1')->willReturn(400);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+
+		$checked = [];
+		$this->reminderSentMapper->method('hasBeenSent')->willReturnCallback(
+			function (int $id, string $type) use (&$checked): bool {
+				$checked[] = $type;
+				return false;
+			},
+		);
+		$marked = [];
+		$this->reminderSentMapper->method('insert')->willReturnCallback(
+			function (ReminderSent $sent) use (&$marked): ReminderSent {
+				$marked[] = $sent->getReminderType();
+				return $sent;
+			},
+		);
+
+		$this->assertSame(1, $this->service->checkAndSendReminders());
+		$this->assertContains('cancellation_2027-11-10_first', $checked);
+		$this->assertSame(['cancellation_2027-11-10_first'], $marked);
+	}
+
+	public function testEachRecipientIsRemindedByTheirOwnDay(): void {
+		// 03:00 UTC on 11 Nov: Berlin is on 11 Nov (deadline 10 Nov passed),
+		// New York still on 10 Nov (deadline today). The server runs in UTC.
+		$this->clockUtc = '2026-11-11 03:00:00';
+		$this->userZones = ['alice' => 'Europe/Berlin', 'bob' => 'America/New_York'];
+		$contract = $this->createContract(new DateTime('2026-11-10'), '', 'fixed');
+		$contract->setId(1);
+		$this->givenSingleContractForReminders($contract, ['alice', 'bob']);
+		$this->settingsService->method('getReminderDays1')->willReturn(14);
+		$this->settingsService->method('getReminderDays2')->willReturn(3);
+		$this->reminderSentMapper->method('hasBeenSent')->willReturn(false);
+		$this->reminderSentMapper->method('insert')->willReturnArgument(0);
+
+		$this->emailService->expects($this->once())
+			->method('sendReminder')
+			->with($contract, 'bob', '10.11.2026', 'final', 'fixed')
+			->willReturn(true);
+
+		$this->assertSame(1, $this->service->checkAndSendReminders());
+	}
+
+	/** @param string[] $users All may see the contract, mode "all", e-mail on. */
+	private function givenSingleContractForReminders(Contract $contract, array $users): void {
+		$this->contractMapper->method('findContractsNeedingReminder')->willReturn([$contract]);
+		$this->permissionService->method('getAllUsersWithAccess')->willReturn($users);
+		$this->permissionService->method('canUserSeeContract')->willReturn(true);
+		$this->settingsService->method('getUserReminderMode')->willReturn(SettingsService::REMINDER_MODE_ALL);
+		$this->settingsService->method('getUserEmailReminder')->willReturn(true);
+		$this->settingsService->method('getUserTalkChatToken')->willReturn(null);
+		$this->optOutMapper->method('findOptedOutUsers')->willReturn([]);
+		$this->emailService->method('sendReminder')->willReturn(true);
 	}
 
 	private function createContract(

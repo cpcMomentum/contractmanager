@@ -127,6 +127,7 @@ class TalkService {
 				'guests', // Actor type - triggers unread notifications
 				'Verträge', // Actor ID (display name)
 				$message,
+				// tz-ok: Zeitstempel der Chat-Nachricht, kein Kalendertag
 				new \DateTime(),
 				null, // No parent message (replyTo)
 				'', // No reference ID

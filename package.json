@@ -15,7 +15,8 @@
         "l10n:fix": "nc-l10n-check --fix",
         "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
         "prepare": "git config core.hooksPath .githooks || true",
-        "whatsnew:check": "nc-whatsnew-check"
+        "whatsnew:check": "nc-whatsnew-check",
+        "timezone:check": "nc-timezone-check"
     },
     "repository": {
         "type": "git",
@@ -48,7 +49,7 @@
         "@vue/tsconfig": "^0.9.1",
         "eslint": "^8.57.0",
         "happy-dom": "^21.0.4",
-        "nc-app-tooling": "github:cpcMomentum/nc-app-tooling#v1.20.0",
+        "nc-app-tooling": "github:cpcMomentum/nc-app-tooling#v1.22.0",
         "sass": "^1.107.0",
         "typescript": "^5.7.2",
         "vite": "^7.3.7",
