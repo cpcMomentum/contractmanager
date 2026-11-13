@@ -1,4 +1,38 @@
 {
+	"1.13.0": [
+		{
+			"title": {
+				"de": "Status-Filter passt zur Liste",
+				"en": "Status filter matches the list"
+			},
+			"text": {
+				"de": "Der Status-Filter bietet dieselben Begriffe an, die in der Liste stehen, und findet genau diese Verträge. „Abgelaufen“ heißt jetzt einheitlich „Beendet“.",
+				"en": "The status filter offers the same terms shown in the list and finds exactly those contracts. “Expired” is now consistently called “Ended”."
+			},
+			"icon": "magnify",
+			"where": {
+				"de": "Vertragsliste › Filter",
+				"en": "Contract list › Filter"
+			},
+			"plus": false
+		},
+		{
+			"title": {
+				"de": "Anrede nach Spracheinstellung",
+				"en": "Follows your language setting"
+			},
+			"text": {
+				"de": "Mit „Deutsch“ duzt die App, mit „Deutsch (Förmlich: Sie)“ siezt sie. Erinnerungen per Mail und Talk kommen in der Sprache des Empfängers.",
+				"en": "VertragsWerk now has its own English (UK) translation. Reminders by e-mail and Talk arrive in the recipient's language."
+			},
+			"icon": "translate",
+			"where": {
+				"de": "Persönliche Einstellungen › Sprache",
+				"en": "Personal settings › Language"
+			},
+			"plus": false
+		}
+	],
 	"1.12.0": [
 		{
 			"title": {
