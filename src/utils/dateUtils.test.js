@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { formatDateForInput, parseLocalDate } from './dateUtils.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getCanonicalLocale } from '@nextcloud/l10n'
+import { formatDate, formatDateForInput, isDateInPast, isDateWithinDays, parseLocalDate, toLocalDate } from './dateUtils.js'
 
 /**
  * Regression tests for #258: while the user types the year digit by digit,
@@ -45,5 +46,56 @@ describe('formatDateForInput', () => {
 		for (const value of ['0002-07-11', '0020-07-11', '0202-07-11', '2026-07-11']) {
 			expect(formatDateForInput(parseLocalDate(value))).toBe(value)
 		}
+	})
+})
+
+describe('toLocalDate', () => {
+	it('reads a date-only string as local midnight of that very day', () => {
+		const d = toLocalDate('2026-11-10')
+		expect([d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()]).toEqual([2026, 10, 10, 0])
+	})
+
+	it('keeps timestamps with a time part as they are', () => {
+		expect(toLocalDate('2026-10-02T09:30:00+00:00')?.getTime()).toBe(Date.UTC(2026, 9, 2, 9, 30))
+	})
+
+	it('returns a copy for Date input and null for empty input', () => {
+		const src = new Date(2026, 0, 5)
+		const copy = toLocalDate(src)
+		expect(copy).not.toBe(src)
+		expect(copy.getTime()).toBe(src.getTime())
+		expect(toLocalDate(null)).toBeNull()
+		expect(toLocalDate('')).toBeNull()
+	})
+})
+
+describe('formatDate', () => {
+	it('shows the calendar day of a date-only string', () => {
+		expect(formatDate('2026-11-10')).toBe(new Date(2026, 10, 10).toLocaleDateString(getCanonicalLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' }))
+	})
+})
+
+describe('isDateInPast / isDateWithinDays with date-only strings', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+		vi.setSystemTime(new Date(2026, 10, 9, 10, 0))
+	})
+
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it('treats today as not past and yesterday as past', () => {
+		expect(isDateInPast('2026-11-09')).toBe(false)
+		expect(isDateInPast('2026-11-08')).toBe(true)
+		expect(isDateInPast(null)).toBe(false)
+	})
+
+	it('counts today and the last day of the window as within', () => {
+		expect(isDateWithinDays('2026-11-09', 5)).toBe(true)
+		expect(isDateWithinDays('2026-11-14', 5)).toBe(true)
+		expect(isDateWithinDays('2026-11-15', 5)).toBe(false)
+		expect(isDateWithinDays('2026-11-08', 5)).toBe(false)
+		expect(isDateWithinDays('', 5)).toBe(false)
 	})
 })

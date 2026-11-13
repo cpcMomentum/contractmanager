@@ -54,7 +54,7 @@ class ExtractionController extends Controller {
 
 		if (!$this->settingsService->isAiConfigured()) {
 			return new JSONResponse(
-				['error' => $this->l->t('Die KI-Erkennung ist nicht eingerichtet. Bitte wenden Sie sich an Ihre Administration.')],
+				['error' => $this->l->t('Die KI-Erkennung ist nicht eingerichtet. Bitte wende dich an deine Administration.')],
 				Http::STATUS_PRECONDITION_FAILED
 			);
 		}

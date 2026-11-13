@@ -1,4 +1,5 @@
 import { calculateCancellationDeadline } from './periodUtils.js'
+import { toLocalDate } from './dateUtils.js'
 import type { Contract } from '../store/contracts'
 
 /**
@@ -68,7 +69,7 @@ export function isEndingSoonFixed(
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
 
-	const end = new Date(contract.endDate)
+	const end = toLocalDate(contract.endDate) as Date
 	end.setHours(0, 0, 0, 0)
 
 	const windowStart = new Date(end)
@@ -92,7 +93,7 @@ export function isExpiredFixed(contract: Contract): boolean {
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
-	const end = new Date(contract.endDate)
+	const end = toLocalDate(contract.endDate) as Date
 	end.setHours(0, 0, 0, 0)
 
 	return end < today
@@ -126,7 +127,7 @@ export function isEndedCancelled(contract: Contract): boolean {
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
-	const end = new Date(effectiveEnd)
+	const end = toLocalDate(effectiveEnd) as Date
 	end.setHours(0, 0, 0, 0)
 
 	return end <= today
@@ -149,8 +150,25 @@ export function isPlanned(contract: Contract): boolean {
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
-	const start = new Date(contract.startDate)
+	const start = toLocalDate(contract.startDate) as Date
 	start.setHours(0, 0, 0, 0)
 
 	return start > today
+}
+
+// Keys are also the saved filter ids (SettingsService::ALLOWED_STATUSES); the check order decides ties.
+export type DisplayStatus = 'planned' | 'active' | 'ending_soon' | 'ending' | 'cancelled' | 'ended'
+
+export function getDisplayStatus(
+	contract: Contract,
+	defaultReminderDays: number = DEFAULT_REMINDER_DAYS_1,
+): DisplayStatus {
+	if (isPlanned(contract)) return 'planned'
+	if (isExpiredFixed(contract)) return 'ended'
+	if (isEndingSoon(contract, defaultReminderDays)) return 'ending_soon'
+	if (isEndingSoonFixed(contract, defaultReminderDays)) return 'ending'
+	if (isEndedCancelled(contract)) return 'ended'
+	if (contract.status === 'cancelled') return 'cancelled'
+	if (contract.status === 'ended') return 'ended'
+	return 'active'
 }

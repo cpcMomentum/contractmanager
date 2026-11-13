@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-11-13
+
+### Added
+- **Anrede nach Sprache**: Wer in Nextcloud „Deutsch“ eingestellt hat, wird geduzt, mit „Deutsch (Förmlich: Sie)“ gesiezt. Für „English (UK)“ gibt es eine eigene Übersetzung. Bisher zeigte die App bei diesen beiden Sprachen die Browsersprache. Erinnerungs-Mail und Talk-Erinnerung kommen jetzt in der Sprache des Empfängers statt in der Standardsprache des Servers (#503)
+- Vertragstyp-Filter: „Unbefristet“ ist auswählbar. „Festlaufzeit“ heißt dort jetzt „Befristet“ wie im Vertragsformular (#487)
+
+### Fixed
+- **Status-Filter und Status-Anzeige passen zusammen**: Der Filter bietet genau die Begriffe an, die in der Liste stehen (Geplant, Laufend, Kündigungsfrist endet, endet, Gekündigt, Beendet), und findet genau diese Verträge. „Abgelaufen“ ist in „Beendet“ aufgegangen. Die Kachel „Aktive Verträge“ zählt abgelaufene befristete Verträge nicht mehr mit, und der Kopf des Vertragsfensters zeigt denselben Status wie die Liste (#495)
+- **Status-Filter**: Das Feld ist beschriftet, einzeilig und so hoch wie die übrigen Filter. Mehrere Status lassen sich nacheinander an- und abwählen (#493)
+- **Fristtag und Endtag**: Am Tag der Kündigungsfrist sprang die Liste schon auf die Frist des nächsten Jahres, und die Warnung „Kündigungsfrist endet“ verschwand. Frist- und Endtag gelten jetzt bis zum Tagesende als heute. Eine noch nicht verschickte Erinnerung kann auch am Fristtag selbst rausgehen (#501)
+- **Datum in Zeitzonen westlich von UTC** (z. B. Amerika): Liste, Status und Filter zeigten Daten einen Tag zu früh (#499)
+- **Erinnerungen und Statuswechsel kurz nach Mitternacht**: Die Hintergrundjobs bestimmen „heute“ in der Zeitzone des Empfängers bzw. des Servers statt in UTC. Bisher konnte zwischen 0 und 2 Uhr eine Erinnerung für eine schon abgelaufene Frist rausgehen, und Verlängerung, „Beendet“ und Archiv griffen bis zu zwei Stunden zu spät (#512)
+- Vertragsliste: Beendete Verträge zeigen „Endete am“ statt „Läuft bis“. Der englische Chip „Notice period ending“ passt in die Statusspalte (#498)
+
+### Changed
+- Wartung: vue 3.5.45, sass 1.108, fast-xml-parser 5.12.0; neue CI-Prüfung gegen Kalendertage aus der UTC-Uhr (#515, #512)
+
+**Hinweis zum Update:** Der Statuswechsel um Mitternacht richtet sich nach `default_timezone` in der `config.php`. Ohne diesen Eintrag rechnet der Server weiter in UTC. Erinnerungen nutzen die Zeitzone des jeweiligen Nutzers und sind davon unabhängig.
+
 ## [1.12.0] - 2026-11-07
 
 ### Added
@@ -534,7 +553,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.12.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.13.0...HEAD
+[1.13.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.1...v1.12.0
 [1.11.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.0...v1.11.1
 [1.11.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.10.0...v1.11.0

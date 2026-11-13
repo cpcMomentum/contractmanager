@@ -9,6 +9,7 @@ use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\ContractMapper;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
+use OCP\IDateTimeZone;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -23,6 +24,7 @@ class StatusUpdateJob extends TimedJob {
 		ITimeFactory $time,
 		private ContractMapper $contractMapper,
 		private LoggerInterface $logger,
+		private IDateTimeZone $dateTimeZone,
 	) {
 		parent::__construct($time);
 
@@ -36,7 +38,12 @@ class StatusUpdateJob extends TimedJob {
 		]);
 
 		try {
-			$expiredContracts = $this->contractMapper->findExpiredActiveFixed();
+			// Today as a calendar day in the server's timezone, not the UTC day,
+			// which is still yesterday shortly after local midnight (#512).
+			$day = $this->time->getDateTime('now', $this->dateTimeZone->getDefaultTimeZone())->format('Y-m-d');
+			$today = new DateTime($day);
+
+			$expiredContracts = $this->contractMapper->findExpiredActiveFixed($today);
 			$updatedCount = 0;
 
 			foreach ($expiredContracts as $contract) {
@@ -59,7 +66,7 @@ class StatusUpdateJob extends TimedJob {
 				'updatedCount' => $updatedCount,
 			]);
 
-			$dueCancelled = $this->contractMapper->findCancelledDue(new DateTime());
+			$dueCancelled = $this->contractMapper->findCancelledDue($today);
 			$archivedCount = 0;
 
 			foreach ($dueCancelled as $contract) {

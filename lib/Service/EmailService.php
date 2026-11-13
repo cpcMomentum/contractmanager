@@ -86,16 +86,18 @@ class EmailService {
 		}
 
 		$displayName = $user->getDisplayName() ?: $userId;
+		// Cron has no session language, so the recipient's own language must be passed explicitly.
+		$language = $this->l10nFactory->getUserLanguage($user);
 
-		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType, $displayName, $contractType);
+		return $this->sendReminderEmail($email, $contract, $deadline, $reminderType, $displayName, $contractType, $language);
 	}
 
 	/**
 	 * Send reminder email to an address
 	 */
-	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType, string $displayName, string $contractType = 'auto_renewal'): bool {
+	private function sendReminderEmail(string $toEmail, Contract $contract, string $deadline, string $reminderType, string $displayName, string $contractType = 'auto_renewal', ?string $language = null): bool {
 		try {
-			$l = $this->l10nFactory->get(Application::APP_ID);
+			$l = $this->l10nFactory->get(Application::APP_ID, $language);
 			$message = $this->mailer->createMessage();
 
 			// Set subject based on reminder type (no emoji)

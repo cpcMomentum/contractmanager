@@ -6,6 +6,7 @@ namespace OCA\ContractManager\Service;
 
 use OCA\ContractManager\AppInfo\Application;
 use OCP\App\IAppManager;
+use OCP\IUserManager;
 use OCP\L10N\IFactory;
 use Psr\Log\LoggerInterface;
 
@@ -28,6 +29,7 @@ class TalkService {
 		private IAppManager $appManager,
 		private LoggerInterface $logger,
 		private IFactory $l10nFactory,
+		private IUserManager $userManager,
 	) {
 	}
 
@@ -69,8 +71,9 @@ class TalkService {
 	 * @param string $reminderType 'first' or 'final'
 	 * @return bool True if message was sent successfully
 	 */
-	public function sendReminderMessage(string $chatToken, string $contractName, string $deadline, string $reminderType, string $contractType = 'auto_renewal'): bool {
-		$l = $this->l10nFactory->get(Application::APP_ID);
+	public function sendReminderMessage(string $chatToken, string $contractName, string $deadline, string $reminderType, string $contractType = 'auto_renewal', ?string $userId = null): bool {
+		$user = $userId !== null ? $this->userManager->get($userId) : null;
+		$l = $this->l10nFactory->get(Application::APP_ID, $user !== null ? $this->l10nFactory->getUserLanguage($user) : null);
 
 		if ($contractType === 'auto_renewal') {
 			if ($reminderType === 'first') {
@@ -124,6 +127,7 @@ class TalkService {
 				'guests', // Actor type - triggers unread notifications
 				'Verträge', // Actor ID (display name)
 				$message,
+				// tz-ok: Zeitstempel der Chat-Nachricht, kein Kalendertag
 				new \DateTime(),
 				null, // No parent message (replyTo)
 				'', // No reference ID

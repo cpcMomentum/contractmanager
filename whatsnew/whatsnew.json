@@ -1,4 +1,38 @@
 {
+	"1.13.0": [
+		{
+			"title": {
+				"de": "Status-Filter passt zur Liste",
+				"en": "Status filter matches the list"
+			},
+			"text": {
+				"de": "Der Status-Filter bietet dieselben Begriffe an, die in der Liste stehen, und findet genau diese Verträge. „Abgelaufen“ heißt jetzt einheitlich „Beendet“.",
+				"en": "The status filter offers the same terms shown in the list and finds exactly those contracts. “Expired” is now consistently called “Ended”."
+			},
+			"icon": "magnify",
+			"where": {
+				"de": "Vertragsliste › Filter",
+				"en": "Contract list › Filter"
+			},
+			"plus": false
+		},
+		{
+			"title": {
+				"de": "Anrede nach Spracheinstellung",
+				"en": "Follows your language setting"
+			},
+			"text": {
+				"de": "Mit „Deutsch“ duzt die App, mit „Deutsch (Förmlich: Sie)“ siezt sie. Erinnerungen per Mail und Talk kommen in der Sprache des Empfängers.",
+				"en": "VertragsWerk now has its own English (UK) translation. Reminders by e-mail and Talk arrive in the recipient's language."
+			},
+			"icon": "translate",
+			"where": {
+				"de": "Persönliche Einstellungen › Sprache",
+				"en": "Personal settings › Language"
+			},
+			"plus": false
+		}
+	],
 	"1.12.0": [
 		{
 			"title": {
@@ -6,7 +40,7 @@
 				"en": "Filter by deadline and cost"
 			},
 			"text": {
-				"de": "In der Filterleiste finden Sie zwei neue Felder: Verträge, deren Frist oder Ende in den nächsten 30 bis 180 Tagen liegt, und Verträge ab einem bestimmten Monatsbetrag. Jahresbeträge werden dafür auf den Monat umgerechnet.",
+				"de": "In der Filterleiste gibt es zwei neue Felder: Verträge, deren Frist oder Ende in den nächsten 30 bis 180 Tagen liegt, und Verträge ab einem bestimmten Monatsbetrag. Jahresbeträge werden dafür auf den Monat umgerechnet.",
 				"en": "The filter bar has two new fields: contracts whose deadline or end falls within the next 30 to 180 days, and contracts from a certain monthly amount. Yearly amounts are converted to a month for this."
 			},
 			"icon": "magnify",
@@ -24,7 +58,7 @@
 				"en": "Link a contact from your address book"
 			},
 			"text": {
-				"de": "Zum Vertragspartner können Sie jetzt einen Kontakt aus Ihrem Adressbuch auswählen. E-Mail, Telefon und Adresse sehen Sie dann direkt im Vertrag, immer auf dem aktuellen Stand, mit einem Link in die Kontakte-App.",
+				"de": "Zum Vertragspartner lässt sich jetzt ein Kontakt aus dem Adressbuch auswählen. E-Mail, Telefon und Adresse stehen dann direkt im Vertrag, immer auf dem aktuellen Stand, mit einem Link in die Kontakte-App.",
 				"en": "You can now link a contact from your address book to the contract partner. Email, phone and address then appear right in the contract, always up to date, with a link to the Contacts app."
 			},
 			"icon": "account-group",
@@ -42,7 +76,7 @@
 				"en": "Restore a backup"
 			},
 			"text": {
-				"de": "Eine Sicherungsdatei von VertragsWerk lässt sich jetzt wieder einlesen, auch auf einer anderen Nextcloud. Sie wählen die Datei aus Ihren Dateien und sehen vorher, wie viele Verträge neu dazukommen. Verträge, die schon da sind, werden übersprungen.",
+				"de": "Eine Sicherungsdatei von VertragsWerk lässt sich jetzt wieder einlesen, auch auf einer anderen Nextcloud. Die Datei wird aus den eigenen Dateien gewählt, vorher zeigt VertragsWerk, wie viele Verträge neu dazukommen. Verträge, die schon da sind, werden übersprungen.",
 				"en": "You can now restore a VertragsWerk backup file, also on another Nextcloud. Choose the file from your files and see beforehand how many contracts will be added. Contracts that already exist are skipped."
 			},
 			"icon": "file-document",
@@ -76,7 +110,7 @@
 				"en": "Read what's new at any time"
 			},
 			"text": {
-				"de": "Unten in der Seitenleiste finden Sie jetzt den Eintrag „Neuerungen“. Er zeigt alle bisherigen Neuerungen, auch die, die Sie im Fenster verpasst haben.",
+				"de": "Unten in der Seitenleiste gibt es jetzt den Eintrag „Neuerungen“. Er zeigt alle bisherigen Neuerungen, auch die, die im Fenster verpasst wurden.",
 				"en": "At the bottom of the sidebar you now find “What's new”. It lists all earlier updates, including the ones you missed in this window."
 			},
 			"icon": "star",
@@ -92,7 +126,7 @@
 				"en": "Trash shows who deleted a contract"
 			},
 			"text": {
-				"de": "Legt jemand Ihren Vertrag in den Papierkorb, bekommen Sie eine Benachrichtigung und können ihn selbst wiederherstellen. Von anderen gelöschte Verträge werden nicht mehr automatisch nach 30 Tagen entfernt.",
+				"de": "Legt jemand anderes einen Vertrag in den Papierkorb, bekommt der Eigentümer eine Benachrichtigung und kann ihn selbst wiederherstellen. Von anderen gelöschte Verträge werden nicht mehr automatisch nach 30 Tagen entfernt.",
 				"en": "If someone moves your contract to the trash, you get a notification and can restore it yourself. Contracts deleted by someone else are no longer removed automatically after 30 days."
 			},
 			"icon": "bell-ring",

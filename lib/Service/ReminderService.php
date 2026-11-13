@@ -11,6 +11,8 @@ use OCA\ContractManager\Db\ContractMapper;
 use OCA\ContractManager\Db\ReminderOptOutMapper;
 use OCA\ContractManager\Db\ReminderSent;
 use OCA\ContractManager\Db\ReminderSentMapper;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -36,7 +38,26 @@ class ReminderService {
 		private LoggerInterface $logger,
 		private PermissionService $permissionService,
 		private ReminderOptOutMapper $optOutMapper,
+		private ITimeFactory $timeFactory,
+		private IDateTimeZone $dateTimeZone,
 	) {
+	}
+
+	/**
+	 * Today as a calendar day, at 00:00 in the PHP runtime zone (UTC in
+	 * Nextcloud) — the same form in which contract dates come out of the
+	 * database, so comparisons stay pure day comparisons (#512).
+	 *
+	 * The day itself is taken in the recipient's timezone, or in the server's
+	 * default timezone when no user is involved. Taking it from the UTC clock
+	 * would still yield yesterday between 00:00 and 01:00/02:00 local time.
+	 */
+	private function today(?string $userId = null): DateTime {
+		$zone = $userId === null
+			? $this->dateTimeZone->getDefaultTimeZone()
+			: $this->dateTimeZone->getTimeZone(false, $userId);
+		$day = $this->timeFactory->getDateTime('now', $zone)->format('Y-m-d');
+		return new DateTime($day);
 	}
 
 	/**
@@ -58,18 +79,21 @@ class ReminderService {
 			}
 
 			foreach ($this->getRecipients($contract, $accessUsers) as $userId) {
+				// One "today" per recipient, so check and mark cannot straddle midnight
+				$today = $this->today($userId);
+
 				// Pre-compute to avoid double DB query when both windows are active
-				$sendFinal = $this->shouldSendFinalReminder($contract, $userId);
+				$sendFinal = $this->shouldSendFinalReminder($contract, $userId, $today);
 
 				// Check for first reminder — skip if final reminder is also due to avoid two emails on the same day
-				if ($this->shouldSendFirstReminder($contract, $userId) && !$sendFinal) {
-					if ($this->deliverReminder($contract, $userId, 'first')) {
+				if ($this->shouldSendFirstReminder($contract, $userId, $today) && !$sendFinal) {
+					if ($this->deliverReminder($contract, $userId, 'first', $today)) {
 						$remindersSent++;
 					}
 				}
 
 				// Check for final reminder
-				if ($sendFinal && $this->deliverReminder($contract, $userId, 'final')) {
+				if ($sendFinal && $this->deliverReminder($contract, $userId, 'final', $today)) {
 					$remindersSent++;
 				}
 			}
@@ -83,11 +107,11 @@ class ReminderService {
 	 *
 	 * @return bool True if at least one channel delivered the reminder
 	 */
-	private function deliverReminder(Contract $contract, string $userId, string $type): bool {
+	private function deliverReminder(Contract $contract, string $userId, string $type, DateTime $today): bool {
 		try {
-			$delivered = $this->sendReminders($contract, $userId, $type);
+			$delivered = $this->sendReminders($contract, $userId, $type, $today);
 			if ($delivered) {
-				$this->markReminderSent($contract, $userId, $type);
+				$this->markReminderSent($contract, $userId, $type, $today);
 				$this->logger->debug('Sent cancellation reminder', [
 					'app' => Application::APP_ID,
 					'contractId' => $contract->getId(),
@@ -175,7 +199,7 @@ class ReminderService {
 	 * repeatedly adds the renewal period until the date is in the future.
 	 *
 	 * @param Contract $contract The contract
-	 * @param DateTime|null $now Override for "now" (injectable for tests; defaults to current time)
+	 * @param DateTime|null $now Override for "now" (injectable for tests; defaults to today in the server's timezone)
 	 * @return DateTime|null The effective end date, or null if no end date set
 	 */
 	public function getEffectiveEndDate(Contract $contract, ?DateTime $now = null): ?DateTime {
@@ -191,10 +215,11 @@ class ReminderService {
 			return clone $endDate;
 		}
 
-		$now = $now ?? new DateTime();
+		// The end day itself still belongs to the current period.
+		$today = (clone ($now ?? $this->today()))->setTime(0, 0);
 		$effective = clone $endDate;
 
-		if ($effective > $now) {
+		if ($effective >= $today) {
 			return $effective;
 		}
 
@@ -207,7 +232,7 @@ class ReminderService {
 		$unit = strtolower(rtrim($matches[2], 's'));
 
 		// Calculate number of periods needed mathematically (O(1) instead of O(n))
-		$diffDays = (int) $now->diff($effective)->format('%a');
+		$diffDays = (int) $today->diff($effective)->format('%a');
 		$periodsNeeded = 0;
 
 		if ($unit === 'day') {
@@ -225,7 +250,7 @@ class ReminderService {
 		$effective->modify("+{$totalValue} {$unit}");
 
 		// Adjust if estimate was slightly off (max 3 iterations for month-length variance)
-		while ($effective <= $now) {
+		while ($effective < $today) {
 			$effective->modify("+{$value} {$unit}");
 		}
 
@@ -235,9 +260,11 @@ class ReminderService {
 	/**
 	 * Calculate the cancellation deadline based on end date and cancellation period
 	 * Uses conservative month-end calculation (1 month before March 31 = Feb 28, not Feb 31)
+	 *
+	 * @param DateTime|null $now Override for "now" (defaults to today in the server's timezone)
 	 */
 	public function calculateCancellationDeadline(Contract $contract, ?DateTime $now = null): ?DateTime {
-		$now = $now ?? new DateTime();
+		$now = $now ?? $this->today();
 		$endDate = $this->getEffectiveEndDate($contract, $now);
 		$cancellationPeriod = $contract->getCancellationPeriod();
 
@@ -267,7 +294,9 @@ class ReminderService {
 		$contractType = $contract->getContractType();
 		$renewalPeriod = $contract->getRenewalPeriod();
 		if ($contractType === 'auto_renewal' && !empty($renewalPeriod)) {
-			while ($deadline < $now) {
+			// The deadline day itself is still open for cancellation.
+			$today = (clone $now)->setTime(0, 0);
+			while ($deadline < $today) {
 				$endDate = $this->addPeriodToDate($endDate, $renewalPeriod);
 				if ($endDate === null) {
 					break;
@@ -350,13 +379,17 @@ class ReminderService {
 	 *
 	 * For auto_renewal contracts: cancellation deadline (endDate minus cancellationPeriod)
 	 * For fixed contracts: the end date itself (contract simply expires)
+	 *
+	 * @param string|null $userId Recipient whose "today" applies (server timezone if null)
+	 * @param DateTime|null $today Already determined "today" of that recipient
 	 */
-	public function getReminderDeadline(Contract $contract): ?DateTime {
+	public function getReminderDeadline(Contract $contract, ?string $userId = null, ?DateTime $today = null): ?DateTime {
+		$today = $today ?? $this->today($userId);
 		if ($contract->getContractType() === 'auto_renewal') {
-			return $this->calculateCancellationDeadline($contract);
+			return $this->calculateCancellationDeadline($contract, $today);
 		}
 		// Fixed: reminder is tied to the end date directly
-		return $this->getEffectiveEndDate($contract);
+		return $this->getEffectiveEndDate($contract, $today);
 	}
 
 	/**
@@ -371,21 +404,21 @@ class ReminderService {
 	 * @return array<array{contract: Contract, deadline: DateTime}>
 	 */
 	public function getUpcomingDeadlinesForUser(string $userId): array {
-		$now = new DateTime();
+		$today = $this->today($userId);
 		$accessUsers = $this->permissionService->getAllUsersWithAccess();
 		$result = [];
 		foreach ($this->contractMapper->findByStatus(Contract::STATUS_ACTIVE) as $contract) {
 			if (!$this->isContractEligibleForReminder($contract)) {
 				continue;
 			}
-			$deadline = $this->getReminderDeadline($contract);
+			$deadline = $this->getReminderDeadline($contract, $userId, $today);
 			if ($deadline === null) {
 				continue;
 			}
 			// Match shouldSendFirstReminder()/shouldSendFinalReminder(): a deadline
 			// that has already passed (e.g. a fixed contract nobody archived yet)
 			// never triggers a notification, so it must not show up here either.
-			if ($deadline < $now) {
+			if ($deadline < $today) {
 				continue;
 			}
 			if (!in_array($userId, $this->getRecipients($contract, $accessUsers), true)) {
@@ -399,32 +432,32 @@ class ReminderService {
 	/**
 	 * Check if the first reminder should be sent to a recipient for this contract
 	 */
-	public function shouldSendFirstReminder(Contract $contract, string $userId): bool {
+	public function shouldSendFirstReminder(Contract $contract, string $userId, ?DateTime $today = null): bool {
+		$today = $today ?? $this->today($userId);
 		if (!$this->isContractEligibleForReminder($contract)) {
 			return false;
 		}
 
-		$deadline = $this->getReminderDeadline($contract);
+		$deadline = $this->getReminderDeadline($contract, $userId, $today);
 		if ($deadline === null) {
 			return false;
 		}
 
 		// Effective lead time: personal > contract override > admin default
 		$reminderDays = $this->getEffectiveDays1($contract, $userId);
-		$now = new DateTime();
 		$reminderDate = clone $deadline;
 		$reminderDate->modify("-{$reminderDays} days");
 
-		// Check if we're within the first reminder window
-		if ($now < $reminderDate) {
+		// Check if we're within the first reminder window (calendar days in the recipient's timezone)
+		if ($today < $reminderDate) {
 			return false; // Too early
 		}
-		if ($now > $deadline) {
+		if ($deadline < $today) {
 			return false; // Too late, deadline passed
 		}
 
 		// Check if first reminder was already sent to this recipient
-		$reminderType = $this->getReminderType($contract, 'first');
+		$reminderType = $this->getReminderType($contract, 'first', $today);
 		if ($this->reminderSentMapper->hasBeenSent($contract->getId(), $reminderType, $userId)) {
 			return false;
 		}
@@ -435,12 +468,13 @@ class ReminderService {
 	/**
 	 * Check if the final reminder should be sent to a recipient for this contract
 	 */
-	public function shouldSendFinalReminder(Contract $contract, string $userId): bool {
+	public function shouldSendFinalReminder(Contract $contract, string $userId, ?DateTime $today = null): bool {
+		$today = $today ?? $this->today($userId);
 		if (!$this->isContractEligibleForReminder($contract)) {
 			return false;
 		}
 
-		$deadline = $this->getReminderDeadline($contract);
+		$deadline = $this->getReminderDeadline($contract, $userId, $today);
 		if ($deadline === null) {
 			return false;
 		}
@@ -455,20 +489,19 @@ class ReminderService {
 			return false;
 		}
 
-		$now = new DateTime();
 		$reminderDate = clone $deadline;
 		$reminderDate->modify("-{$reminderDays} days");
 
-		// Check if we're within the final reminder window
-		if ($now < $reminderDate) {
+		// Check if we're within the final reminder window (calendar days in the recipient's timezone)
+		if ($today < $reminderDate) {
 			return false; // Too early
 		}
-		if ($now > $deadline) {
+		if ($deadline < $today) {
 			return false; // Too late, deadline passed
 		}
 
 		// Check if final reminder was already sent to this recipient
-		$reminderType = $this->getReminderType($contract, 'final');
+		$reminderType = $this->getReminderType($contract, 'final', $today);
 		if ($this->reminderSentMapper->hasBeenSent($contract->getId(), $reminderType, $userId)) {
 			return false;
 		}
@@ -499,11 +532,12 @@ class ReminderService {
 	 *
 	 * @param Contract $contract The contract
 	 * @param string $type 'first' or 'final'
+	 * @param DateTime $today The recipient's "today" (decides the renewal period)
 	 * @return string Unique identifier
 	 */
-	private function getReminderType(Contract $contract, string $type): string {
+	private function getReminderType(Contract $contract, string $type, DateTime $today): string {
 		// Use effective end date so auto-renewal contracts get new reminders per renewal period
-		$effectiveEnd = $this->getEffectiveEndDate($contract);
+		$effectiveEnd = $this->getEffectiveEndDate($contract, $today);
 		$endDateStr = $effectiveEnd?->format('Y-m-d') ?? 'unknown';
 		$prefix = $contract->getContractType() === 'auto_renewal' ? 'cancellation' : 'expiry';
 		return "{$prefix}_{$endDateStr}_{$type}";
@@ -515,10 +549,11 @@ class ReminderService {
 	 * @param Contract $contract The contract
 	 * @param string $userId The recipient
 	 * @param string $reminderType 'first' or 'final'
+	 * @param DateTime $today The recipient's "today"
 	 * @return bool True if at least one channel delivered the reminder
 	 */
-	private function sendReminders(Contract $contract, string $userId, string $reminderType): bool {
-		$deadline = $this->getReminderDeadline($contract);
+	private function sendReminders(Contract $contract, string $userId, string $reminderType, DateTime $today): bool {
+		$deadline = $this->getReminderDeadline($contract, $userId, $today);
 		if ($deadline === null) {
 			return false;
 		}
@@ -531,7 +566,7 @@ class ReminderService {
 		$talkToken = $this->settingsService->getUserTalkChatToken($userId);
 		if ($talkToken !== null && $this->talkService->isTalkAvailable()) {
 			try {
-				if ($this->talkService->sendReminderMessage($talkToken, $contract->getName(), $deadlineFormatted, $reminderType, $contractType)) {
+				if ($this->talkService->sendReminderMessage($talkToken, $contract->getName(), $deadlineFormatted, $reminderType, $contractType, $userId)) {
 					$delivered = true;
 				}
 			} catch (\Exception $e) {
@@ -565,11 +600,12 @@ class ReminderService {
 	 * @param Contract $contract The contract
 	 * @param string $userId The recipient
 	 * @param string $type 'first' or 'final'
+	 * @param DateTime $today The recipient's "today" (same as in the check)
 	 */
-	private function markReminderSent(Contract $contract, string $userId, string $type): void {
+	private function markReminderSent(Contract $contract, string $userId, string $type, DateTime $today): void {
 		$reminder = new ReminderSent();
 		$reminder->setContractId($contract->getId());
-		$reminder->setReminderType($this->getReminderType($contract, $type));
+		$reminder->setReminderType($this->getReminderType($contract, $type, $today));
 		$reminder->setSentAt(new DateTime());
 		$reminder->setSentTo($userId);
 

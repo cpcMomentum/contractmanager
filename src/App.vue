@@ -4,7 +4,7 @@
 		     contract data, so explain why instead of showing an empty app. -->
 		<NcAppContent v-if="noAccess">
 			<NcEmptyContent :name="t('contractmanager', 'Kein Zugriff auf VertragsWerk')"
-				:description="t('contractmanager', 'Ihnen wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wenden Sie sich an Ihre Nextcloud-Administration.')">
+				:description="t('contractmanager', 'Dir wurde noch keine Rolle in VertragsWerk zugewiesen. Bitte wende dich an deine Nextcloud-Administration.')">
 				<template #icon>
 					<AccountLockOutlineIcon :size="64" />
 				</template>

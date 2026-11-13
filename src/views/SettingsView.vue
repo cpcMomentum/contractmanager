@@ -76,7 +76,7 @@
 				<div v-show="activeSection === 'notifications'" class="settings-section">
 					<h3>{{ t('contractmanager', 'Benachrichtigungen') }}</h3>
 					<p class="settings-description">
-						{{ t('contractmanager', 'Legen Sie fest, für welche Verträge Sie Erinnerungen erhalten möchten, wie früh und auf welchem Weg.') }}
+						{{ t('contractmanager', 'Lege fest, für welche Verträge du Erinnerungen erhalten möchtest, wie früh und auf welchem Weg.') }}
 					</p>
 
 					<!-- Reminder mode: which contracts -->
@@ -112,7 +112,7 @@
 								{{ t('contractmanager', 'Per E-Mail benachrichtigen') }}
 							</NcCheckboxRadioSwitch>
 							<p class="settings-description">
-								{{ t('contractmanager', 'E-Mails gehen an Ihre in Nextcloud hinterlegte Adresse.') }}
+								{{ t('contractmanager', 'E-Mails gehen an deine in Nextcloud hinterlegte Adresse.') }}
 							</p>
 						</div>
 
@@ -120,7 +120,7 @@
 						<div class="settings-item">
 							<label class="settings-label">{{ t('contractmanager', 'Eigener Nextcloud Talk Chat (optional)') }}</label>
 							<p class="settings-description">
-								{{ t('contractmanager', 'Token eines Chats, in dem Sie Erinnerungen erhalten möchten (aus der Chat-URL). Leer lassen, um Talk nicht zu nutzen.') }}
+								{{ t('contractmanager', 'Token eines Chats, in dem du Erinnerungen erhalten möchtest (aus der Chat-URL). Leer lassen, um Talk nicht zu nutzen.') }}
 							</p>
 							<NcTextField v-model="userReminders.talkChatToken"
 								:placeholder="t('contractmanager', 'z.B. abc123xyz')"
@@ -193,7 +193,7 @@
 				<div v-show="activeSection === 'backup'" class="settings-section">
 					<h3>{{ t('contractmanager', 'Automatisches Backup') }}</h3>
 					<p class="settings-description">
-						{{ t('contractmanager', 'Sichert Ihre eigenen Vertragsdaten regelmäßig als JSON-Datei in einen Nextcloud-Ordner, damit der Stand in jedem normalen Nextcloud-Backup landet.') }}
+						{{ t('contractmanager', 'Sichert deine eigenen Vertragsdaten regelmäßig als JSON-Datei in einen Nextcloud-Ordner, damit der Stand in jedem normalen Nextcloud-Backup landet.') }}
 					</p>
 					<div class="settings-item">
 						<NcCheckboxRadioSwitch :model-value="backupEnabled" @update:model-value="onBackupEnabledChange">
@@ -254,7 +254,7 @@
 							{{ t('contractmanager', 'Backup einlesen') }}
 						</h3>
 						<p class="settings-description">
-							{{ t('contractmanager', 'Liest eine Sicherungsdatei (JSON) aus Ihren Nextcloud-Dateien ein, auch aus einer anderen Nextcloud. Die Verträge gehören danach Ihnen. Verträge, die Sie schon haben (gleicher Name, Anbieter und Beginn), werden übersprungen.') }}
+							{{ t('contractmanager', 'Liest eine Sicherungsdatei (JSON) aus deinen Nextcloud-Dateien ein, auch aus einer anderen Nextcloud. Die Verträge gehören danach dir. Verträge, die du schon hast (gleicher Name, Anbieter und Beginn), werden übersprungen.') }}
 						</p>
 						<div class="settings-item">
 							<NcButton variant="secondary" :disabled="importBusy" @click="pickImportFile">
@@ -272,7 +272,7 @@
 				<div v-show="activeSection === 'calendar'" class="settings-section">
 					<h3>{{ t('contractmanager', 'Kalender-Abo') }}</h3>
 					<p class="settings-description">
-						{{ t('contractmanager', 'Abonnieren Sie Ihre Vertragsfristen als schreibgeschützten Kalender in der Nextcloud-Kalender-App. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die Sie Erinnerungen erhalten – so läuft der Kalender nicht über.') }}
+						{{ t('contractmanager', 'Abonniere deine Vertragsfristen als schreibgeschützten Kalender in der Nextcloud-Kalender-App. Pro Vertrag erscheint ein Ganztags-Termin an der Kündigungsfrist (bzw. dem Vertragsende). Enthalten sind nur die Verträge, für die du Erinnerungen erhältst – so läuft der Kalender nicht über.') }}
 					</p>
 					<template v-if="calendarFeedUrl">
 						<div class="settings-item">
@@ -296,7 +296,7 @@
 								{{ t('contractmanager', 'URL neu erzeugen') }}
 							</NcButton>
 							<p class="settings-description">
-								{{ t('contractmanager', 'Die bisherige URL wird dabei ungültig. Nutzen Sie das, falls die URL versehentlich geteilt wurde.') }}
+								{{ t('contractmanager', 'Die bisherige URL wird dabei ungültig. Nutze das, falls die URL versehentlich geteilt wurde.') }}
 							</p>
 						</div>
 					</template>
@@ -308,7 +308,7 @@
 							{{ t('contractmanager', 'Abo-URL erzeugen') }}
 						</NcButton>
 						<p class="settings-description">
-							{{ t('contractmanager', 'Die URL enthält einen geheimen Zugangs-Token. Geben Sie sie nicht weiter.') }}
+							{{ t('contractmanager', 'Die URL enthält einen geheimen Zugangs-Token. Gib sie nicht weiter.') }}
 						</p>
 					</div>
 				</div>
@@ -551,7 +551,7 @@
 							{{ t('contractmanager', 'Zusatzfelder') }}
 						</h3>
 						<p class="settings-description">
-							{{ t('contractmanager', 'Aktivieren Sie bis zu 3 optionale Zusatzfelder für Verträge.') }}
+							{{ t('contractmanager', 'Aktiviere bis zu 3 optionale Zusatzfelder für Verträge.') }}
 						</p>
 
 						<div v-for="n in 3" :key="'cf' + n" class="settings-item custom-field-item">
@@ -733,7 +733,7 @@
 					{{ n('contractmanager', '%n Vertrag ist schon vorhanden und wird übersprungen', '%n Verträge sind schon vorhanden und werden übersprungen', importPreview.duplicates) }}
 				</li>
 				<li v-if="importPreview.inTrash > 0">
-					{{ n('contractmanager', '%n Vertrag liegt im Papierkorb und wird übersprungen. Stellen Sie ihn dort wieder her.', '%n Verträge liegen im Papierkorb und werden übersprungen. Stellen Sie sie dort wieder her.', importPreview.inTrash) }}
+					{{ n('contractmanager', '%n Vertrag liegt im Papierkorb und wird übersprungen. Stelle ihn dort wieder her.', '%n Verträge liegen im Papierkorb und werden übersprungen. Stelle sie dort wieder her.', importPreview.inTrash) }}
 				</li>
 				<li v-if="importPreview.invalid > 0">
 					{{ n('contractmanager', '%n Eintrag ist unvollständig und wird übersprungen', '%n Einträge sind unvollständig und werden übersprungen', importPreview.invalid) }}
@@ -742,7 +742,7 @@
 					{{ n('contractmanager', '%n Kategorie wird neu angelegt', '%n Kategorien werden neu angelegt', importPreview.categories) }}
 				</li>
 				<li v-if="importPreview.missingFiles > 0">
-					{{ n('contractmanager', 'Bei %n Vertrag wurde das verknüpfte Dokument oder der Ordner hier nicht gefunden. Der Pfad bleibt erhalten, die Dateien müssen Sie selbst nachkopieren.', 'Bei %n Verträgen wurden verknüpfte Dokumente oder Ordner hier nicht gefunden. Die Pfade bleiben erhalten, die Dateien müssen Sie selbst nachkopieren.', importPreview.missingFiles) }}
+					{{ n('contractmanager', 'Bei %n Vertrag wurde das verknüpfte Dokument oder der Ordner hier nicht gefunden. Der Pfad bleibt erhalten, die Dateien musst du selbst nachkopieren.', 'Bei %n Verträgen wurden verknüpfte Dokumente oder Ordner hier nicht gefunden. Die Pfade bleiben erhalten, die Dateien musst du selbst nachkopieren.', importPreview.missingFiles) }}
 				</li>
 				<li v-if="importPreview.unknownUsers > 0">
 					{{ n('contractmanager', 'Bei %n Vertrag gibt es den Zuständigen hier nicht, das Feld bleibt leer.', 'Bei %n Verträgen gibt es den Zuständigen hier nicht, das Feld bleibt leer.', importPreview.unknownUsers) }}

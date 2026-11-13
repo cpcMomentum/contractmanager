@@ -81,16 +81,23 @@
 				:clearable="true"
 				input-id="filter-vendor"
 				@update:model-value="persistFilters" />
-			<NcSelect v-model="filterStatuses"
-				:multiple="true"
+			<NcSelect :model-value="statusSummary"
 				:options="statusOptions"
 				:placeholder="t('contractmanager', 'Status')"
-				:clearable="false"
+				:clearable="true"
+				:keep-open="true"
 				label="label"
 				track-by="id"
-				:reduce="option => option.id"
 				input-id="filter-status"
-				@update:model-value="persistFilters" />
+				@update:model-value="onStatusPick">
+				<template #option="option">
+					<span class="status-option">
+						<CheckboxMarkedIcon v-if="filterStatuses.includes(option.id)" :size="20" fill-color="var(--color-primary-element)" />
+						<CheckboxBlankOutlineIcon v-else :size="20" />
+						{{ option.label }}
+					</span>
+				</template>
+			</NcSelect>
 			<NcSelect v-model="filterContractType"
 				:options="contractTypeOptions"
 				:placeholder="t('contractmanager', 'Vertragstyp')"
@@ -152,8 +159,8 @@
 				? t('contractmanager', 'Kein Vertrag passt zur aktuellen Auswahl')
 				: t('contractmanager', 'Keine Verträge')"
 			:description="viewIsNarrowed
-				? t('contractmanager', 'Filter, Kategorie oder Suche schränken die Liste ein. Heben Sie die Einschränkung auf, um alle Verträge zu sehen.')
-				: t('contractmanager', 'Erstellen Sie Ihren ersten Vertrag, um zu beginnen.')">
+				? t('contractmanager', 'Filter, Kategorie oder Suche schränken die Liste ein. Hebe die Einschränkung auf, um alle Verträge zu sehen.')
+				: t('contractmanager', 'Erstelle deinen ersten Vertrag, um zu beginnen.')">
 			<template #icon>
 				<FilterOffIcon v-if="viewIsNarrowed" :size="64" />
 				<FileDocumentIcon v-else :size="64" />
@@ -226,7 +233,7 @@ import { mapState, mapActions } from 'pinia'
 import { useContractsStore } from '../store/contracts'
 import { useCategoriesStore } from '../store/categories'
 import { loadState } from '@nextcloud/initial-state'
-import { getCanonicalLocale } from '@nextcloud/l10n'
+import { getCanonicalLocale, translatePlural as n } from '@nextcloud/l10n'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -244,14 +251,17 @@ import CircleSmallIcon from 'vue-material-design-icons/CircleSmall.vue'
 import FilterIcon from 'vue-material-design-icons/Filter.vue'
 import FilterOffIcon from 'vue-material-design-icons/FilterOff.vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import CheckboxMarkedIcon from 'vue-material-design-icons/CheckboxMarked.vue'
+import CheckboxBlankOutlineIcon from 'vue-material-design-icons/CheckboxBlankOutline.vue'
 import CashMultipleIcon from 'vue-material-design-icons/CashMultiple.vue'
 import BellRingIcon from 'vue-material-design-icons/BellRing.vue'
 import ContractListItem from '../components/ContractListItem.vue'
 import { getDeadlineInfo, getEffectiveEndDate } from '../utils/periodUtils.js'
-import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isPlanned } from '../utils/contractStatus'
+import { DEFAULT_REMINDER_DAYS_1, getDisplayStatus, isEndingSoon, isPlanned } from '../utils/contractStatus'
 import { contractForDuplicate } from '../utils/contractDuplicate'
 import { hasMonthlyEquivalent, monthlyCost } from '../utils/costInterval'
 import { normalizeCostInput } from '../utils/costFormat'
+import { toLocalDate } from '../utils/dateUtils.js'
 import { DEADLINE_WITHIN_OPTIONS, hasMonthlyCostAtLeast, isDeadlineWithin } from '../utils/listFilters'
 import ContractForm from '../components/ContractForm.vue'
 import SettingsService from '../services/SettingsService'
@@ -277,6 +287,8 @@ export default {
 		FilterIcon,
 		FilterOffIcon,
 		CloseIcon,
+		CheckboxMarkedIcon,
+		CheckboxBlankOutlineIcon,
 		CashMultipleIcon,
 		BellRingIcon,
 		ContractListItem,
@@ -296,7 +308,7 @@ export default {
 		const defaultPrefs = {
 			sortBy: 'endDate',
 			sortDirection: 'asc',
-			filters: { vendor: '', statuses: ['active', 'cancelled', 'ended'], contractType: '' },
+			filters: { vendor: '', statuses: [], contractType: '' },
 		}
 		const prefs = loadState('contractmanager', 'userPreferences', defaultPrefs)
 		const filters = prefs.filters || defaultPrefs.filters
@@ -338,18 +350,31 @@ export default {
 			defaultReminderDays: DEFAULT_REMINDER_DAYS_1,
 			statusOptions: [
 				{ id: 'planned', label: t('contractmanager', 'Geplant') },
-				{ id: 'active', label: t('contractmanager', 'Aktiv') },
+				{ id: 'active', label: t('contractmanager', 'Laufend') },
 				{ id: 'ending_soon', label: t('contractmanager', 'Kündigungsfrist endet') },
+				{ id: 'ending', label: t('contractmanager', 'endet') },
 				{ id: 'cancelled', label: t('contractmanager', 'Gekündigt') },
-				{ id: 'ended', label: t('contractmanager', 'Abgelaufen') },
+				{ id: 'ended', label: t('contractmanager', 'Beendet') },
 			],
 			contractTypeOptions: [
-				{ id: 'fixed', label: t('contractmanager', 'Festlaufzeit') },
+				{ id: 'fixed', label: t('contractmanager', 'Befristet') },
 				{ id: 'auto_renewal', label: t('contractmanager', 'Automatische Verlängerung') },
+				{ id: 'unlimited', label: t('contractmanager', 'Unbefristet') },
 			],
 		}
 	},
 	computed: {
+		statusSummary() {
+			if (this.filterStatuses.length === 0) return null
+			const count = this.filterStatuses.length
+			const label = count > 2
+				? n('contractmanager', '%n Status', '%n Status', count)
+				: this.statusOptions
+					.filter(o => this.filterStatuses.includes(o.id))
+					.map(o => o.label)
+					.join(', ')
+			return { id: '__summary', label }
+		},
 		...mapState(useContractsStore, {
 			allContracts: 'allContracts',
 			loading: 'isLoading',
@@ -427,14 +452,14 @@ export default {
 			}
 			return t('contractmanager', 'Kennzahlen für die gefilterte Ansicht')
 		},
+		kpiRunningContracts() {
+			return this.kpiBaseContracts.filter(c => ['active', 'ending_soon', 'ending'].includes(getDisplayStatus(c, this.defaultReminderDays)))
+		},
 		kpiActiveCount() {
-			// Planned contracts keep the stored status "active" but haven't started
-			// yet (#109) — they show as „Geplant", so they must not be counted as
-			// active here or the KPI would contradict the list.
-			return this.kpiBaseContracts.filter(c => c.status === 'active' && !isPlanned(c)).length
+			return this.kpiRunningContracts.length
 		},
 		kpiTypeSub() {
-			const auto = this.kpiBaseContracts.filter(c => c.status === 'active' && !isPlanned(c) && c.contractType === 'auto_renewal').length
+			const auto = this.kpiRunningContracts.filter(c => c.contractType === 'auto_renewal').length
 			const rest = this.kpiActiveCount - auto
 			return t('contractmanager', '{auto} mit autom. Verlängerung · {rest} weitere', { auto, rest })
 		},
@@ -527,22 +552,10 @@ export default {
 				filtered = filtered.filter(c => c.categoryId === this.categoryFilter)
 			}
 
-			// Status-Filter (leer = kein Filter = alle anzeigen).
-			// "ending_soon" and "planned" are virtual options: they don't map to a
-			// stored status but to a derived predicate over active contracts —
-			// see utils/contractStatus.isEndingSoon / isPlanned. Planned contracts
-			// keep the stored status "active", so they also match the "active"
-			// option, mirroring how ending_soon behaves.
+			// Status-Filter (leer = kein Filter = alle anzeigen), gleicher Schlüssel wie der Chip.
 			if (this.filterStatuses.length > 0) {
-				const wantsEndingSoon = this.filterStatuses.includes('ending_soon')
-				const wantsPlanned = this.filterStatuses.includes('planned')
-				const realStatuses = this.filterStatuses.filter(id => id !== 'ending_soon' && id !== 'planned')
 				const reminderDays = this.defaultReminderDays
-				filtered = filtered.filter(c => {
-					if (wantsEndingSoon && isEndingSoon(c, reminderDays)) return true
-					if (wantsPlanned && isPlanned(c)) return true
-					return realStatuses.includes(c.status)
-				})
+				filtered = filtered.filter(c => this.filterStatuses.includes(getDisplayStatus(c, reminderDays)))
 			}
 
 			// Vertragspartner-Filter
@@ -727,7 +740,7 @@ export default {
 					if (!a.endDate && !b.endDate) { cmp = 0; break }
 					if (!a.endDate) { cmp = 1; break }
 					if (!b.endDate) { cmp = -1; break }
-					cmp = new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
+					cmp = toLocalDate(a.endDate).getTime() - toLocalDate(b.endDate).getTime()
 					break
 				}
 				case 'name':
@@ -796,6 +809,17 @@ export default {
 			this.showFilters = !this.showFilters
 		},
 
+		onStatusPick(option) {
+			if (!option) {
+				this.filterStatuses = []
+			} else if (this.filterStatuses.includes(option.id)) {
+				this.filterStatuses = this.filterStatuses.filter(id => id !== option.id)
+			} else {
+				this.filterStatuses = [...this.filterStatuses, option.id]
+			}
+			this.persistFilters()
+		},
+
 		resetFilters() {
 			this.filterVendor = null
 			this.filterStatuses = []
@@ -833,6 +857,12 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.status-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
 .contract-list {
 	padding: 20px;
 	padding-left: 50px;
@@ -881,6 +911,8 @@ export default {
 
 		.filter-min-cost {
 			flex: 0 0 180px;
+			// Same bottom margin as NcSelect, so the row centres all fields alike.
+			margin-block-end: var(--default-grid-baseline);
 		}
 	}
 

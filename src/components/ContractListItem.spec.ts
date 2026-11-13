@@ -8,7 +8,7 @@
  * machen kann.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { useContractsStore } from '../store/contracts'
@@ -92,5 +92,72 @@ describe('ContractListItem im Papierkorb', () => {
 		const wrapper = mount(ContractListItem, { global, props: { contract: trashed({ archived: true, deletedAt: null }), mode: 'archive' } })
 
 		expect(actionLabels(wrapper)).not.toContain('Wiederherstellen')
+	})
+})
+
+describe('ContractListItem: Status-Chip', () => {
+	const FAKE_NOW = new Date('2026-06-15T08:00:00Z')
+	const day = (offset: number) => {
+		const d = new Date(FAKE_NOW)
+		d.setDate(d.getDate() + offset)
+		return d.toISOString().slice(0, 10)
+	}
+	const chipOf = (contract: Record<string, unknown>) => {
+		const wrapper = mount(ContractListItem, { global, props: { contract: { id: 1, name: 'X', vendor: 'Y', ...contract } } })
+		return wrapper.find('.contract-list-item__status .cm-chip')
+	}
+
+	beforeEach(() => {
+		setActivePinia(createPinia())
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+	})
+
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it('zeigt einen abgelaufenen befristeten Vertrag grau als „Beendet“ mit Hinweis', () => {
+		const chip = chipOf({ status: 'active', contractType: 'fixed', endDate: day(-3) })
+		expect(chip.text()).toBe('Beendet')
+		expect(chip.classes()).toContain('cm-chip--ended')
+		expect(chip.attributes('title')).toBe('Das Enddatum ist überschritten.')
+	})
+
+	it('zeigt einen regulär beendeten Vertrag ohne Hinweis', () => {
+		const chip = chipOf({ status: 'ended', contractType: 'fixed', endDate: day(-30) })
+		expect(chip.text()).toBe('Beendet')
+		expect(chip.attributes('title')).toBe('')
+	})
+
+	it.each([
+		[{ status: 'active', contractType: 'fixed', startDate: day(10), endDate: day(400) }, 'Geplant', 'cm-chip--planned'],
+		[{ status: 'active', contractType: 'fixed', endDate: day(5) }, 'endet', 'cm-chip--soon'],
+		[{ status: 'active', contractType: 'auto_renewal', endDate: day(20), cancellationPeriod: '7 days', renewalPeriod: '12 months' }, 'Kündigungsfrist endet', 'cm-chip--soon'],
+		[{ status: 'cancelled', contractType: 'auto_renewal', endDate: day(60), cancelledOn: day(-5), cancelledTo: day(60) }, 'Gekündigt', 'cm-chip--cancelled'],
+		[{ status: 'active', contractType: 'fixed', endDate: day(200) }, 'Laufend', 'cm-chip--active-fixed'],
+		[{ status: 'active', contractType: 'unlimited' }, 'Laufend', 'cm-chip--active'],
+	])('%j → %s', (contract, label, cls) => {
+		const chip = chipOf(contract)
+		expect(chip.text()).toBe(label)
+		expect(chip.classes()).toContain(cls)
+	})
+
+	const deadlineLabelOf = (contract: Record<string, unknown>) => {
+		const wrapper = mount(ContractListItem, { global, props: { contract: { id: 1, name: 'X', vendor: 'Y', ...contract } } })
+		return wrapper.find('.contract-list-item__deadline-label').text()
+	}
+
+	it.each([
+		[{ status: 'active', contractType: 'fixed', endDate: day(-3) }, 'Endete am'],
+		[{ status: 'ended', contractType: 'fixed', endDate: day(-30) }, 'Endete am'],
+		[{ status: 'active', contractType: 'fixed', endDate: day(0) }, 'Läuft bis'],
+		[{ status: 'active', contractType: 'fixed', endDate: day(200) }, 'Läuft bis'],
+		[{ status: 'cancelled', contractType: 'auto_renewal', endDate: day(-10), cancelledOn: day(-60), cancelledTo: day(-10) }, 'Gekündigt zum'],
+		[{ status: 'cancelled', contractType: 'auto_renewal', endDate: day(60), cancelledOn: day(-5), cancelledTo: day(60) }, 'Gekündigt zum'],
+		[{ status: 'ended', contractType: 'auto_renewal', endDate: day(-10), cancelledOn: day(-60), cancelledTo: day(-10) }, 'Gekündigt zum'],
+		[{ status: 'active', contractType: 'auto_renewal', endDate: day(20), cancellationPeriod: '7 days', renewalPeriod: '12 months' }, 'Kündbar bis'],
+	])('Frist/Ende-Beschriftung %j → %s', (contract, label) => {
+		expect(deadlineLabelOf(contract)).toBe(label)
 	})
 })

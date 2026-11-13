@@ -36,7 +36,7 @@
 			</a>
 		</template>
 		<NcNoteCard v-else type="info">
-			{{ t('contractmanager', 'Der verknüpfte Kontakt ist in Ihren Adressbüchern nicht verfügbar.') }}
+			{{ t('contractmanager', 'Der verknüpfte Kontakt ist in deinen Adressbüchern nicht verfügbar.') }}
 		</NcNoteCard>
 	</div>
 </template>

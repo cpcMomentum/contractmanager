@@ -158,7 +158,7 @@ import { generateUrl } from '@nextcloud/router'
 import { getCanonicalLocale } from '@nextcloud/l10n'
 import { formatDate } from '../utils/dateUtils.js'
 import { formatPeriod, getDeadlineInfo } from '../utils/periodUtils.js'
-import { isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled, isPlanned } from '../utils/contractStatus'
+import { getDisplayStatus, isExpiredFixed } from '../utils/contractStatus'
 import { isUrl } from '../utils/documentUtils.js'
 import { CONTRACT_DND_TYPE } from '../utils/categoryDrop'
 import { showSuccess, showError } from '@nextcloud/dialogs'
@@ -209,49 +209,29 @@ export default {
 	},
 	computed: {
 		...mapState(useContractsStore, ['isAdmin', 'canEdit']),
-		endingSoon() {
-			return isEndingSoon(this.contract, this.defaultReminderDays)
-		},
-		endingSoonFixed() {
-			return isEndingSoonFixed(this.contract, this.defaultReminderDays)
-		},
-		expiredFixed() {
-			return isExpiredFixed(this.contract)
-		},
-		endedCancelled() {
-			return isEndedCancelled(this.contract)
-		},
-		planned() {
-			return isPlanned(this.contract)
-		},
-		// Single derived status chip — replaces the former stack of badges
-		// (Status + „Kündigungsfrist endet" + „Abgelaufen") with one clear signal.
+		// Same key as the status filter, so chip and filter never disagree.
 		statusChip() {
-			if (this.planned) {
+			switch (getDisplayStatus(this.contract, this.defaultReminderDays)) {
+			case 'planned':
 				return { cls: 'planned', label: t('contractmanager', 'Geplant'), title: t('contractmanager', 'Der Vertrag beginnt erst zum Startdatum.') }
-			}
-			if (this.expiredFixed) {
-				return { cls: 'expired', label: t('contractmanager', 'Abgelaufen'), title: t('contractmanager', 'Das Enddatum ist überschritten.') }
-			}
-			if (this.endingSoon) {
+			case 'ending_soon':
 				return { cls: 'soon', label: t('contractmanager', 'Kündigungsfrist endet'), title: t('contractmanager', 'Die Kündigungsfrist läuft in Kürze ab.') }
-			}
-			if (this.endingSoonFixed) {
+			case 'ending':
 				return { cls: 'soon', label: t('contractmanager', 'endet'), title: t('contractmanager', 'Der befristete Vertrag läuft in Kürze aus.') }
-			}
-			if (this.endedCancelled) {
-				return { cls: 'ended', label: t('contractmanager', 'Beendet'), title: '' }
-			}
-			if (this.contract.status === 'cancelled') {
+			case 'cancelled':
 				return { cls: 'cancelled', label: t('contractmanager', 'Gekündigt'), title: '' }
+			case 'ended':
+				return {
+					cls: 'ended',
+					label: t('contractmanager', 'Beendet'),
+					title: isExpiredFixed(this.contract) ? t('contractmanager', 'Das Enddatum ist überschritten.') : '',
+				}
+			default:
+				if (this.contract.contractType === 'fixed') {
+					return { cls: 'active-fixed', label: t('contractmanager', 'Laufend'), title: t('contractmanager', 'Befristeter Vertrag, endet automatisch zum Enddatum.') }
+				}
+				return { cls: 'active', label: t('contractmanager', 'Laufend'), title: '' }
 			}
-			if (this.contract.status === 'ended') {
-				return { cls: 'ended', label: t('contractmanager', 'Beendet'), title: '' }
-			}
-			if (this.contract.contractType === 'fixed') {
-				return { cls: 'active-fixed', label: t('contractmanager', 'Laufend'), title: t('contractmanager', 'Befristeter Vertrag, endet automatisch zum Enddatum.') }
-			}
-			return { cls: 'active', label: t('contractmanager', 'Laufend'), title: '' }
 		},
 		// Value + semantics of the "Frist / Ende" column (#252): the shown date
 		// means different things per contract, so each row carries its own label.
@@ -266,8 +246,14 @@ export default {
 				cancelBy: t('contractmanager', 'Kündbar bis'),
 				cancelledTo: t('contractmanager', 'Gekündigt zum'),
 				runsUntil: t('contractmanager', 'Läuft bis'),
+				endedOn: t('contractmanager', 'Endete am'),
 			}
-			return labels[this.deadlineInfo.labelKey] || null
+			// The background job also sets expired fixed contracts to 'ended'; only a real cancellation reads "Gekündigt zum".
+			const wasCancelled = Boolean(this.contract.cancelledOn || this.contract.cancelledTo)
+			const key = this.deadlineInfo.labelKey && !wasCancelled && getDisplayStatus(this.contract, this.defaultReminderDays) === 'ended'
+				? 'endedOn'
+				: this.deadlineInfo.labelKey
+			return labels[key] || null
 		},
 		// Archive and trash are view-only (#328) — dragging a row there must not
 		// be able to change its category, even for editors.
@@ -394,7 +380,6 @@ $st: (
 	soon:      (#fbf3e6, #9a6c25),
 	cancelled: (#fef3c7, #92400e),
 	ended:     (#efefef, #5a5a5a),
-	expired:   (#fbecea, #b03b33),
 );
 
 /* Dark-Mode-Entsprechung (#204): gleiche Farbtöne, dunkler Grund + hellerer
@@ -407,7 +392,6 @@ $st-dark: (
 	soon:      (#33291a, #e0b15a),
 	cancelled: (#3a2713, #e08a4a),
 	ended:     (#2b2b2b, #a8a8a8),
-	expired:   (#3a201d, #ef8177),
 );
 
 /* Chip-Hintergrund/Text im Dark-Mode. */

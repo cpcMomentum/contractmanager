@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_REMINDER_DAYS_1, isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled, isPlanned } from './contractStatus'
+import { DEFAULT_REMINDER_DAYS_1, getDisplayStatus, isEndingSoon, isEndingSoonFixed, isExpiredFixed, isEndedCancelled, isPlanned } from './contractStatus'
 import type { Contract } from '../store/contracts'
 
 /**
@@ -279,5 +279,71 @@ describe('isPlanned', () => {
 	it('is false for cancelled or ended contracts even with a future start date', () => {
 		expect(isPlanned(fixed({ status: 'cancelled', startDate: daysFromNow(5) }))).toBe(false)
 		expect(isPlanned(fixed({ status: 'ended', startDate: daysFromNow(5) }))).toBe(false)
+	})
+})
+
+describe('getDisplayStatus', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+		vi.setSystemTime(FAKE_NOW)
+	})
+
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	function cancelled(overrides: Partial<Contract> = {}): Contract {
+		return {
+			id: 3,
+			status: 'cancelled',
+			contractType: 'auto_renewal',
+			endDate: daysFromNow(60),
+			cancelledOn: daysFromNow(-5),
+			cancelledTo: daysFromNow(30),
+			...overrides,
+		} as Contract
+	}
+
+	it('is "planned" for an active contract that has not started yet', () => {
+		expect(getDisplayStatus(fixed({ startDate: daysFromNow(5) }))).toBe('planned')
+	})
+
+	it('is "active" for a running contract outside every warning window', () => {
+		expect(getDisplayStatus(autoRenewal())).toBe('active')
+		expect(getDisplayStatus(fixed())).toBe('active')
+		expect(getDisplayStatus({ id: 4, status: 'active', contractType: 'unlimited' })).toBe('active')
+	})
+
+	it('is "ending_soon" when the cancellation deadline of a renewing contract is near', () => {
+		expect(getDisplayStatus(autoRenewal({ reminderDays: 45 }))).toBe('ending_soon')
+	})
+
+	it('is "ending" when a fixed contract is about to run out', () => {
+		expect(getDisplayStatus(fixed({ endDate: daysFromNow(10) }))).toBe('ending')
+	})
+
+	it('honours the reminder window passed in', () => {
+		expect(getDisplayStatus(fixed({ endDate: daysFromNow(20) }), DEFAULT_REMINDER_DAYS_1)).toBe('active')
+		expect(getDisplayStatus(fixed({ endDate: daysFromNow(20) }), 30)).toBe('ending')
+	})
+
+	it('is "ended" for a fixed contract past its end date that the job has not flipped yet (#495)', () => {
+		expect(getDisplayStatus(fixed({ endDate: daysFromNow(-1) }))).toBe('ended')
+	})
+
+	it('is "cancelled" while a cancelled contract is still running', () => {
+		expect(getDisplayStatus(cancelled())).toBe('cancelled')
+	})
+
+	it('is "ended" once a cancelled contract has effectively ended', () => {
+		expect(getDisplayStatus(cancelled({ cancelledTo: daysFromNow(0) }))).toBe('ended')
+	})
+
+	it('is "ended" for a stored status of ended', () => {
+		expect(getDisplayStatus(fixed({ status: 'ended', endDate: daysFromNow(-30) }))).toBe('ended')
+	})
+
+	it('puts "planned" before every other derived state', () => {
+		expect(getDisplayStatus(fixed({ startDate: daysFromNow(5), endDate: daysFromNow(10) }))).toBe('planned')
 	})
 })

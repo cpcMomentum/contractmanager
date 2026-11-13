@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import ContractService, { type Permissions } from '../services/ContractService'
 
 export type ContractStatus = 'active' | 'cancelled' | 'ended'
-export type ContractType = 'fixed' | 'auto_renewal'
+export type ContractType = 'fixed' | 'auto_renewal' | 'unlimited'
 export type AmountType = 'netto' | 'brutto'
 export type CancellationDeadlineType = 'normal' | 'month_end'
 

@@ -1,12 +1,13 @@
 {
     "name": "contractmanager",
-    "version": "1.12.0",
+    "version": "1.13.0",
     "description": "Nextcloud App zur Vertragsverwaltung mit Kündigungserinnerungen",
     "main": "src/main.ts",
     "scripts": {
         "dev": "vite",
         "build": "vite build && mkdir -p js css && cp -r dist/js/* js/ && cp -r dist/css/* css/",
         "test": "vitest run",
+        "test:tz": "TZ=America/New_York vitest run",
         "test:watch": "vitest",
         "typecheck": "vue-tsc --noEmit",
         "lint": "eslint --ext .js,.ts,.vue src",
@@ -14,7 +15,8 @@
         "l10n:fix": "nc-l10n-check --fix",
         "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
         "prepare": "git config core.hooksPath .githooks || true",
-        "whatsnew:check": "nc-whatsnew-check"
+        "whatsnew:check": "nc-whatsnew-check",
+        "timezone:check": "nc-timezone-check"
     },
     "repository": {
         "type": "git",
@@ -37,7 +39,7 @@
         "@nextcloud/router": "^3.2.0",
         "@nextcloud/vue": "^9.14.1",
         "pinia": "^2.3.1",
-        "vue": "^3.5.44",
+        "vue": "^3.5.45",
         "vue-material-design-icons": "^5.4.0"
     },
     "devDependencies": {
@@ -47,8 +49,8 @@
         "@vue/tsconfig": "^0.9.1",
         "eslint": "^8.57.0",
         "happy-dom": "^21.0.4",
-        "nc-app-tooling": "github:cpcMomentum/nc-app-tooling#v1.17.0",
-        "sass": "^1.107.0",
+        "nc-app-tooling": "github:cpcMomentum/nc-app-tooling#v1.22.0",
+        "sass": "^1.108.1",
         "typescript": "^5.7.2",
         "vite": "^7.3.7",
         "vitest": "^4.1.12",

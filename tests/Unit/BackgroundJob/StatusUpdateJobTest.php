@@ -8,6 +8,7 @@ use OCA\ContractManager\BackgroundJob\StatusUpdateJob;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -18,10 +19,29 @@ class StatusUpdateJobTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
+		// 23:30 UTC on 10 Nov = 00:30 on 11 Nov in the server's timezone (Berlin).
 		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getDateTime')->willReturnCallback(
+			static fn (string $t = 'now', ?\DateTimeZone $tz = null): \DateTime
+				=> (new \DateTime('2026-11-10 23:30:00', new \DateTimeZone('UTC')))->setTimezone($tz ?? new \DateTimeZone('UTC')),
+		);
+		$dateTimeZone = $this->createMock(IDateTimeZone::class);
+		$dateTimeZone->method('getDefaultTimeZone')->willReturn(new \DateTimeZone('Europe/Berlin'));
 		$this->contractMapper = $this->createMock(ContractMapper::class);
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->job = new StatusUpdateJob($time, $this->contractMapper, $logger);
+		$this->job = new StatusUpdateJob($time, $this->contractMapper, $logger, $dateTimeZone);
+	}
+
+	/**
+	 * #512: Both queries get today's date in the server's timezone, not the
+	 * UTC day, which is still yesterday shortly after local midnight.
+	 */
+	public function testQueriesUseTheLocalDay(): void {
+		$isLocalDay = $this->callback(static fn (\DateTime $d): bool => $d->format('Y-m-d') === '2026-11-11');
+		$this->contractMapper->expects($this->once())->method('findExpiredActiveFixed')->with($isLocalDay)->willReturn([]);
+		$this->contractMapper->expects($this->once())->method('findCancelledDue')->with($isLocalDay)->willReturn([]);
+
+		$this->invokeRun(null);
 	}
 
 	private function invokeRun(mixed $argument): void {

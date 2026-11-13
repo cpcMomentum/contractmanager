@@ -321,16 +321,17 @@ class ContractMapper extends QBMapper {
     /**
      * Find active fixed contracts whose end date has passed
      *
+     * @param \DateTime $today Today as a calendar day in the server's timezone (#512)
      * @return Contract[]
      */
-    public function findExpiredActiveFixed(): array {
+    public function findExpiredActiveFixed(\DateTime $today): array {
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from($this->getTableName())
             ->where($qb->expr()->eq('status', $qb->createNamedParameter(Contract::STATUS_ACTIVE)))
             ->andWhere($qb->expr()->eq('contract_type', $qb->createNamedParameter(Contract::TYPE_FIXED)))
             ->andWhere($qb->expr()->eq('archived', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
-            ->andWhere($qb->expr()->lt('end_date', $qb->createNamedParameter(new \DateTime(), IQueryBuilder::PARAM_DATE)))
+            ->andWhere($qb->expr()->lt('end_date', $qb->createNamedParameter($today, IQueryBuilder::PARAM_DATE)))
             ->andWhere($qb->expr()->isNull('deleted_at'));
 
         return $this->findEntities($qb);
