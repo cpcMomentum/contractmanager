@@ -68,6 +68,10 @@ jobs:
       - name: Was-ist-neu-Schema
         run: npm run whatsnew:check
 
+      # Kalendertage duerfen nicht aus dem UTC-"jetzt" des Servers entstehen (#512)
+      - name: Zeitzonen-Check
+        run: npm run timezone:check
+
       - name: Typecheck
         run: npm run typecheck
 
