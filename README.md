@@ -56,6 +56,11 @@ npm run build
 
 AGPL-3.0-or-later
 
+VertragsWerk ist kostenlos und Open Source. Wer die Weiterentwicklung
+unterstützen möchte, findet mit WerkPlus optionale Zusatzfunktionen für alle
+Werk-Apps. Welche es für VertragsWerk gibt, steht auf
+https://werkwolke.de/funktionen#vertragswerk
+
 ## Autor
 
 cpcMomentum GmbH - https://cpcMomentum.com
