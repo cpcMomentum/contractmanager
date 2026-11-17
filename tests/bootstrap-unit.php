@@ -29,4 +29,15 @@ spl_autoload_register(static function (string $class) use ($ocpRoot): void {
 	}
 });
 
+// Test helpers (traits) live under tests/ and are not part of the composer autoloader.
+spl_autoload_register(static function (string $class): void {
+	$prefix = 'OCA\\ContractManager\\Tests\\';
+	if (str_starts_with($class, $prefix)) {
+		$file = __DIR__ . '/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
+		if (is_file($file)) {
+			require $file;
+		}
+	}
+});
+
 require __DIR__ . '/../vendor/autoload.php';

@@ -1,0 +1,394 @@
+.settings-view {
+	padding: 20px;
+	padding-left: 50px;
+	max-width: 1100px;
+
+	&__header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 24px;
+
+		h2 {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 600;
+		}
+	}
+}
+
+// Werte nach dem Design-System der App-Flotte (nc-app-tooling/docs/design-system.md, Abschnitt 3).
+.settings-section {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	padding: 18px 20px;
+	background: var(--color-main-background);
+
+	h3 {
+		margin: 0 0 12px;
+		font-size: 13px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--color-text-maxcontrast);
+	}
+}
+
+.settings-layout {
+	display: grid;
+	grid-template-columns: 240px 1fr;
+	gap: 24px;
+	align-items: start;
+}
+
+.settings-nav {
+	position: sticky;
+	top: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 0 16px 0 0;
+	border-right: 1px solid var(--color-border-dark, var(--color-border));
+}
+
+.settings-nav-group {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	color: var(--color-text-maxcontrast);
+	padding: 16px 12px 6px;
+	margin-top: 8px;
+	border-top: 1px solid var(--color-border-dark, var(--color-border));
+
+	&:first-child {
+		padding-top: 0;
+		margin-top: 0;
+		border-top: none;
+	}
+}
+
+.settings-nav-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 9px 12px;
+	border: none;
+	background: none;
+	text-align: left;
+	color: var(--color-main-text);
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: var(--border-radius-element, 8px);
+	cursor: pointer;
+
+	.material-design-icon { color: var(--color-text-maxcontrast); }
+
+	&:hover { background: var(--color-background-hover); }
+
+	&.active {
+		background: var(--color-primary-element-light);
+		color: var(--color-primary-element);
+		font-weight: 600;
+
+		.material-design-icon { color: var(--color-primary-element); }
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--color-primary-element);
+		outline-offset: -2px;
+	}
+}
+
+@media (max-width: 900px) {
+	.settings-layout { grid-template-columns: 1fr; }
+
+	.settings-nav {
+		position: static;
+		border-right: none;
+		padding: 0;
+	}
+}
+
+.reminder-link-note {
+	margin-bottom: 16px;
+}
+
+.reminder-link-summary {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border: none;
+	border-radius: var(--border-radius);
+	background: transparent;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.95em;
+	text-align: start;
+	cursor: pointer;
+
+	&:hover,
+	&:focus-visible {
+		background: var(--color-background-hover);
+		color: var(--color-main-text);
+	}
+
+	&__icon {
+		flex: 0 0 auto;
+	}
+}
+
+.reminder-link-details {
+	padding: 4px 8px 0 30px;
+	font-size: 0.9em;
+
+	p {
+		margin: 0 0 8px;
+	}
+
+	.reminder-link-intro {
+		color: var(--color-main-text);
+	}
+
+	.reminder-link-fix {
+		color: var(--color-text-maxcontrast);
+	}
+
+	.reminder-link-command {
+		display: block;
+		padding: 8px 12px;
+		background: var(--color-background-darker);
+		border-radius: var(--border-radius);
+		font-family: var(--font-face-monospace, monospace);
+		white-space: pre-wrap;
+		word-break: break-all;
+		user-select: all;
+	}
+}
+
+.reminder-link-values {
+	margin: 0 0 8px;
+
+	div {
+		display: flex;
+		gap: 8px;
+	}
+
+	dt {
+		flex: 0 0 80px;
+		color: var(--color-text-maxcontrast);
+	}
+
+	dd {
+		margin: 0;
+		font-family: var(--font-face-monospace, monospace);
+		word-break: break-all;
+	}
+}
+
+.settings-item {
+	margin-bottom: 20px;
+}
+
+.settings-label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.settings-value {
+	color: var(--color-text-maxcontrast);
+}
+
+.settings-description {
+	margin: 4px 0 8px;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.settings-input {
+	max-width: 400px;
+}
+
+.calendar-feed-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 520px;
+
+	.calendar-feed-url {
+		flex: 1 1 auto;
+		max-width: none;
+	}
+}
+
+.reminder-days {
+	.reminder-inputs {
+		display: flex;
+		gap: 24px;
+		margin-top: 12px;
+	}
+
+	.reminder-input-group {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+
+		label {
+			font-size: 14px;
+			min-width: 120px;
+		}
+
+		.number-input {
+			width: 80px;
+		}
+
+		.unit {
+			color: var(--color-text-maxcontrast);
+		}
+	}
+}
+
+.category-management {
+	margin-top: 16px;
+}
+
+.category-add {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 16px;
+
+	.category-input {
+		max-width: 300px;
+	}
+}
+
+.category-list-edit {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.category-edit-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	background: var(--color-background-dark);
+	border-radius: 8px;
+
+	.category-name {
+		flex: 1;
+		font-size: 14px;
+	}
+
+	.category-input {
+		flex: 1;
+		max-width: 300px;
+	}
+
+	.category-actions {
+		display: flex;
+		gap: 4px;
+		opacity: 0.6;
+		transition: opacity 0.2s;
+	}
+
+	&:hover .category-actions {
+		opacity: 1;
+	}
+}
+
+.category-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.category-item {
+	padding: 6px 12px;
+	background: var(--color-background-dark);
+	border-radius: 16px;
+	font-size: 13px;
+}
+
+.custom-field-item {
+	.custom-field-label {
+		margin-top: 8px;
+	}
+}
+
+.settings-actions {
+	margin-top: 24px;
+}
+
+// Zwischenueberschrift im Abschnitt: normaler Text, fett, keine Grossbuchstaben.
+.settings-section h3.settings-subheading {
+	margin-top: 32px;
+	font-size: 14px;
+	text-transform: none;
+	letter-spacing: normal;
+	color: var(--color-main-text);
+}
+
+.import-file {
+	color: var(--color-text-maxcontrast);
+	word-break: break-all;
+}
+
+.import-summary {
+	margin: 12px 0;
+	padding-inline-start: 20px;
+	list-style: disc;
+}
+
+/* KI-Block: eigener Speichern-Schritt direkt am Block, nicht am Seitenende. */
+.settings-actions--inline {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 16px;
+}
+
+.settings-description--hint {
+	margin: 0;
+}
+
+/* Statuszeile des KI-Blocks: sagt, ob die Analyse wirklich einsatzbereit ist. */
+.ai-status {
+	margin: 6px 0 0;
+	font-size: 0.9em;
+	font-weight: 500;
+}
+
+.ai-status--active {
+	color: var(--color-success, #2d7d46);
+}
+
+.ai-status--inactive {
+	color: var(--color-text-maxcontrast);
+}
+
+.permission-select {
+	max-width: 500px;
+}
+
+.permission-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+
+	.permission-option-type {
+		margin-left: auto;
+		color: var(--color-text-maxcontrast);
+		font-size: 12px;
+	}
+}
+
+.permission-tag {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
