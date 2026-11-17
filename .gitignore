@@ -67,5 +67,7 @@ appinfo/*.crt
 
 # Internal documentation
 CLAUDE.md
-docs/
+docs/*
+# App-eigene Ergaenzungen zum Design-System der Flotte (nc-design-check)
+!docs/design-system.md
 sessions/

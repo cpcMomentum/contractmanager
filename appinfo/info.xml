@@ -17,6 +17,20 @@ Verwalten Sie Ihre Verträge zentral in Nextcloud:
 - **Dateianhänge** aus Nextcloud Files
 
 Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
+
+## WerkPlus (optional)
+
+VertragsWerk ist kostenlos und Open Source (AGPL-3.0-or-later).
+Damit die Werk-Apps gepflegt bleiben, gibt es WerkPlus: Zusatzfunktionen in allen
+Werk-Apps. Alle bisherigen Funktionen von VertragsWerk sind ohne Lizenz nutzbar.
+Unter Verwaltung › WerkPlus lässt sich WerkPlus 30 Tage kostenlos testen.
+Ein Schlüssel gilt für alle Werk-Apps einer Nextcloud. Mehr dazu auf https://werkwolke.de.
+
+Ohne Lizenzschlüssel nimmt die App erst Kontakt zu unserem Server auf, wenn Sie den
+Testzeitraum starten. Übertragen werden dann eine aus der Nextcloud abgeleitete Kennung
+und die Versionen der aktivierten Werk-Apps, mit Schlüssel zusätzlich der Lizenzschlüssel.
+Keine Verträge, keine Vertragspartner, keine Personendaten, keine Nextcloud-Benutzer- oder
+Datei-IDs. Ist der Server nicht erreichbar, arbeitet VertragsWerk normal weiter.
     ]]></description>
 
     <version>1.13.0</version>
@@ -48,6 +62,7 @@ Behalten Sie den Überblick über Laufzeiten, Kosten und Kündigungsfristen.
         <job>OCA\ContractManager\BackgroundJob\TrashCleanupJob</job>
         <job>OCA\ContractManager\BackgroundJob\StatusUpdateJob</job>
         <job>OCA\ContractManager\BackgroundJob\AutoBackupJob</job>
+        <job>OCA\ContractManager\BackgroundJob\EntitlementRefreshJob</job>
     </background-jobs>
 
     <commands>

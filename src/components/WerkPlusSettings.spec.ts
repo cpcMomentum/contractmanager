@@ -1,0 +1,298 @@
+/**
+ * SPDX-FileCopyrightText: 2026 cpcMomentum
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import type { LicenseStatus } from '../services/LicenseService'
+import WerkPlusSettings from './WerkPlusSettings.vue'
+
+const getLicense = vi.fn<() => Promise<LicenseStatus>>()
+const activateLicense = vi.fn<(key: string) => Promise<LicenseStatus>>()
+const refreshLicense = vi.fn<() => Promise<LicenseStatus>>()
+const removeLicense = vi.fn<() => Promise<LicenseStatus>>()
+const startTrial = vi.fn<() => Promise<{ key: string, status: LicenseStatus }>>()
+
+vi.mock('../services/LicenseService', () => ({
+	default: {
+		getLicense: () => getLicense(),
+		activateLicense: (key: string) => activateLicense(key),
+		refreshLicense: () => refreshLicense(),
+		removeLicense: () => removeLicense(),
+		startTrial: () => startTrial(),
+	},
+}))
+
+// Die echten Komponenten ziehen ihr CSS mit, das der Test-Runner nicht laedt.
+vi.mock('@nextcloud/vue/components/NcButton', () => ({
+	default: {
+		name: 'NcButton',
+		props: ['variant', 'disabled'],
+		emits: ['click'],
+		template: '<button class="stub-button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+	},
+}))
+vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
+	default: {
+		name: 'NcNoteCard',
+		props: ['type', 'text'],
+		template: '<div :class="[\'stub-note\', \'stub-note--\' + type]"><slot>{{ text }}</slot></div>',
+	},
+}))
+// Der Bestaetigungsknopf ist der letzte Knopf im Dialog.
+vi.mock('@nextcloud/vue/components/NcDialog', () => ({
+	default: {
+		name: 'NcDialog',
+		props: ['name'],
+		emits: ['close'],
+		template: '<div class="stub-confirm"><slot /><div class="stub-actions"><slot name="actions" /></div></div>',
+	},
+}))
+
+const status = (teil: Partial<LicenseStatus> = {}): LicenseStatus => ({
+	instanceUuid: '8cb3c100-9e4c-5375-9e63-1f4d122ea315',
+	keySet: false,
+	keyHint: null,
+	licensedEmployees: null,
+	state: 'none',
+	tier: 'free',
+	features: [],
+	expiresAt: null,
+	graceUntil: null,
+	lastCheckAt: null,
+	lastError: null,
+	storeTooNew: false,
+	canManage: true,
+	...teil,
+})
+
+const aktiv = (teil: Partial<LicenseStatus> = {}): LicenseStatus => status({
+	keySet: true,
+	keyHint: '…69B6',
+	state: 'valid',
+	tier: 'werkplus',
+	features: ['vw_reports'],
+	expiresAt: '2026-11-05T12:00:00Z',
+	graceUntil: '2026-11-19T12:00:00Z',
+	lastCheckAt: '2026-10-06T12:00:00Z',
+	...teil,
+})
+
+async function confirm(wrapper: ReturnType<typeof mount>): Promise<void> {
+	const inDialog = wrapper.findAll('.stub-actions .stub-button')
+	await inDialog[inDialog.length - 1].trigger('click')
+}
+
+function buttons(wrapper: ReturnType<typeof mount>): string[] {
+	return wrapper.findAll('.stub-button').filter((b) => !b.element.closest('.stub-confirm')).map((b) => b.text())
+}
+
+describe('WerkPlusSettings', () => {
+	beforeEach(() => {
+		getLicense.mockReset()
+		activateLicense.mockReset()
+		refreshLicense.mockReset()
+		removeLicense.mockReset()
+		startTrial.mockReset()
+	})
+
+	it('ohne Schlüssel: Eintragen und Testen, kein Prüfen oder Entfernen', async () => {
+		getLicense.mockResolvedValue(status())
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(buttons(wrapper)).toEqual(['Schlüssel prüfen und speichern', '30 Tage testen'])
+		expect(wrapper.find('.stub-button').attributes('disabled')).toBeDefined()
+		expect(wrapper.find('dl').exists()).toBe(false)
+		expect(wrapper.text()).toContain('8cb3c100-9e4c-5375-9e63-1f4d122ea315')
+	})
+
+	it('mit Schlüssel: Tarif, Hinweis und alle Knöpfe, keine Größenklasse', async () => {
+		getLicense.mockResolvedValue(aktiv())
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--success').text()).toBe('WerkPlus ist aktiv.')
+		expect(wrapper.find('dl').text()).toContain('WerkPlus')
+		expect(wrapper.find('dl').text()).toContain('…69B6')
+		expect(buttons(wrapper)).toEqual(['Speichern und prüfen', 'Jetzt prüfen', 'Schlüssel entfernen'])
+		expect(wrapper.find('select').exists()).toBe(false)
+		expect(wrapper.text()).not.toContain('Größenklasse')
+		expect(wrapper.find('dl').text()).not.toContain('Lizenzierte Mitarbeitende')
+	})
+
+	it('gekaufte Lizenz: zeigt, für wie viele Mitarbeitende sie gilt', async () => {
+		getLicense.mockResolvedValue(aktiv({ licensedEmployees: 12 }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		const facts = wrapper.findAll('dl > *').map((el) => el.text())
+		expect(facts[facts.indexOf('Lizenzierte Mitarbeitende') + 1]).toBe('12')
+	})
+
+	it('Grace-Frist: Warnung statt Erfolg', async () => {
+		getLicense.mockResolvedValue(aktiv({ state: 'grace' }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--success').exists()).toBe(false)
+		expect(wrapper.find('.stub-note--warning').text()).toContain('bleiben bis')
+	})
+
+	it('abgelaufen: Fehlerhinweis und Tarif Frei', async () => {
+		getLicense.mockResolvedValue(aktiv({ state: 'expired', tier: 'free', features: [] }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--error').text()).toContain('freien Umfang')
+		expect(wrapper.find('dl').text()).toContain('Frei')
+	})
+
+	it('sendet nur den Schlüssel ohne Leerraum', async () => {
+		getLicense.mockResolvedValue(status())
+		activateLicense.mockResolvedValue(aktiv())
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		await wrapper.find('input').setValue('  wp_ABC  ')
+		await wrapper.find('.stub-button').trigger('click')
+		await flushPromises()
+
+		expect(activateLicense).toHaveBeenCalledWith('wp_ABC')
+		expect((wrapper.find('input').element as HTMLInputElement).value).toBe('')
+		expect(wrapper.find('.stub-note--success').exists()).toBe(true)
+	})
+
+	it('zeigt die Fehlermeldung des Servers und lädt den Status neu', async () => {
+		getLicense.mockResolvedValue(status())
+		activateLicense.mockRejectedValue({ status: 400, message: 'Dieser Schlüssel ist nicht bekannt.' })
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		await wrapper.find('input').setValue('wp_FALSCH')
+		await wrapper.find('.stub-button').trigger('click')
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--error').text()).toBe('Dieser Schlüssel ist nicht bekannt.')
+		expect(getLicense).toHaveBeenCalledTimes(2)
+		expect((wrapper.find('input').element as HTMLInputElement).value).toBe('wp_FALSCH')
+	})
+
+	it('Entfernen erst nach Bestätigung', async () => {
+		getLicense.mockResolvedValue(aktiv())
+		removeLicense.mockResolvedValue(status())
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		await wrapper.findAll('.stub-button').filter((b) => b.text() === 'Schlüssel entfernen')[0].trigger('click')
+		expect(removeLicense).not.toHaveBeenCalled()
+		await confirm(wrapper)
+		await flushPromises()
+
+		expect(removeLicense).toHaveBeenCalledOnce()
+		expect(wrapper.find('.stub-confirm').exists()).toBe(false)
+		expect(buttons(wrapper)).toEqual(['Schlüssel prüfen und speichern', '30 Tage testen'])
+	})
+
+	it('Testzeitraum erst nach Bestätigung, zeigt den Schlüssel einmal', async () => {
+		getLicense.mockResolvedValue(status())
+		startTrial.mockResolvedValue({ key: 'wp_TESTKEY', status: aktiv({ keyHint: '…EKEY' }) })
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		await wrapper.findAll('.stub-button').filter((b) => b.text() === '30 Tage testen')[0].trigger('click')
+		expect(startTrial).not.toHaveBeenCalled()
+		await confirm(wrapper)
+		await flushPromises()
+
+		expect(startTrial).toHaveBeenCalledWith()
+		expect(wrapper.find('.werkplus__trial-key').text()).toContain('wp_TESTKEY')
+		expect(buttons(wrapper)).not.toContain('30 Tage testen')
+
+		getLicense.mockResolvedValue(aktiv({ keyHint: '…EKEY' }))
+		const neu = mount(WerkPlusSettings)
+		await flushPromises()
+		expect(neu.text()).not.toContain('wp_TESTKEY')
+		expect(neu.find('dl').text()).toContain('…EKEY')
+	})
+
+	it('Token noch nicht geprüft: eigener Text, Schlüssel bleibt beim Prüfen sichtbar', async () => {
+		getLicense.mockResolvedValue(status())
+		const offen = status({ keySet: true, keyHint: '…EKEY', lastError: { code: 'TOKEN_REJECTED', message: 'nicht übernommen', at: null } })
+		startTrial.mockResolvedValue({ key: 'wp_TESTKEY', status: offen })
+		refreshLicense.mockResolvedValue(aktiv({ keyHint: '…EKEY' }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		await wrapper.findAll('.stub-button').filter((b) => b.text() === '30 Tage testen')[0].trigger('click')
+		await confirm(wrapper)
+		await flushPromises()
+		expect(wrapper.find('.werkplus__trial-key').text()).toContain('noch nicht geprüft')
+		expect(wrapper.find('.werkplus__trial-key').text()).toContain('wp_TESTKEY')
+
+		await wrapper.findAll('.stub-button').find((b) => b.text() === 'Jetzt prüfen')!.trigger('click')
+		await flushPromises()
+		expect(wrapper.find('.werkplus__trial-key').text()).toContain('Der Testzeitraum läuft.')
+		expect(wrapper.find('.werkplus__trial-key').text()).toContain('wp_TESTKEY')
+	})
+
+	it('schon genutzter Testzeitraum: ruhiger Hinweis statt Fehler', async () => {
+		getLicense.mockResolvedValue(status())
+		startTrial.mockRejectedValue({ status: 400, code: 'TRIAL_ALREADY_USED', message: 'Diese Installation hat den Testzeitraum bereits genutzt.' })
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		await wrapper.findAll('.stub-button').filter((b) => b.text() === '30 Tage testen')[0].trigger('click')
+		await confirm(wrapper)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--info').text()).toContain('bereits genutzt')
+		expect(wrapper.find('.stub-note--error').exists()).toBe(false)
+		expect(wrapper.find('.werkplus__trial-key').exists()).toBe(false)
+	})
+
+	it('abgeschalteter Testzeitraum: Fehlerhinweis mit Verweis', async () => {
+		getLicense.mockResolvedValue(status())
+		startTrial.mockRejectedValue({ status: 400, code: 'TRIAL_UNAVAILABLE', message: 'Unter werkwolke.de/testen steht, wie es geht.' })
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		await wrapper.findAll('.stub-button').filter((b) => b.text() === '30 Tage testen')[0].trigger('click')
+		await confirm(wrapper)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--error').text()).toContain('werkwolke.de/testen')
+	})
+
+	it('ohne Recht zum Verwalten: sieht den Status, kann den Schlüssel nicht ändern', async () => {
+		getLicense.mockResolvedValue(aktiv({ canManage: false }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(buttons(wrapper)).toEqual(['Jetzt prüfen'])
+		expect(wrapper.find('input').exists()).toBe(false)
+		expect(wrapper.text()).toContain('nur Nextcloud-Admins')
+		expect(wrapper.text()).toContain('WerkPlus ist aktiv.')
+	})
+
+	it('Ablage in neuerem Format: Hinweis auf Update', async () => {
+		getLicense.mockResolvedValue(aktiv({ storeTooNew: true }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--warning').text()).toContain('neueren Format')
+		expect(buttons(wrapper)).toEqual([])
+		expect(wrapper.find('input').exists()).toBe(false)
+	})
+
+	it('nennt die abgeleitete Kennung und dass der Schlüssel für alle Werk-Apps gilt', async () => {
+		getLicense.mockResolvedValue(status())
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(wrapper.text()).toContain('alle Werk-Apps dieser Nextcloud')
+		expect(wrapper.text()).toContain('Eine aus dieser Nextcloud abgeleitete Kennung')
+		expect(wrapper.text()).toContain('8cb3c100-9e4c-5375-9e63-1f4d122ea315')
+	})
+})
