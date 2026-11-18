@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-11-18
+
+### Added
+- **WerkPlus in der Verwaltung**: Unter Verwaltung › WerkPlus lässt sich WerkPlus 30 Tage testen oder ein Schlüssel eintragen. Angezeigt werden Tarif, Laufzeit, Testzeitraum und letzte Prüfung. Der Schlüssel gilt für die ganze Nextcloud und wird mit den anderen Werk-Apps geteilt. Zum Lizenzserver gehen nur Schlüssel, Instanz-ID und App-Versionen, nie Vertrags- oder Personendaten. Alles, was VertragsWerk bisher konnte, bleibt frei (#523)
+- **Berichte (WerkPlus)**: Vertragsspiegel, Kostenübersicht und Fristenvorschau (3, 6 oder 12 Monate) als PDF und CSV. Ein Bericht enthält nur Verträge, die die Person auch in der Liste sieht. Ohne WerkPlus nennt das Fenster WerkPlus als Grund und verlinkt die Freischaltung (#521)
+- **Erinnerungen zum Testzeitraum**: Admins bekommen 7 Tage und 1 Tag vor Ende des WerkPlus-Testzeitraums und einmal danach eine Nextcloud-Benachrichtigung. Sind mehrere Werk-Apps installiert, kommt jede Erinnerung nur einmal (#519)
+- **Leitwährung**: Persönliche Einstellung unter Einstellungen › Betragsangabe. Die Kachel „Monatliche Kosten“ summiert in dieser Währung, neue Verträge starten mit ihr. Andere Währungen werden ohne Umrechnung gesondert gezählt (#522)
+
+### Changed
+- Links zu Funktionen, Preisen und Testzeitraum führen auf werkwolke.de (#519)
+- „Netto/Brutto“ als Vorgabe für neue Verträge wirkt sofort, ohne die Seite neu zu laden (#522)
+- Wartung: vite und @vitejs/plugin-vue aktualisiert; `composer.lock` wird mitgeführt, ausgeliefert werden nur die benötigten TCPDF-Schriften
+
 ## [1.13.0] - 2026-11-13
 
 ### Added
@@ -553,7 +566,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - German date format (DD.MM.YYYY)
 - Structured cancellation period input
 
-[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.13.0...HEAD
+[Unreleased]: https://github.com/cpcMomentum/contractmanager/compare/v1.14.0...HEAD
+[1.14.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.1...v1.12.0
 [1.11.1]: https://github.com/cpcMomentum/contractmanager/compare/v1.11.0...v1.11.1

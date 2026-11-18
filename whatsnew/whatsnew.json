@@ -1,4 +1,54 @@
 {
+	"1.14.0": [
+		{
+			"title": {
+				"de": "Berichte als PDF und CSV",
+				"en": "Reports as PDF and CSV"
+			},
+			"text": {
+				"de": "Vertragsspiegel, Kostenübersicht und Fristenvorschau für die nächsten 3, 6 oder 12 Monate. Ein Bericht enthält nur Verträge, die in der Liste sichtbar sind.",
+				"en": "Contract overview, cost summary and deadline preview for the next 3, 6 or 12 months. A report only contains contracts that are visible in the list."
+			},
+			"icon": "chart-bar",
+			"where": {
+				"de": "Vertragsliste › Berichte",
+				"en": "Contract list › Reports"
+			},
+			"plus": true
+		},
+		{
+			"title": {
+				"de": "Leitwährung für die Kosten",
+				"en": "Lead currency for costs"
+			},
+			"text": {
+				"de": "Die Kachel „Monatliche Kosten“ rechnet in der gewählten Währung, und neue Verträge starten mit ihr. Verträge in anderen Währungen werden gesondert gezählt, nicht umgerechnet.",
+				"en": "The “Monthly cost” tile adds up in the chosen currency, and new contracts start with it. Contracts in other currencies are counted separately, not converted."
+			},
+			"icon": "cog",
+			"where": {
+				"de": "Einstellungen › Betragsangabe",
+				"en": "Settings › Amount type"
+			},
+			"plus": false
+		},
+		{
+			"title": {
+				"de": "WerkPlus in der Verwaltung",
+				"en": "WerkPlus in the administration"
+			},
+			"text": {
+				"de": "Hier lässt sich WerkPlus 30 Tage testen oder ein Schlüssel eintragen. Die Verwaltung zeigt Tarif, Laufzeit und letzte Prüfung. Alles, was VertragsWerk bisher konnte, bleibt frei.",
+				"en": "Try WerkPlus for 30 days or enter a key here. The administration shows plan, term and last check. Everything VertragsWerk could do so far stays free."
+			},
+			"icon": "star",
+			"where": {
+				"de": "Verwaltung › WerkPlus",
+				"en": "Administration › WerkPlus"
+			},
+			"plus": false
+		}
+	],
 	"1.13.0": [
 		{
 			"title": {

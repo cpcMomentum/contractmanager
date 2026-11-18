@@ -33,7 +33,7 @@ Keine Verträge, keine Vertragspartner, keine Personendaten, keine Nextcloud-Ben
 Datei-IDs. Ist der Server nicht erreichbar, arbeitet VertragsWerk normal weiter.
     ]]></description>
 
-    <version>1.13.0</version>
+    <version>1.14.0</version>
     <licence>AGPL-3.0-or-later</licence>
 
     <author mail="axel.deffner@cpcmomentum.com" homepage="https://github.com/cpcMomentum">Axel Deffner</author>
