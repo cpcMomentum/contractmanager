@@ -53,6 +53,7 @@ class PageController extends Controller {
 				'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 				'filters' => $this->settingsService->getUserFilters($this->userId),
 				'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
+				'defaultCurrency' => $this->settingsService->getUserDefaultCurrency($this->userId),
 			]);
 		}
 

@@ -137,6 +137,21 @@
 							{{ t('contractmanager', 'Brutto') }}
 						</NcCheckboxRadioSwitch>
 					</div>
+					<div class="settings-item">
+						<label class="settings-label">{{ t('contractmanager', 'Leitwährung') }}</label>
+						<p class="settings-description">
+							{{ t('contractmanager', 'Neue Verträge starten mit dieser Währung, und die Kachel „Monatliche Kosten“ summiert in ihr. Verträge in anderen Währungen werden nicht umgerechnet, sondern gesondert gezählt.') }}
+						</p>
+						<NcCheckboxRadioSwitch v-for="currency in currencies"
+							:key="currency"
+							v-model="defaultCurrency"
+							:value="currency"
+							name="defaultCurrency"
+							type="radio"
+							@update:model-value="onDefaultCurrencyChange">
+							{{ currency }}
+						</NcCheckboxRadioSwitch>
+					</div>
 				</div>
 
 				<!-- Auto-Backup (#296) -->
@@ -328,6 +343,7 @@ import UploadIcon from 'vue-material-design-icons/Upload.vue'
 import { useCategoriesStore } from '../store/categories'
 import { useContractsStore } from '../store/contracts'
 import SettingsService from '../services/SettingsService'
+import { CURRENCIES, userDefaults } from '../userPreferences'
 import ImportService from '../services/ImportService'
 
 // Persoenliche Einstellungen; App-weites steht in der Verwaltung (AdminView).
@@ -358,6 +374,8 @@ export default {
 			},
 			savingUserReminders: false,
 			defaultAmountType: 'netto',
+			defaultCurrency: 'EUR',
+			currencies: CURRENCIES,
 			backupEnabled: false,
 			backupFolder: '/VertragsWerk-Backup',
 			backupInterval: 'weekly',
@@ -424,6 +442,7 @@ export default {
 					days2: settings.reminderDays2 || 3,
 				}
 				this.defaultAmountType = settings.defaultAmountType || 'netto'
+				this.defaultCurrency = settings.defaultCurrency || 'EUR'
 				this.backupEnabled = settings.backupEnabled === true
 				this.backupFolder = settings.backupFolder || '/VertragsWerk-Backup'
 				this.backupInterval = settings.backupInterval || 'weekly'
@@ -626,13 +645,26 @@ export default {
 		},
 
 		async onDefaultAmountTypeChange() {
-			const previous = this.defaultAmountType
+			const previous = userDefaults.defaultAmountType
 			try {
 				await SettingsService.updateUserSettings({ defaultAmountType: this.defaultAmountType })
+				userDefaults.defaultAmountType = this.defaultAmountType
 			} catch (error) {
 				console.error('Failed to save default amount type:', error)
 				showError(t('contractmanager', 'Fehler beim Speichern'))
 				this.defaultAmountType = previous
+			}
+		},
+
+		async onDefaultCurrencyChange() {
+			const previous = userDefaults.defaultCurrency
+			try {
+				await SettingsService.updateUserSettings({ defaultCurrency: this.defaultCurrency })
+				userDefaults.defaultCurrency = this.defaultCurrency
+			} catch (error) {
+				console.error('Failed to save lead currency:', error)
+				showError(t('contractmanager', 'Fehler beim Speichern'))
+				this.defaultCurrency = previous
 			}
 		},
 
