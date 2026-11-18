@@ -6,6 +6,7 @@ namespace OCA\ContractManager\Controller;
 
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Service\SettingsService;
+use OCA\ContractManager\Service\WerkPlusLinks;
 use OCA\Viewer\Event\LoadViewer;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -43,6 +44,7 @@ class PageController extends Controller {
 		// Admin-Status über Initial State API bereitstellen
 		$isAdmin = $this->userId !== null && $this->groupManager->isAdmin($this->userId);
 		$this->initialState->provideInitialState('isAdmin', $isAdmin);
+		$this->initialState->provideInitialState('werkplusLinks', WerkPlusLinks::all());
 
 		// Benutzer-Präferenzen über Initial State API bereitstellen
 		if ($this->userId !== null) {

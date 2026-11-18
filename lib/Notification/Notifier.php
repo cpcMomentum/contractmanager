@@ -7,12 +7,18 @@ namespace OCA\ContractManager\Notification;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
+use OCA\ContractManager\Service\TrialNoticeService;
+use OCA\ContractManager\Service\WerkPlusLinks;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeFormatter;
+use OCP\IDateTimeZone;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\L10N\IFactory;
 use OCP\Notification\AlreadyProcessedException;
+use OCP\Notification\IAction;
 use OCP\Notification\INotification;
 use OCP\Notification\INotifier;
 use OCP\Notification\UnknownNotificationException;
@@ -21,12 +27,16 @@ class Notifier implements INotifier {
 
 	public const SUBJECT_USER_DELETED = 'user_deleted';
 	public const SUBJECT_CONTRACT_TRASHED = 'contract_trashed';
+	public const SUBJECT_TRIAL = 'werkplus_trial';
 
 	public function __construct(
 		private IURLGenerator $urlGenerator,
 		private IFactory $l10nFactory,
 		private ContractMapper $contractMapper,
 		private IUserManager $userManager,
+		private IDateTimeFormatter $dates,
+		private IDateTimeZone $timeZones,
+		private ITimeFactory $timeFactory,
 	) {
 	}
 
@@ -125,6 +135,32 @@ class Notifier implements INotifier {
 				$notification->setParsedMessage(
 					$l->t('Du kannst ihn im Papierkorb wiederherstellen.')
 				);
+				break;
+
+			case self::SUBJECT_TRIAL:
+				$trialEnd = (int)($params['trialEnd'] ?? 0);
+				$isEnd = ($params['stage'] ?? '') === TrialNoticeService::STAGE_END;
+				// „endet am …“ mit Kauf-Link ist nach dem Testende überholt.
+				if (!$isEnd && $trialEnd <= $this->timeFactory->getTime()) {
+					throw new AlreadyProcessedException();
+				}
+				if ($isEnd) {
+					$notification->setParsedSubject($l->t('Der WerkPlus-Testzeitraum ist beendet.'));
+					$notification->setParsedMessage($l->t('VertragsWerk läuft im freien Umfang weiter, deine Daten bleiben erhalten.'));
+				} else {
+					// Zeitzone des Empfängers, sonst zeigt die Glocke beim Testende kurz vor Mitternacht den Vortag.
+					$timeZone = $this->timeZones->getTimeZone($trialEnd, $notification->getUser());
+					$notification->setParsedSubject($l->t('Der WerkPlus-Testzeitraum endet am %s.', [
+						$this->dates->formatDate($trialEnd, 'long', $timeZone, $l),
+					]));
+					$notification->setParsedMessage($l->t('Danach läuft VertragsWerk im freien Umfang weiter, deine Daten bleiben erhalten.'));
+				}
+				$buy = $notification->createAction();
+				$buy->setLabel('buy')
+					->setParsedLabel($l->t('Jetzt kaufen'))
+					->setLink(WerkPlusLinks::BUY, IAction::TYPE_WEB)
+					->setPrimary(true);
+				$notification->addParsedAction($buy);
 				break;
 
 			default:

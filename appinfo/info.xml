@@ -24,7 +24,7 @@ VertragsWerk ist kostenlos und Open Source (AGPL-3.0-or-later).
 Damit die Werk-Apps gepflegt bleiben, gibt es WerkPlus: Zusatzfunktionen in allen
 Werk-Apps. Alle bisherigen Funktionen von VertragsWerk sind ohne Lizenz nutzbar.
 Unter Verwaltung › WerkPlus lässt sich WerkPlus 30 Tage kostenlos testen.
-Ein Schlüssel gilt für alle Werk-Apps einer Nextcloud. Mehr dazu auf https://werkwolke.de.
+Ein Schlüssel gilt für alle Werk-Apps einer Nextcloud. Welche Funktionen WerkPlus in VertragsWerk freischaltet, steht auf https://werkwolke.de/funktionen#vertragswerk.
 
 Ohne Lizenzschlüssel nimmt die App erst Kontakt zu unserem Server auf, wenn Sie den
 Testzeitraum starten. Übertragen werden dann eine aus der Nextcloud abgeleitete Kennung

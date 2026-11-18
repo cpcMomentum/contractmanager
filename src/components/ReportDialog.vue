@@ -10,6 +10,7 @@
 			<NcNoteCard v-else-if="!available" type="info">
 				<p>{{ t('contractmanager', 'Berichte gehören zu WerkPlus.') }}</p>
 				<p>{{ t('contractmanager', 'Mit WerkPlus lassen sich Vertragsspiegel, Kostenübersicht und Fristenvorschau als PDF und CSV herunterladen.') }}</p>
+				<WerkPlusUnlockLink />
 			</NcNoteCard>
 
 			<template v-else>
@@ -85,6 +86,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import DownloadIcon from 'vue-material-design-icons/Download.vue'
+import WerkPlusUnlockLink from './WerkPlusUnlockLink.vue'
 import ReportService, { ReportError, type ReportFormat, type ReportType } from '../services/ReportService'
 
 const props = defineProps<{

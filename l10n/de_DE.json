@@ -438,7 +438,6 @@
 		"Bitte bewahre ihn sicher auf. Er ist hinterlegt, wird aber nur jetzt vollständig angezeigt.": "Bitte bewahren Sie ihn sicher auf. Er ist hinterlegt, wird aber nur jetzt vollständig angezeigt.",
 		"Tarif": "Tarif",
 		"Lizenzierte Mitarbeitende": "Lizenzierte Mitarbeitende",
-		"Gültig bis": "Gültig bis",
 		"Letzte erfolgreiche Prüfung": "Letzte erfolgreiche Prüfung",
 		"noch keine": "noch keine",
 		"Schlüssel": "Schlüssel",
@@ -528,7 +527,27 @@
 		"Keine Einträge.": "Keine Einträge.",
 		"Stand: %s": "Stand: %s",
 		"Kündigungsfristen und automatische Verlängerungen vom %1$s bis %2$s": "Kündigungsfristen und automatische Verlängerungen vom %1$s bis %2$s",
-		"Seite %1$s von %2$s": "Seite %1$s von %2$s"
+		"Seite %1$s von %2$s": "Seite %1$s von %2$s",
+		"Welche Funktionen WerkPlus bietet": "Welche Funktionen WerkPlus bietet",
+		"Testzeitraum auf werkwolke.de": "Testzeitraum auf werkwolke.de",
+		"Testzeitraum läuft bis": "Testzeitraum läuft bis",
+		"Laufzeit": "Laufzeit",
+		"abgelaufen, Karenz bis {date}": "abgelaufen, Karenz bis {date}",
+		"Laufzeit bis": "Laufzeit bis",
+		"Mit dem Kauf bekommst du einen eigenen Schlüssel. Trage ihn hier ein, er ersetzt den Testschlüssel.": "Mit dem Kauf bekommen Sie einen eigenen Schlüssel. Tragen Sie ihn hier ein, er ersetzt den Testschlüssel.",
+		"WerkPlus kaufen": "WerkPlus kaufen",
+		"Jetzt kaufen": "Jetzt kaufen",
+		"Der Testzeitraum ist beendet. VertragsWerk arbeitet im freien Umfang weiter, deine Daten bleiben erhalten.": "Der Testzeitraum ist beendet. VertragsWerk arbeitet im freien Umfang weiter, Ihre Daten bleiben erhalten.",
+		"_noch %n Tag_::_noch %n Tage_": [
+			"noch %n Tag",
+			"noch %n Tage"
+		],
+		"Mit WerkPlus freischalten": "Mit WerkPlus freischalten",
+		"Der WerkPlus-Testzeitraum ist beendet.": "Der WerkPlus-Testzeitraum ist beendet.",
+		"VertragsWerk läuft im freien Umfang weiter, deine Daten bleiben erhalten.": "VertragsWerk läuft im freien Umfang weiter, Ihre Daten bleiben erhalten.",
+		"Der WerkPlus-Testzeitraum endet am %s.": "Der WerkPlus-Testzeitraum endet am %s.",
+		"Danach läuft VertragsWerk im freien Umfang weiter, deine Daten bleiben erhalten.": "Danach läuft VertragsWerk im freien Umfang weiter, Ihre Daten bleiben erhalten.",
+		"WerkPlus – Testzeitraum": "WerkPlus – Testzeitraum"
 	},
 	"pluralForm": "nplurals=2; plural=(n != 1);"
 }

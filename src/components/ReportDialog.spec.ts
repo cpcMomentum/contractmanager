@@ -21,6 +21,10 @@ vi.mock('../services/ReportService', async () => {
 	}
 })
 
+vi.mock('../werkplusLinks', () => ({
+	werkplusLinks: () => ({ buy: 'https://werkwolke.de/preis?app=vertragswerk', features: '', trial: '' }),
+}))
+
 // Die echten Komponenten ziehen ihr CSS mit, das der Test-Runner nicht laedt.
 vi.mock('@nextcloud/vue/components/NcButton', () => ({
 	default: {
@@ -59,6 +63,7 @@ describe('ReportDialog', () => {
 		await flushPromises()
 
 		expect(wrapper.find('.stub-note--info').text()).toContain('Berichte gehören zu WerkPlus.')
+		expect(wrapper.find('.stub-note--info a').attributes('href')).toBe('https://werkwolke.de/preis?app=vertragswerk')
 		expect(primary(wrapper).exists()).toBe(false)
 	})
 

@@ -15,6 +15,14 @@ const getWhatsNew = vi.fn<() => Promise<WhatsNewPayload>>()
 const getWhatsNewArchive = vi.fn<() => Promise<WhatsNewArchive>>()
 const markWhatsNewSeen = vi.fn<() => Promise<void>>()
 
+vi.mock('../werkplusLinks', () => ({
+	werkplusLinks: () => ({
+		buy: 'https://werkwolke.de/preis?app=vertragswerk',
+		features: 'https://werkwolke.de/funktionen#vertragswerk',
+		trial: 'https://werkwolke.de/testen?app=vertragswerk',
+	}),
+}))
+
 vi.mock('../services/WhatsNewService', () => ({
 	default: {
 		getWhatsNew: () => getWhatsNew(),
@@ -121,7 +129,7 @@ describe('WhatsNewDialog', () => {
 
 		const links = wrapper.findAll('.whatsnew__link')
 		expect(links).toHaveLength(1)
-		expect(links[0].attributes('href')).toBe('https://werkwolke.de')
+		expect(links[0].attributes('href')).toBe('https://werkwolke.de/funktionen#vertragswerk')
 		expect(links[0].attributes('rel')).toContain('noopener')
 	})
 
