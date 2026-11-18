@@ -739,4 +739,43 @@ class SettingsServiceTest extends TestCase {
 		$this->service->setUserBackupHour('alice', 24);
 		$this->service->setUserBackupHour('alice', -2);
 	}
+
+	// ========================================
+	// Lead currency
+	// ========================================
+
+	public function testGetUserDefaultCurrencyDefaultsToEur(): void {
+		$this->config->expects($this->once())
+			->method('getUserValue')
+			->with('testuser', Application::APP_ID, 'default_currency', 'EUR')
+			->willReturn('EUR');
+
+		$this->assertSame('EUR', $this->service->getUserDefaultCurrency('testuser'));
+	}
+
+	public function testGetUserDefaultCurrencyReturnsStoredValue(): void {
+		$this->config->method('getUserValue')->willReturn('CHF');
+
+		$this->assertSame('CHF', $this->service->getUserDefaultCurrency('testuser'));
+	}
+
+	public function testGetUserDefaultCurrencyFallsBackOnUnknownValue(): void {
+		$this->config->method('getUserValue')->willReturn('XYZ');
+
+		$this->assertSame('EUR', $this->service->getUserDefaultCurrency('testuser'));
+	}
+
+	public function testSetUserDefaultCurrencyStoresAllowedValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('testuser', Application::APP_ID, 'default_currency', 'CHF');
+
+		$this->service->setUserDefaultCurrency('testuser', 'CHF');
+	}
+
+	public function testSetUserDefaultCurrencyIgnoresUnknownValue(): void {
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$this->service->setUserDefaultCurrency('testuser', 'chf');
+	}
 }

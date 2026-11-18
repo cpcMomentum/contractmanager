@@ -36,7 +36,7 @@
 						</p>
 						<a v-if="entry.plus"
 							class="whatsnew__link"
-							:href="WERKPLUS_URL"
+							:href="links.features"
 							target="_blank"
 							rel="noreferrer noopener">
 							{{ t('contractmanager', 'Mehr zu WerkPlus') }}
@@ -78,9 +78,10 @@ import StarIcon from 'vue-material-design-icons/Star.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
 import TranslateIcon from 'vue-material-design-icons/Translate.vue'
 import WhatsNewService, { type WhatsNewGroup } from '../services/WhatsNewService'
+import { werkplusLinks } from '../werkplusLinks'
 
-/** Zielseite der WerkPlus-Eintraege (Konzept v1.1, Abschnitt 2). */
-const WERKPLUS_URL = 'https://werkwolke.de'
+/** WerkPlus-Eintraege verlinken die Funktionen-Seite (app-links-v1). */
+const links = werkplusLinks()
 
 /**
  * Erlaubte Symbole. Bewusst eine feste Liste statt dynamischer Importe: das

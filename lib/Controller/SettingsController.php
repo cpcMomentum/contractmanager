@@ -62,6 +62,7 @@ class SettingsController extends Controller {
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
+			'defaultCurrency' => $this->settingsService->getUserDefaultCurrency($this->userId),
 			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
 			'backupInterval' => $backupInterval,
@@ -97,6 +98,7 @@ class SettingsController extends Controller {
 		?string $sortDirection = null,
 		?array $filters = null,
 		?string $defaultAmountType = null,
+		?string $defaultCurrency = null,
 		?bool $backupEnabled = null,
 		?string $backupFolder = null,
 		?string $backupInterval = null,
@@ -136,6 +138,9 @@ class SettingsController extends Controller {
 		if ($defaultAmountType !== null) {
 			$this->settingsService->setUserDefaultAmountType($this->userId, $defaultAmountType);
 		}
+		if ($defaultCurrency !== null) {
+			$this->settingsService->setUserDefaultCurrency($this->userId, $defaultCurrency);
+		}
 		if ($backupEnabled !== null) {
 			$this->settingsService->setUserBackupEnabled($this->userId, $backupEnabled);
 		}
@@ -161,6 +166,7 @@ class SettingsController extends Controller {
 			'sortDirection' => $this->settingsService->getUserSortDirection($this->userId),
 			'filters' => $this->settingsService->getUserFilters($this->userId),
 			'defaultAmountType' => $this->settingsService->getUserDefaultAmountType($this->userId),
+			'defaultCurrency' => $this->settingsService->getUserDefaultCurrency($this->userId),
 			'backupEnabled' => $this->settingsService->getUserBackupEnabled($this->userId),
 			'backupFolder' => $this->settingsService->getUserBackupFolder($this->userId),
 			'backupInterval' => $updatedInterval,

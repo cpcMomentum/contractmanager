@@ -8,7 +8,9 @@ use DateTime;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Notification\NotificationService;
 use OCA\ContractManager\Notification\Notifier;
+use OCP\IGroup;
 use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\IUserManager;
 use OCP\Notification\IManager as INotificationManager;
 use OCP\Notification\INotification;
@@ -104,5 +106,53 @@ class NotificationServiceTest extends TestCase {
 		$this->service->notifyOwnerAboutTrashedContract($this->trashed('alice'), 'bob');
 
 		$this->addToAssertionCount(1);
+	}
+
+	private function serviceWithAdmins(LoggerInterface $logger, string ...$admins): NotificationService {
+		$users = array_map(function (string $uid): IUser {
+			$user = $this->createMock(IUser::class);
+			$user->method('getUID')->willReturn($uid);
+			return $user;
+		}, $admins);
+		$group = $this->createMock(IGroup::class);
+		$group->method('getUsers')->willReturn($users);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('get')->with('admin')->willReturn($group);
+		return new NotificationService($this->notificationManager, $groupManager, $this->userManager, $logger);
+	}
+
+	public function testTrialReminderGoesToEachAdminOnly(): void {
+		$recipients = [];
+		$notification = $this->createMock(INotification::class);
+		foreach (['setApp', 'setDateTime'] as $setter) {
+			$notification->method($setter)->willReturnSelf();
+		}
+		$notification->method('setUser')->willReturnCallback(function (string $uid) use (&$recipients, $notification) {
+			$recipients[] = $uid;
+			return $notification;
+		});
+		$notification->expects($this->exactly(2))->method('setObject')->with('werkplus_trial', '7d')->willReturnSelf();
+		$notification->expects($this->exactly(2))->method('setSubject')
+			->with(Notifier::SUBJECT_TRIAL, ['stage' => '7d', 'trialEnd' => 1796134323])->willReturnSelf();
+		$this->notificationManager->method('createNotification')->willReturn($notification);
+		$this->notificationManager->expects($this->exactly(2))->method('notify');
+
+		$this->serviceWithAdmins($this->createMock(LoggerInterface::class), 'admin', 'zweitadmin')
+			->notifyAdminsAboutTrial('7d', 1796134323);
+
+		$this->assertSame(['admin', 'zweitadmin'], $recipients);
+	}
+
+	public function testTrialReminderFailureIsLoggedNotThrown(): void {
+		$notification = $this->createMock(INotification::class);
+		foreach (['setApp', 'setUser', 'setDateTime', 'setObject', 'setSubject'] as $setter) {
+			$notification->method($setter)->willReturnSelf();
+		}
+		$this->notificationManager->method('createNotification')->willReturn($notification);
+		$this->notificationManager->method('notify')->willThrowException(new \RuntimeException('kaputt'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error');
+
+		$this->serviceWithAdmins($logger, 'admin')->notifyAdminsAboutTrial('end', 1796134323);
 	}
 }

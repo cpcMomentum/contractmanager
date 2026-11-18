@@ -98,14 +98,8 @@
 					</template>
 				</NcAppNavigationItem>
 
+				<!-- Reihenfolge nach Design-System: Neuerungen · Einstellungen · Verwaltung -->
 				<template #footer>
-					<NcAppNavigationItem :name="t('contractmanager', 'Einstellungen')"
-						:class="{ active: currentView === 'settings' }"
-						@click="currentView = 'settings'; selectedCategoryId = null">
-						<template #icon>
-							<CogIcon :size="20" />
-						</template>
-					</NcAppNavigationItem>
 					<!-- Dauerhafter Zugang zu den Neuerungen (#427): oeffnet das
 					     „Was ist neu?"-Fenster im Archiv-Modus (alle bisherigen Punkte).
 					     Kein eigener View, nur ein Knopf. -->
@@ -113,6 +107,21 @@
 						@click="openWhatsNew">
 						<template #icon>
 							<BullhornOutlineIcon :size="20" />
+						</template>
+					</NcAppNavigationItem>
+					<NcAppNavigationItem :name="t('contractmanager', 'Einstellungen')"
+						:class="{ active: currentView === 'settings' }"
+						@click="currentView = 'settings'; selectedCategoryId = null">
+						<template #icon>
+							<CogIcon :size="20" />
+						</template>
+					</NcAppNavigationItem>
+					<NcAppNavigationItem v-if="$isAdmin"
+						:name="t('contractmanager', 'Verwaltung')"
+						:class="{ active: currentView === 'admin' }"
+						@click="currentView = 'admin'; selectedCategoryId = null">
+						<template #icon>
+							<ShieldAccountIcon :size="20" />
 						</template>
 					</NcAppNavigationItem>
 				</template>
@@ -123,6 +132,7 @@
 				<ArchiveView v-else-if="currentView === 'archive'" />
 				<TrashView v-else-if="currentView === 'trash'" />
 				<SettingsView v-else-if="currentView === 'settings'" />
+				<AdminView v-else-if="currentView === 'admin' && $isAdmin" />
 			</NcAppContent>
 
 			<!-- „Was ist neu?"-Fenster (#415): meldet sich selbst, wenn es etwas zu
@@ -146,12 +156,14 @@ import AccountLockOutlineIcon from 'vue-material-design-icons/AccountLockOutline
 import ArchiveIcon from 'vue-material-design-icons/Archive.vue'
 import BullhornOutlineIcon from 'vue-material-design-icons/BullhornOutline.vue'
 import CogIcon from 'vue-material-design-icons/Cog.vue'
+import ShieldAccountIcon from 'vue-material-design-icons/ShieldAccount.vue'
 import TagIcon from 'vue-material-design-icons/Tag.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import ContractList from './views/ContractList.vue'
 import ArchiveView from './views/ArchiveView.vue'
 import TrashView from './views/TrashView.vue'
 import SettingsView from './views/SettingsView.vue'
+import AdminView from './views/AdminView.vue'
 import WhatsNewDialog from './components/WhatsNewDialog.vue'
 import { mapState, mapActions } from 'pinia'
 import { useContractsStore } from './store/contracts'
@@ -175,12 +187,14 @@ export default {
 		ArchiveIcon,
 		BullhornOutlineIcon,
 		CogIcon,
+		ShieldAccountIcon,
 		TagIcon,
 		DeleteIcon,
 		ContractList,
 		ArchiveView,
 		TrashView,
 		SettingsView,
+		AdminView,
 		WhatsNewDialog,
 	},
 	data() {

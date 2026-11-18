@@ -5,6 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ContractForm from './ContractForm.vue'
+import { userDefaults } from '../userPreferences'
 
 // Die echten Komponenten ziehen ihr CSS mit, das der Test-Runner nicht laedt.
 vi.mock('@nextcloud/vue/components/NcModal', () => ({ default: {} }))
@@ -52,5 +53,22 @@ describe('ContractForm: Status im Kopf', () => {
 		[{ status: 'active', contractType: 'auto_renewal', endDate: day(200), cancellationPeriod: '1 months', renewalPeriod: '12 months' }, 'active', 'Laufend'],
 	])('%j → %s / %s', (payload, cls, label) => {
 		expect(chipFor(payload)).toEqual({ cls, label })
+	})
+})
+
+describe('ContractForm: Vorgaben für neue Verträge', () => {
+	const methods = ContractForm.methods as unknown as Record<string, (this: unknown, ...args: unknown[]) => Record<string, unknown>>
+
+	afterEach(() => {
+		userDefaults.defaultCurrency = 'EUR'
+		userDefaults.defaultAmountType = 'netto'
+	})
+
+	it('startet mit Leitwährung und Betragsart aus den Einstellungen', () => {
+		userDefaults.defaultCurrency = 'CHF'
+		userDefaults.defaultAmountType = 'brutto'
+		const form = methods.getInitialForm.call({})
+		expect(form.currency).toBe('CHF')
+		expect(form.amountType).toBe('brutto')
 	})
 })

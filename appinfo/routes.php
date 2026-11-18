@@ -68,5 +68,16 @@ return [
         // AI Extraction API routes
         ['name' => 'extraction#status', 'url' => '/api/extraction/status', 'verb' => 'GET'],
         ['name' => 'extraction#extract', 'url' => '/api/extraction/extract', 'verb' => 'POST'],
+
+        // Berichte (WerkPlus, vw_reports)
+        ['name' => 'report#status',   'url' => '/api/reports',        'verb' => 'GET'],
+        ['name' => 'report#download', 'url' => '/api/reports/{type}', 'verb' => 'POST'],
+
+        // WerkPlus-Lizenz (entitlement-v1), nur Nextcloud-Admins
+        ['name' => 'license#show',     'url' => '/api/license',         'verb' => 'GET'],
+        ['name' => 'license#activate', 'url' => '/api/license',         'verb' => 'PUT'],
+        ['name' => 'license#trial',    'url' => '/api/license/trial',   'verb' => 'POST'],
+        ['name' => 'license#refresh',  'url' => '/api/license/refresh', 'verb' => 'POST'],
+        ['name' => 'license#destroy',  'url' => '/api/license',         'verb' => 'DELETE'],
     ]
 ];

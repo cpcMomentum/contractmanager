@@ -337,4 +337,16 @@ class SettingsControllerTest extends TestCase {
 
 		$this->controller->update(backupInterval: 'daily');
 	}
+
+	public function testUpdateSetsDefaultCurrency(): void {
+		$this->settingsService->expects($this->once())->method('setUserDefaultCurrency')->with('admin', 'CHF');
+
+		$this->controller->update(defaultCurrency: 'CHF');
+	}
+
+	public function testUpdateWithoutDefaultCurrencyLeavesItAlone(): void {
+		$this->settingsService->expects($this->never())->method('setUserDefaultCurrency');
+
+		$this->controller->update(defaultAmountType: 'brutto');
+	}
 }
