@@ -7,6 +7,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { LicenseStatus } from '../services/LicenseService'
 import WerkPlusSettings from './WerkPlusSettings.vue'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 
 const getLicense = vi.fn<() => Promise<LicenseStatus>>()
 const activateLicense = vi.fn<(key: string) => Promise<LicenseStatus>>()
@@ -332,7 +333,7 @@ describe('WerkPlusSettings', () => {
 
 		const f = facts(wrapper)
 		expect(f[f.indexOf('Tarif') + 1]).toBe('WerkPlus')
-		expect(f[f.indexOf('Laufzeit bis') + 1]).toBe(new Date('2027-11-18T12:00:00Z').toLocaleDateString('de-DE'))
+		expect(f[f.indexOf('Laufzeit bis') + 1]).toBe(new Date('2027-11-18T12:00:00Z').toLocaleDateString(getCanonicalLocale()))
 		expect(f).not.toContain('Gültig bis')
 		expect(wrapper.find('a.stub-button').exists()).toBe(false)
 		expect(wrapper.text()).not.toContain('Testschlüssel')
@@ -345,7 +346,7 @@ describe('WerkPlusSettings', () => {
 
 		const f = facts(wrapper)
 		expect(f.some((x) => x.startsWith('Laufzeit') || x === 'Gültig bis')).toBe(false)
-		expect(wrapper.find('dl').text()).not.toContain(new Date('2026-11-05T12:00:00Z').toLocaleDateString('de-DE'))
+		expect(wrapper.find('dl').text()).not.toContain(new Date('2026-11-05T12:00:00Z').toLocaleDateString(getCanonicalLocale()))
 	})
 
 	it('Laufzeit vorbei, Token in der Karenz: abgelaufen mit Karenz-Ende', async () => {
@@ -354,7 +355,7 @@ describe('WerkPlusSettings', () => {
 		await flushPromises()
 
 		const f = facts(wrapper)
-		expect(f[f.indexOf('Laufzeit') + 1]).toBe('abgelaufen, Karenz bis ' + new Date('2026-11-19T12:00:00Z').toLocaleDateString('de-DE'))
+		expect(f[f.indexOf('Laufzeit') + 1]).toBe('abgelaufen, Karenz bis ' + new Date('2026-11-19T12:00:00Z').toLocaleDateString(getCanonicalLocale()))
 	})
 
 	it('Testzeitraum beendet: eigener Hinweis statt Ablauf-Fehler, Jetzt kaufen', async () => {
