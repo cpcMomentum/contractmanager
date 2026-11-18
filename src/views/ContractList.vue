@@ -18,6 +18,12 @@
 						{{ option.label }}
 					</NcActionButton>
 				</NcActions>
+				<NcButton variant="secondary" @click="showReportDialog = true">
+					<template #icon>
+						<FileChartIcon :size="20" />
+					</template>
+					{{ t('contractmanager', 'Berichte') }}
+				</NcButton>
 				<NcButton :variant="hasActiveFilters ? 'warning' : 'secondary'"
 					@click="toggleFilters">
 					<template #icon>
@@ -212,6 +218,10 @@
 			:read-only="true"
 			@close="closeForm" />
 
+		<ReportDialog v-if="showReportDialog"
+			:contract-ids="contracts.map(c => c.id)"
+			@close="showReportDialog = false" />
+
 		<NcDialog v-if="showArchiveDialog"
 			:name="t('contractmanager', 'Vertrag archivieren')"
 			@close="showArchiveDialog = false">
@@ -264,6 +274,8 @@ import { normalizeCostInput } from '../utils/costFormat'
 import { toLocalDate } from '../utils/dateUtils.js'
 import { DEADLINE_WITHIN_OPTIONS, hasMonthlyCostAtLeast, isDeadlineWithin } from '../utils/listFilters'
 import ContractForm from '../components/ContractForm.vue'
+import ReportDialog from '../components/ReportDialog.vue'
+import FileChartIcon from 'vue-material-design-icons/FileChart.vue'
 import SettingsService from '../services/SettingsService'
 import { showInfo, showError } from '@nextcloud/dialogs'
 
@@ -293,6 +305,8 @@ export default {
 		BellRingIcon,
 		ContractListItem,
 		ContractForm,
+		ReportDialog,
+		FileChartIcon,
 	},
 	props: {
 		categoryFilter: {
@@ -317,6 +331,7 @@ export default {
 			showEditForm: false,
 			showViewForm: false,
 			showArchiveDialog: false,
+			showReportDialog: false,
 			editingContract: null,
 			viewingContract: null,
 			archivingContract: null,

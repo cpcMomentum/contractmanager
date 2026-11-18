@@ -18,6 +18,7 @@ vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({ default: {} 
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({ default: {} }))
 vi.mock('../components/ContractForm.vue', () => ({ default: {} }))
 vi.mock('../components/ContractListItem.vue', () => ({ default: {} }))
+vi.mock('../components/ReportDialog.vue', () => ({ default: {} }))
 vi.mock('@nextcloud/dialogs', () => ({ showInfo: vi.fn(), showError: vi.fn() }))
 vi.mock('@nextcloud/initial-state', () => ({ loadState: (_app: string, _key: string, fallback: unknown) => fallback }))
 

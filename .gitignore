@@ -13,6 +13,19 @@ vendor/*
 !vendor/composer
 !vendor/smalot
 !vendor/symfony
+vendor/symfony/*
+!vendor/symfony/polyfill-mbstring
+# TCPDF: nur freesans, freesansb und die helvetica-Metriken werden ausgeliefert
+!vendor/tecnickcom
+vendor/tecnickcom/tcpdf/fonts/*
+!vendor/tecnickcom/tcpdf/fonts/freesans.*
+!vendor/tecnickcom/tcpdf/fonts/freesansb.*
+!vendor/tecnickcom/tcpdf/fonts/helvetica*.php
+!vendor/tecnickcom/tcpdf/fonts/freefont-20120503
+vendor/tecnickcom/tcpdf/fonts/freefont-20120503/*
+!vendor/tecnickcom/tcpdf/fonts/freefont-20120503/AUTHORS
+!vendor/tecnickcom/tcpdf/fonts/freefont-20120503/COPYING
+!vendor/tecnickcom/tcpdf/fonts/freefont-20120503/README
 
 # Build output (js/ UND das kompilierte css/ werden committet für einfache Installation
 # und robuste Releases: git-basiertes Packen liesse ungetrackte Dateien aus, ein
@@ -45,8 +58,7 @@ npm-debug.log*
 # Claude Code: lokale, ungetrackte Settings (u.a. NC_APPSTORE_TOKEN), siehe .claude/techstack.md
 .claude/settings.local.json
 
-# Composer
-composer.lock
+# Composer: composer.lock wird committet, die Release-Pruefung vergleicht vendor/ dagegen
 
 # Package lock (keep package-lock.json for reproducible builds)
 # package-lock.json
