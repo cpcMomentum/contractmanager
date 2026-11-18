@@ -13,7 +13,7 @@ export interface WhatsNewEntry {
 	where: string
 	/** Stelle ist adminpflichtig; der Dialog schreibt es dazu. */
 	adminOnly: boolean
-	/** WerkPlus-Feature: Badge und Link auf werkwolke.de. */
+	/** WerkPlus-Feature: Badge und Link auf die Funktionen-Seite. */
 	plus: boolean
 }
 

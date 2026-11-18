@@ -7,6 +7,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { LicenseStatus } from '../services/LicenseService'
 import WerkPlusSettings from './WerkPlusSettings.vue'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 
 const getLicense = vi.fn<() => Promise<LicenseStatus>>()
 const activateLicense = vi.fn<(key: string) => Promise<LicenseStatus>>()
@@ -24,13 +25,20 @@ vi.mock('../services/LicenseService', () => ({
 	},
 }))
 
+const LINKS = {
+	buy: 'https://werkwolke.de/preis?app=vertragswerk',
+	features: 'https://werkwolke.de/funktionen#vertragswerk',
+	trial: 'https://werkwolke.de/testen?app=vertragswerk',
+}
+vi.mock('../werkplusLinks', () => ({ werkplusLinks: () => LINKS }))
+
 // Die echten Komponenten ziehen ihr CSS mit, das der Test-Runner nicht laedt.
 vi.mock('@nextcloud/vue/components/NcButton', () => ({
 	default: {
 		name: 'NcButton',
-		props: ['variant', 'disabled'],
+		props: ['variant', 'disabled', 'href', 'target'],
 		emits: ['click'],
-		template: '<button class="stub-button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+		template: '<a v-if="href" class="stub-button" :href="href" :target="target"><slot /></a><button v-else class="stub-button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
 	},
 }))
 vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
@@ -58,6 +66,9 @@ const status = (teil: Partial<LicenseStatus> = {}): LicenseStatus => ({
 	state: 'none',
 	tier: 'free',
 	features: [],
+	trial: false,
+	licenseValidUntil: null,
+	trialEnded: false,
 	expiresAt: null,
 	graceUntil: null,
 	lastCheckAt: null,
@@ -102,7 +113,9 @@ describe('WerkPlusSettings', () => {
 		const wrapper = mount(WerkPlusSettings)
 		await flushPromises()
 
-		expect(buttons(wrapper)).toEqual(['Schlüssel prüfen und speichern', '30 Tage testen'])
+		expect(buttons(wrapper)).toEqual(['Schlüssel prüfen und speichern', '30 Tage testen', 'WerkPlus kaufen'])
+		expect(wrapper.find('a.stub-button').attributes('href')).toBe(LINKS.buy)
+		expect(wrapper.find('a.stub-button').attributes('target')).toBe('_blank')
 		expect(wrapper.find('.stub-button').attributes('disabled')).toBeDefined()
 		expect(wrapper.find('dl').exists()).toBe(false)
 		expect(wrapper.text()).toContain('8cb3c100-9e4c-5375-9e63-1f4d122ea315')
@@ -192,7 +205,7 @@ describe('WerkPlusSettings', () => {
 
 		expect(removeLicense).toHaveBeenCalledOnce()
 		expect(wrapper.find('.stub-confirm').exists()).toBe(false)
-		expect(buttons(wrapper)).toEqual(['Schlüssel prüfen und speichern', '30 Tage testen'])
+		expect(buttons(wrapper)).toEqual(['Schlüssel prüfen und speichern', '30 Tage testen', 'WerkPlus kaufen'])
 	})
 
 	it('Testzeitraum erst nach Bestätigung, zeigt den Schlüssel einmal', async () => {
@@ -263,6 +276,7 @@ describe('WerkPlusSettings', () => {
 		await flushPromises()
 
 		expect(wrapper.find('.stub-note--error').text()).toContain('werkwolke.de/testen')
+		expect(wrapper.find('.stub-note--error a').attributes('href')).toBe(LINKS.trial)
 	})
 
 	it('ohne Recht zum Verwalten: sieht den Status, kann den Schlüssel nicht ändern', async () => {
@@ -294,5 +308,99 @@ describe('WerkPlusSettings', () => {
 		expect(wrapper.text()).toContain('alle Werk-Apps dieser Nextcloud')
 		expect(wrapper.text()).toContain('Eine aus dieser Nextcloud abgeleitete Kennung')
 		expect(wrapper.text()).toContain('8cb3c100-9e4c-5375-9e63-1f4d122ea315')
+	})
+
+	const facts = (wrapper: ReturnType<typeof mount>) => wrapper.findAll('dl > *').map((el) => el.text())
+	const inDays = (days: number) => new Date(Date.now() + days * 86400000 - 60000).toISOString()
+
+	it('Testzeitraum läuft: Tarif, Ende mit Resttagen, Jetzt kaufen und Hinweis zum Schlüssel', async () => {
+		getLicense.mockResolvedValue(aktiv({ trial: true, licenseValidUntil: inDays(5), expiresAt: inDays(2) }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		const f = facts(wrapper)
+		expect(f[f.indexOf('Tarif') + 1]).toBe('WerkPlus – Testzeitraum')
+		expect(f[f.indexOf('Testzeitraum läuft bis') + 1]).toContain('noch 5 Tage')
+		expect(buttons(wrapper)).toContain('Jetzt kaufen')
+		expect(wrapper.find('a.stub-button').attributes('href')).toBe(LINKS.buy)
+		expect(wrapper.text()).toContain('er ersetzt den Testschlüssel')
+	})
+
+	it('gekaufter Schlüssel: Laufzeit statt Token-Ende, kein Kauf-Link', async () => {
+		getLicense.mockResolvedValue(aktiv({ licenseValidUntil: '2027-11-18T12:00:00Z' }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		const f = facts(wrapper)
+		expect(f[f.indexOf('Tarif') + 1]).toBe('WerkPlus')
+		expect(f[f.indexOf('Laufzeit bis') + 1]).toBe(new Date('2027-11-18T12:00:00Z').toLocaleDateString(getCanonicalLocale()))
+		expect(f).not.toContain('Gültig bis')
+		expect(wrapper.find('a.stub-button').exists()).toBe(false)
+		expect(wrapper.text()).not.toContain('Testschlüssel')
+	})
+
+	it('ohne Laufzeit im Token: keine Laufzeit-Zeile, auch nicht das Token-Ende', async () => {
+		getLicense.mockResolvedValue(aktiv())
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		const f = facts(wrapper)
+		expect(f.some((x) => x.startsWith('Laufzeit') || x === 'Gültig bis')).toBe(false)
+		expect(wrapper.find('dl').text()).not.toContain(new Date('2026-11-05T12:00:00Z').toLocaleDateString(getCanonicalLocale()))
+	})
+
+	it('Laufzeit vorbei, Token in der Karenz: abgelaufen mit Karenz-Ende', async () => {
+		getLicense.mockResolvedValue(aktiv({ state: 'grace', licenseValidUntil: '2020-01-01T00:00:00Z' }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		const f = facts(wrapper)
+		expect(f[f.indexOf('Laufzeit') + 1]).toBe('abgelaufen, Karenz bis ' + new Date('2026-11-19T12:00:00Z').toLocaleDateString(getCanonicalLocale()))
+	})
+
+	it('Testzeitraum beendet: eigener Hinweis statt Ablauf-Fehler, Jetzt kaufen', async () => {
+		getLicense.mockResolvedValue(status({
+			keySet: true,
+			keyHint: '…69B6',
+			trialEnded: true,
+			lastError: { code: 'KEY_EXPIRED', message: 'Die Lizenz ist abgelaufen.', at: null },
+		}))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--warning').text()).toContain('Der Testzeitraum ist beendet.')
+		expect(wrapper.text()).not.toContain('Die Lizenz ist abgelaufen.')
+		expect(buttons(wrapper)).toContain('Jetzt kaufen')
+		expect(wrapper.text()).toContain('er ersetzt den Testschlüssel')
+	})
+
+	it('Testtoken abgelaufen, Server noch nicht gefragt: ebenfalls Testzeitraum beendet', async () => {
+		getLicense.mockResolvedValue(aktiv({ trial: true, state: 'expired', tier: 'free', features: [], licenseValidUntil: '2026-11-01T12:00:00Z' }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(wrapper.find('.stub-note--warning').text()).toContain('Der Testzeitraum ist beendet.')
+		expect(buttons(wrapper)).toContain('Jetzt kaufen')
+		expect(wrapper.text()).toContain('er ersetzt den Testschlüssel')
+	})
+
+	it('Laufzeit vorbei, Token noch gültig: abgelaufen statt Datum in der Vergangenheit', async () => {
+		getLicense.mockResolvedValue(aktiv({ licenseValidUntil: '2020-01-01T00:00:00Z' }))
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		expect(facts(wrapper)).not.toContain('Laufzeit bis')
+		expect(facts(wrapper)[facts(wrapper).indexOf('Laufzeit') + 1]).toContain('abgelaufen, Karenz bis')
+	})
+
+	it('verlinkt die Funktionen-Seite in neuem Tab ohne Referrer', async () => {
+		getLicense.mockResolvedValue(status())
+		const wrapper = mount(WerkPlusSettings)
+		await flushPromises()
+
+		const link = wrapper.find('a.werkplus__link')
+		expect(link.attributes('href')).toBe(LINKS.features)
+		expect(link.attributes('target')).toBe('_blank')
+		expect(link.attributes('rel')).toBe('noopener noreferrer')
 	})
 })

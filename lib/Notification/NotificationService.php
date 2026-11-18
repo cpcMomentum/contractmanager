@@ -109,6 +109,30 @@ class NotificationService {
 		}
 	}
 
+	/** Only Nextcloud admins can enter a key, so nobody else is reminded. */
+	public function notifyAdminsAboutTrial(string $stage, int $trialEnd): void {
+		try {
+			foreach ($this->getAdminUserIds() as $adminUserId) {
+				$notification = $this->notificationManager->createNotification();
+				$notification->setApp(Application::APP_ID);
+				$notification->setUser($adminUserId);
+				$notification->setDateTime(new \DateTime());
+				$notification->setObject('werkplus_trial', $stage);
+				$notification->setSubject(Notifier::SUBJECT_TRIAL, [
+					'stage' => $stage,
+					'trialEnd' => $trialEnd,
+				]);
+
+				$this->notificationManager->notify($notification);
+			}
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to notify admins about the WerkPlus trial: ' . $e->getMessage(), [
+				'app' => Application::APP_ID,
+				'exception' => $e,
+			]);
+		}
+	}
+
 	/**
 	 * @return string[]
 	 */

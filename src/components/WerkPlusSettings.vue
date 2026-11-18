@@ -10,6 +10,11 @@
 		<p class="werkplus__hint">
 			{{ t('contractmanager', 'Mit einem WerkPlus-Schlüssel schaltet VertragsWerk zusätzliche Funktionen frei. Ohne Schlüssel bleibt alles, wie es ist.') }}
 			{{ t('contractmanager', 'Der Schlüssel gilt für alle Werk-Apps dieser Nextcloud und muss nur in einer davon eingetragen werden.') }}
+			<a v-if="links.features"
+				class="werkplus__link"
+				:href="links.features"
+				target="_blank"
+				rel="noopener noreferrer">{{ t('contractmanager', 'Welche Funktionen WerkPlus bietet') }}</a>
 		</p>
 
 		<NcNoteCard v-if="loadError" type="error" :text="loadError" />
@@ -28,19 +33,36 @@
 				<p>{{ t('contractmanager', 'Bitte bewahre ihn sicher auf. Er ist hinterlegt, wird aber nur jetzt vollständig angezeigt.') }}</p>
 			</NcNoteCard>
 			<NcNoteCard v-if="actionInfo" type="info" :text="actionInfo" />
-			<NcNoteCard v-if="actionError" type="error" :text="actionError" />
-			<NcNoteCard v-else-if="status.lastError" type="warning" :text="status.lastError.message" />
+			<NcNoteCard v-if="actionError" type="error">
+				<p>{{ actionError }}</p>
+				<a v-if="actionErrorCode === 'TRIAL_UNAVAILABLE' && links.trial"
+					class="werkplus__link"
+					:href="links.trial"
+					target="_blank"
+					rel="noopener noreferrer">{{ t('contractmanager', 'Testzeitraum auf werkwolke.de') }}</a>
+			</NcNoteCard>
+			<NcNoteCard v-else-if="status.lastError && !trialOver" type="warning" :text="status.lastError.message" />
 
 			<dl v-if="status.keySet" class="werkplus__facts">
 				<dt>{{ t('contractmanager', 'Tarif') }}</dt>
 				<dd>{{ tierLabel }}</dd>
+				<template v-if="trialRunning && status.licenseValidUntil">
+					<dt>{{ t('contractmanager', 'Testzeitraum läuft bis') }}</dt>
+					<dd>{{ formatDate(status.licenseValidUntil) }} ({{ daysLeftLabel }})</dd>
+				</template>
+				<template v-else-if="!status.trial && status.licenseValidUntil && licenseActive">
+					<template v-if="isPast(status.licenseValidUntil)">
+						<dt>{{ t('contractmanager', 'Laufzeit') }}</dt>
+						<dd>{{ t('contractmanager', 'abgelaufen, Karenz bis {date}', { date: status.graceUntil ? formatDate(status.graceUntil) : '' }) }}</dd>
+					</template>
+					<template v-else>
+						<dt>{{ t('contractmanager', 'Laufzeit bis') }}</dt>
+						<dd>{{ formatDate(status.licenseValidUntil) }}</dd>
+					</template>
+				</template>
 				<template v-if="status.licensedEmployees">
 					<dt>{{ t('contractmanager', 'Lizenzierte Mitarbeitende') }}</dt>
 					<dd>{{ status.licensedEmployees }}</dd>
-				</template>
-				<template v-if="status.expiresAt">
-					<dt>{{ t('contractmanager', 'Gültig bis') }}</dt>
-					<dd>{{ formatDate(status.expiresAt) }}</dd>
 				</template>
 				<dt>{{ t('contractmanager', 'Letzte erfolgreiche Prüfung') }}</dt>
 				<dd>{{ status.lastCheckAt ? formatDateTime(status.lastCheckAt) : t('contractmanager', 'noch keine') }}</dd>
@@ -62,6 +84,10 @@
 					:placeholder="status.keySet ? t('contractmanager', 'gespeichert, leer lassen') : 'wp_…'">
 			</label>
 
+			<p v-if="showBuyHint" class="werkplus__hint">
+				{{ t('contractmanager', 'Mit dem Kauf bekommst du einen eigenen Schlüssel. Trage ihn hier ein, er ersetzt den Testschlüssel.') }}
+			</p>
+
 			<div class="werkplus__actions">
 				<NcButton v-if="canEdit"
 					variant="primary"
@@ -71,6 +97,11 @@
 				</NcButton>
 				<NcButton v-if="canEdit && !status.keySet" :disabled="busy" @click="confirmTrial = true">
 					{{ t('contractmanager', '30 Tage testen') }}
+				</NcButton>
+				<NcButton v-if="buyLabel && links.buy"
+					:href="links.buy"
+					target="_blank">
+					{{ buyLabel }}
 				</NcButton>
 				<NcButton v-if="status.keySet && !status.storeTooNew" :disabled="busy" @click="onRefresh">
 					{{ t('contractmanager', 'Jetzt prüfen') }}
@@ -129,17 +160,21 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { getCanonicalLocale, translate as t } from '@nextcloud/l10n'
+import { getCanonicalLocale, translate as t, translatePlural as n } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import LicenseService, { type LicenseStatus } from '../services/LicenseService'
+import { werkplusLinks } from '../werkplusLinks'
+
+const links = werkplusLinks()
 
 const status = ref<LicenseStatus | null>(null)
 const keyInput = ref('')
 const busy = ref(false)
 const loadError = ref('')
 const actionError = ref('')
+const actionErrorCode = ref('')
 const actionInfo = ref('')
 const trialKey = ref('')
 const confirmRemove = ref(false)
@@ -152,12 +187,45 @@ const canEdit = computed(() => status.value?.canManage === true && !status.value
 
 const licenseActive = computed(() => status.value?.state === 'valid' || status.value?.state === 'grace')
 
-const tierLabel = computed(() => (status.value?.tier === 'werkplus' ? 'WerkPlus' : t('contractmanager', 'Frei')))
+const trialRunning = computed(() => status.value?.trial === true && licenseActive.value)
+
+// Auch ohne Netz: Ein abgelaufenes Testtoken zaehlt, bevor die Pruefung KEY_EXPIRED meldet.
+const trialOver = computed(() => status.value?.trialEnded === true || (status.value?.trial === true && status.value.state === 'expired'))
+
+const tierLabel = computed(() => {
+	if (status.value?.tier !== 'werkplus') {
+		return t('contractmanager', 'Frei')
+	}
+	return status.value.trial ? t('contractmanager', 'WerkPlus – Testzeitraum') : 'WerkPlus'
+})
+
+// Kauf-Link nach app-links-v1: ohne Schluessel und im Testzeitraum, nie bei gekauftem Schluessel.
+const buyLabel = computed(() => {
+	const s = status.value
+	if (!s || s.storeTooNew) {
+		return ''
+	}
+	if (!s.keySet) {
+		return t('contractmanager', 'WerkPlus kaufen')
+	}
+	return trialRunning.value || trialOver.value ? t('contractmanager', 'Jetzt kaufen') : ''
+})
+
+const showBuyHint = computed(() => trialRunning.value || trialOver.value)
+
+const daysLeftLabel = computed(() => {
+	const until = status.value?.licenseValidUntil
+	const days = until ? Math.max(0, Math.ceil((new Date(until).getTime() - Date.now()) / 86400000)) : 0
+	return n('contractmanager', 'noch %n Tag', 'noch %n Tage', days)
+})
 
 const stateNote = computed<{ type: 'success' | 'warning' | 'error', text: string } | null>(() => {
 	const s = status.value
 	if (!s) {
 		return null
+	}
+	if (trialOver.value) {
+		return { type: 'warning', text: t('contractmanager', 'Der Testzeitraum ist beendet. VertragsWerk arbeitet im freien Umfang weiter, deine Daten bleiben erhalten.') }
 	}
 	switch (s.state) {
 	case 'valid':
@@ -180,6 +248,10 @@ function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString(getCanonicalLocale())
 }
 
+function isPast(iso: string): boolean {
+	return new Date(iso).getTime() <= Date.now()
+}
+
 function formatDateTime(iso: string): string {
 	return new Date(iso).toLocaleString(getCanonicalLocale())
 }
@@ -197,6 +269,7 @@ async function load(): Promise<void> {
 async function run(action: () => Promise<LicenseStatus>): Promise<void> {
 	busy.value = true
 	actionError.value = ''
+	actionErrorCode.value = ''
 	actionInfo.value = ''
 	try {
 		status.value = await action()
@@ -208,6 +281,7 @@ async function run(action: () => Promise<LicenseStatus>): Promise<void> {
 			actionInfo.value = text
 		} else {
 			actionError.value = text
+			actionErrorCode.value = code ?? ''
 		}
 		await load()
 	} finally {
@@ -286,6 +360,11 @@ onMounted(load)
 	flex-wrap: wrap;
 	gap: 8px;
 	margin: 12px 0 20px;
+}
+
+.werkplus__link {
+	display: inline-block;
+	font-weight: 600;
 }
 
 .werkplus__label {
