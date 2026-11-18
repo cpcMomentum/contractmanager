@@ -32,6 +32,7 @@ class SettingsService {
 	private const KEY_SORT_DIRECTION = 'sort_direction';
 	private const KEY_FILTERS = 'filters';
 	private const KEY_DEFAULT_AMOUNT_TYPE = 'default_amount_type';
+	private const KEY_DEFAULT_CURRENCY = 'default_currency';
 
 	private const KEY_CUSTOM_FIELD_LABEL_PREFIX = 'custom_field_label_';
 	private const KEY_CUSTOM_FIELD_ENABLED_PREFIX = 'custom_field_enabled_';
@@ -93,6 +94,7 @@ class SettingsService {
 
 	private const ALLOWED_SORT_BY = ['endDate', 'name', 'updatedAt', 'cost', 'cancellationDeadline'];
 	private const ALLOWED_AMOUNT_TYPES = ['netto', 'brutto'];
+	private const ALLOWED_CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP'];
 	private const ALLOWED_SORT_DIRECTION = ['asc', 'desc'];
 	private const ALLOWED_STATUSES = ['planned', 'active', 'ending_soon', 'ending', 'cancelled', 'ended'];
 	private const ALLOWED_CONTRACT_TYPES = ['', 'fixed', 'auto_renewal', 'unlimited'];
@@ -527,6 +529,19 @@ class SettingsService {
 			self::KEY_DEFAULT_AMOUNT_TYPE,
 			$amountType
 		);
+	}
+
+	// No conversion between currencies; other currencies are counted separately.
+	public function getUserDefaultCurrency(string $userId): string {
+		$currency = $this->config->getUserValue($userId, Application::APP_ID, self::KEY_DEFAULT_CURRENCY, 'EUR');
+		return in_array($currency, self::ALLOWED_CURRENCIES, true) ? $currency : 'EUR';
+	}
+
+	public function setUserDefaultCurrency(string $userId, string $currency): void {
+		if (!in_array($currency, self::ALLOWED_CURRENCIES, true)) {
+			return;
+		}
+		$this->config->setUserValue($userId, Application::APP_ID, self::KEY_DEFAULT_CURRENCY, $currency);
 	}
 
 	// ========================================

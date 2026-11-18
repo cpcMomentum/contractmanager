@@ -606,7 +606,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
 import { getCanonicalLocale } from '@nextcloud/l10n'
 import { getDisplayStatus } from '../utils/contractStatus'
-import { loadState } from '@nextcloud/initial-state'
+import { CURRENCIES, userDefaults } from '../userPreferences'
 import { formatDate, formatDateForInput, parseLocalDate } from '../utils/dateUtils.js'
 import { parsePeriod, calculateCancellationDeadline, getEffectiveEndDate } from '../utils/periodUtils.js'
 import { isUrl, isInternalUrl, getDisplayName } from '../utils/documentUtils.js'
@@ -658,11 +658,8 @@ export default {
 	},
 	emits: ['close', 'submit'],
 	data() {
-		const prefs = loadState('contractmanager', 'userPreferences', { defaultAmountType: 'netto' })
-		const defaultAmountType = prefs.defaultAmountType || 'netto'
 		return {
-			defaultAmountType,
-			form: this.getInitialForm(defaultAmountType),
+			form: this.getInitialForm(),
 			aiAvailable: false,
 			extracting: false,
 			extractionNotes: null,
@@ -870,12 +867,7 @@ export default {
 			]
 		},
 		currencyOptions() {
-			return [
-				{ value: 'EUR', label: 'EUR' },
-				{ value: 'USD', label: 'USD' },
-				{ value: 'CHF', label: 'CHF' },
-				{ value: 'GBP', label: 'GBP' },
-			]
+			return CURRENCIES.map(c => ({ value: c, label: c }))
 		},
 		costIntervalOptions() {
 			return [
@@ -925,7 +917,7 @@ export default {
 	watch: {
 		show(newVal) {
 			if (newVal) {
-				this.form = this.getInitialForm(this.defaultAmountType)
+				this.form = this.getInitialForm()
 				this.responsibleInitialLoaded = false
 				this.responsibleSearchResults = []
 			}
@@ -1085,7 +1077,7 @@ export default {
 				this.vendorOptions = []
 			}
 		},
-		getInitialForm(defaultAmountType = 'netto') {
+		getInitialForm() {
 			return {
 				name: '',
 				vendor: '',
@@ -1103,9 +1095,9 @@ export default {
 				renewalPeriodValue: '1',
 				renewalPeriodUnit: 'months',
 				cost: '',
-				currency: 'EUR',
+				currency: userDefaults.defaultCurrency,
 				costInterval: 'monthly',
-				amountType: defaultAmountType,
+				amountType: userDefaults.defaultAmountType,
 				contractFolder: '',
 				mainDocument: '',
 				reminderEnabled: true,

@@ -5,6 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ContractList from './ContractList.vue'
+import { userDefaults } from '../userPreferences'
 
 // Die echten Komponenten ziehen ihr CSS mit, das der Test-Runner nicht laedt.
 vi.mock('@nextcloud/vue/components/NcActions', () => ({ default: {} }))
@@ -69,6 +70,7 @@ describe('ContractList: Status-Filter und KPI', () => {
 
 	afterEach(() => {
 		vi.useRealTimers()
+		userDefaults.defaultCurrency = 'EUR'
 	})
 
 	it('bietet genau die sechs Chip-Begriffe als Filter an, ohne Vorauswahl', () => {
@@ -109,5 +111,19 @@ describe('ContractList: Status-Filter und KPI', () => {
 		vi.stubGlobal('t', (_app: string, text: string, vars: Record<string, unknown> = {}) => text.replace(/{(\w+)}/g, (_m, k) => String(vars[k])))
 		expect(computed.kpiTypeSub.call(ctx)).toBe('2 mit autom. Verlängerung · 1 weitere')
 		vi.unstubAllGlobals()
+	})
+
+	it('summiert die Kachel „Monatliche Kosten“ in der Leitwährung und zählt andere Währungen gesondert', () => {
+		const costs = [
+			{ currency: 'CHF', cost: '100', costInterval: 'monthly' },
+			{ currency: 'CHF', cost: '1200', costInterval: 'yearly' },
+			{ currency: 'EUR', cost: '50', costInterval: 'monthly' },
+		]
+		userDefaults.defaultCurrency = 'CHF'
+		const ctx: Record<string, unknown> = { kpiCostContracts: costs }
+		ctx.kpiLeadCurrency = computed.kpiLeadCurrency.call(ctx)
+		expect(ctx.kpiLeadCurrency).toBe('CHF')
+		expect(computed.kpiMonthlyTotal.call(ctx)).toBe(200)
+		expect(computed.kpiForeignCurrencyCount.call(ctx)).toBe(1)
 	})
 })

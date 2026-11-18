@@ -512,6 +512,8 @@ OC.L10N.register(
     "VertragsWerk läuft im freien Umfang weiter, deine Daten bleiben erhalten." : "VertragsWerk läuft im freien Umfang weiter, Ihre Daten bleiben erhalten.",
     "Der WerkPlus-Testzeitraum endet am %s." : "Der WerkPlus-Testzeitraum endet am %s.",
     "Danach läuft VertragsWerk im freien Umfang weiter, deine Daten bleiben erhalten." : "Danach läuft VertragsWerk im freien Umfang weiter, Ihre Daten bleiben erhalten.",
-    "WerkPlus – Testzeitraum" : "WerkPlus – Testzeitraum"
+    "WerkPlus – Testzeitraum" : "WerkPlus – Testzeitraum",
+    "Leitwährung" : "Leitwährung",
+    "Neue Verträge starten mit dieser Währung, und die Kachel „Monatliche Kosten“ summiert in ihr. Verträge in anderen Währungen werden nicht umgerechnet, sondern gesondert gezählt." : "Neue Verträge starten mit dieser Währung, und die Kachel „Monatliche Kosten“ summiert in ihr. Verträge in anderen Währungen werden nicht umgerechnet, sondern gesondert gezählt."
 },
 "nplurals=2; plural=(n != 1);");

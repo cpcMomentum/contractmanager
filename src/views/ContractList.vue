@@ -243,6 +243,7 @@ import { mapState, mapActions } from 'pinia'
 import { useContractsStore } from '../store/contracts'
 import { useCategoriesStore } from '../store/categories'
 import { loadState } from '@nextcloud/initial-state'
+import { userDefaults } from '../userPreferences'
 import { getCanonicalLocale, translatePlural as n } from '@nextcloud/l10n'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -508,7 +509,7 @@ export default {
 			})
 		},
 		kpiLeadCurrency() {
-			return 'EUR'
+			return userDefaults.defaultCurrency
 		},
 		kpiMonthlyTotal() {
 			let sum = 0
