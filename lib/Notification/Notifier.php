@@ -7,6 +7,7 @@ namespace OCA\ContractManager\Notification;
 use OCA\ContractManager\AppInfo\Application;
 use OCA\ContractManager\Db\Contract;
 use OCA\ContractManager\Db\ContractMapper;
+use OCA\ContractManager\Service\EntitlementService;
 use OCA\ContractManager\Service\TrialNoticeService;
 use OCA\ContractManager\Service\WerkPlusLinks;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -37,6 +38,7 @@ class Notifier implements INotifier {
 		private IDateTimeFormatter $dates,
 		private IDateTimeZone $timeZones,
 		private ITimeFactory $timeFactory,
+		private EntitlementService $entitlement,
 	) {
 	}
 
@@ -140,8 +142,7 @@ class Notifier implements INotifier {
 			case self::SUBJECT_TRIAL:
 				$trialEnd = (int)($params['trialEnd'] ?? 0);
 				$isEnd = ($params['stage'] ?? '') === TrialNoticeService::STAGE_END;
-				// „endet am …“ mit Kauf-Link ist nach dem Testende überholt.
-				if (!$isEnd && $trialEnd <= $this->timeFactory->getTime()) {
+				if (!$this->isCurrentTrialNotice((string)($params['stage'] ?? ''), $trialEnd)) {
 					throw new AlreadyProcessedException();
 				}
 				if ($isEnd) {
@@ -183,5 +184,17 @@ class Notifier implements INotifier {
 		);
 
 		return $notification;
+	}
+
+	// Nach Kauf, nächster Stufe oder neuem Testzeitraum ist die Erinnerung überholt.
+	private function isCurrentTrialNotice(string $stage, int $trialEnd): bool {
+		$now = $this->timeFactory->getTime();
+		$trialEndsAt = $this->entitlement->trialEndsAt();
+		return match ($stage) {
+			TrialNoticeService::STAGE_7D => $trialEndsAt === $trialEnd && $now < $trialEnd - 86400,
+			TrialNoticeService::STAGE_1D => $trialEndsAt === $trialEnd && $now < $trialEnd,
+			TrialNoticeService::STAGE_END => !($this->entitlement->tier() === 'werkplus' && $trialEndsAt === null),
+			default => false,
+		};
 	}
 }
