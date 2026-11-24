@@ -353,6 +353,22 @@ class NotifierTest extends TestCase {
 		$this->notifier->prepare($notification, 'de');
 	}
 
+	public function testEndNoticeStaysWhileATrialTokenIsStillActive(): void {
+		$this->now = self::TRIAL_END + 3600;
+		$this->trialEndsAt = self::TRIAL_END;
+		$this->tier = 'werkplus';
+		$notification = $this->notification('contractmanager', Notifier::SUBJECT_TRIAL, ['stage' => TrialNoticeService::STAGE_END, 'trialEnd' => self::TRIAL_END]);
+		$action = $this->createMock(IAction::class);
+		$action->method('setLabel')->willReturnSelf();
+		$action->method('setParsedLabel')->willReturnSelf();
+		$action->method('setPrimary')->willReturnSelf();
+		$action->method('setLink')->willReturnSelf();
+		$notification->method('createAction')->willReturn($action);
+		$notification->expects($this->once())->method('setParsedSubject')->with('Der WerkPlus-Testzeitraum ist beendet.')->willReturnSelf();
+
+		$this->notifier->prepare($notification, 'de');
+	}
+
 	public function testUnknownStageVanishes(): void {
 		$this->expectException(AlreadyProcessedException::class);
 
