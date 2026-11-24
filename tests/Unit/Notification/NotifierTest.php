@@ -16,6 +16,7 @@ use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\L10N\IFactory;
+use OCA\ContractManager\Service\EntitlementService;
 use OCA\ContractManager\Service\TrialNoticeService;
 use OCA\ContractManager\Service\WerkPlusLinks;
 use OCP\Notification\AlreadyProcessedException;
@@ -28,7 +29,11 @@ class NotifierTest extends TestCase {
 
 	private Notifier $notifier;
 	private ContractMapper $contractMapper;
-	private int $now = 1796134323 - 86400;
+	private const TRIAL_END = 1796134323;
+
+	private int $now = self::TRIAL_END - 3 * 86400;
+	private ?int $trialEndsAt = self::TRIAL_END;
+	private string $tier = 'werkplus';
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -60,7 +65,11 @@ class NotifierTest extends TestCase {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getTime')->willReturnCallback(fn () => $this->now);
 
-		$this->notifier = new Notifier($urlGenerator, $l10nFactory, $this->contractMapper, $userManager, $dates, $timeZones, $time);
+		$entitlement = $this->createMock(EntitlementService::class);
+		$entitlement->method('trialEndsAt')->willReturnCallback(fn () => $this->trialEndsAt);
+		$entitlement->method('tier')->willReturnCallback(fn () => $this->tier);
+
+		$this->notifier = new Notifier($urlGenerator, $l10nFactory, $this->contractMapper, $userManager, $dates, $timeZones, $time, $entitlement);
 	}
 
 	private function notification(string $app, string $subject, array $params = []): INotification {
@@ -130,7 +139,7 @@ class NotifierTest extends TestCase {
 		$l10nFactory = $this->createMock(IFactory::class);
 		$l10nFactory->method('get')->willReturn($l);
 
-		$notifier = new Notifier($urlGenerator, $l10nFactory, $this->createMock(ContractMapper::class), $this->createMock(IUserManager::class), $this->createMock(IDateTimeFormatter::class), $this->createMock(IDateTimeZone::class), $this->createMock(ITimeFactory::class));
+		$notifier = new Notifier($urlGenerator, $l10nFactory, $this->createMock(ContractMapper::class), $this->createMock(IUserManager::class), $this->createMock(IDateTimeFormatter::class), $this->createMock(IDateTimeZone::class), $this->createMock(ITimeFactory::class), $this->createMock(EntitlementService::class));
 
 		$notification = $this->notification('contractmanager', Notifier::SUBJECT_USER_DELETED, [
 			'deletedUser' => 'alice',
@@ -231,19 +240,24 @@ class NotifierTest extends TestCase {
 	}
 
 	/**
-	 * @return array<string, array{string, string}>
+	 * @return array<string, array{string, int, string}>
 	 */
 	public static function trialStages(): array {
 		return [
-			'7 Tage' => [TrialNoticeService::STAGE_7D, 'Der WerkPlus-Testzeitraum endet am 15.12.2026 Pacific/Auckland.'],
-			'1 Tag' => [TrialNoticeService::STAGE_1D, 'Der WerkPlus-Testzeitraum endet am 15.12.2026 Pacific/Auckland.'],
-			'Ende' => [TrialNoticeService::STAGE_END, 'Der WerkPlus-Testzeitraum ist beendet.'],
+			'7 Tage' => [TrialNoticeService::STAGE_7D, 3 * 86400, 'Der WerkPlus-Testzeitraum endet am 15.12.2026 Pacific/Auckland.'],
+			'1 Tag' => [TrialNoticeService::STAGE_1D, 3600, 'Der WerkPlus-Testzeitraum endet am 15.12.2026 Pacific/Auckland.'],
+			'Ende' => [TrialNoticeService::STAGE_END, -3600, 'Der WerkPlus-Testzeitraum ist beendet.'],
 		];
 	}
 
 	#[\PHPUnit\Framework\Attributes\DataProvider('trialStages')]
-	public function testTrialNoticeOffersTheBuyLink(string $stage, string $subject): void {
-		$notification = $this->notification('contractmanager', Notifier::SUBJECT_TRIAL, ['stage' => $stage, 'trialEnd' => 1796134323]);
+	public function testTrialNoticeOffersTheBuyLink(string $stage, int $left, string $subject): void {
+		$this->now = self::TRIAL_END - $left;
+		if ($stage === TrialNoticeService::STAGE_END) {
+			$this->trialEndsAt = null;
+			$this->tier = 'free';
+		}
+		$notification = $this->notification('contractmanager', Notifier::SUBJECT_TRIAL, ['stage' => $stage, 'trialEnd' => self::TRIAL_END]);
 		$action = $this->createMock(IAction::class);
 		$action->method('setLabel')->willReturnSelf();
 		$action->method('setParsedLabel')->willReturnSelf();
@@ -265,9 +279,83 @@ class NotifierTest extends TestCase {
 	}
 
 	public function testAnAnnouncedEndVanishesOnceTheTrialIsOver(): void {
-		$this->now = 1796134323 + 60;
+		$this->now = self::TRIAL_END + 60;
 		$this->expectException(AlreadyProcessedException::class);
 
-		$this->notifier->prepare($this->notification('contractmanager', Notifier::SUBJECT_TRIAL, ['stage' => TrialNoticeService::STAGE_7D, 'trialEnd' => 1796134323]), 'de');
+		$this->prepareTrial(TrialNoticeService::STAGE_7D);
+	}
+
+	private function prepareTrial(string $stage): void {
+		$this->notifier->prepare($this->notification('contractmanager', Notifier::SUBJECT_TRIAL, ['stage' => $stage, 'trialEnd' => self::TRIAL_END]), 'de');
+	}
+
+	public function testSevenDayNoticeVanishesOnceTheOneDayStageIsDue(): void {
+		$this->now = self::TRIAL_END - 86400;
+		$this->expectException(AlreadyProcessedException::class);
+
+		$this->prepareTrial(TrialNoticeService::STAGE_7D);
+	}
+
+	public function testOneDayNoticeVanishesAtTheTrialEnd(): void {
+		$this->now = self::TRIAL_END;
+		$this->expectException(AlreadyProcessedException::class);
+
+		$this->prepareTrial(TrialNoticeService::STAGE_1D);
+	}
+
+	/**
+	 * @return array<string, array{string}>
+	 */
+	public static function announcements(): array {
+		return ['7 Tage' => [TrialNoticeService::STAGE_7D], '1 Tag' => [TrialNoticeService::STAGE_1D]];
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('announcements')]
+	public function testAnnouncementsVanishAfterBuying(string $stage): void {
+		$this->now = self::TRIAL_END - 2 * 86400;
+		$this->trialEndsAt = null;
+		$this->expectException(AlreadyProcessedException::class);
+
+		$this->prepareTrial($stage);
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('announcements')]
+	public function testAnnouncementsOfAnEarlierTrialVanish(string $stage): void {
+		$this->now = self::TRIAL_END - 2 * 86400;
+		$this->trialEndsAt = self::TRIAL_END + 30 * 86400;
+		$this->expectException(AlreadyProcessedException::class);
+
+		$this->prepareTrial($stage);
+	}
+
+	public function testEndNoticeVanishesAfterBuying(): void {
+		$this->now = self::TRIAL_END + 86400;
+		$this->trialEndsAt = null;
+		$this->tier = 'werkplus';
+		$this->expectException(AlreadyProcessedException::class);
+
+		$this->prepareTrial(TrialNoticeService::STAGE_END);
+	}
+
+	public function testEndNoticeStaysWithoutABoughtKey(): void {
+		$this->now = self::TRIAL_END + 86400;
+		$this->trialEndsAt = null;
+		$this->tier = 'free';
+		$notification = $this->notification('contractmanager', Notifier::SUBJECT_TRIAL, ['stage' => TrialNoticeService::STAGE_END, 'trialEnd' => self::TRIAL_END]);
+		$action = $this->createMock(IAction::class);
+		$action->method('setLabel')->willReturnSelf();
+		$action->method('setParsedLabel')->willReturnSelf();
+		$action->method('setPrimary')->willReturnSelf();
+		$action->method('setLink')->willReturnSelf();
+		$notification->method('createAction')->willReturn($action);
+		$notification->expects($this->once())->method('setParsedSubject')->with('Der WerkPlus-Testzeitraum ist beendet.')->willReturnSelf();
+
+		$this->notifier->prepare($notification, 'de');
+	}
+
+	public function testUnknownStageVanishes(): void {
+		$this->expectException(AlreadyProcessedException::class);
+
+		$this->prepareTrial('2d');
 	}
 }
